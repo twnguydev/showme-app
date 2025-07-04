@@ -169,14 +169,14 @@ Widget _buildQuickActionsSection() {
       animation: _contentStaggerAnimation,
       builder: (context, child) {
         return Transform.translate(
-          offset: Offset(0, (1 - _contentStaggerAnimation.value) * 15), // Réduit de 40 à 15
+          offset: Offset(0, 0),
           child: Opacity(
             opacity: _contentStaggerAnimation.value,
             child: Padding(
               padding: EdgeInsets.only(
-                top: ShowmeDesign.spacingSm, // Réduit l'espace avec la carte
-                left: 20, // Même marge que la carte
-                right: 20, // Même marge que la carte
+                top: 0,
+                left: 20,
+                right: 20,
                 bottom: ShowmeDesign.spacingLg,
               ),
               child: Column(
