@@ -15,7 +15,8 @@ import '../../features/card/presentation/pages/public_card_page.dart';
 import '../../features/crm/presentation/pages/crm_page.dart';
 import '../../features/payment/presentation/pages/payment_page.dart';
 import '../../shared/presentation/pages/home_page.dart';
-import '../../shared/presentation/pages/splash_page.dart';
+import '../../shared/presentation/pages/nfc_share_page.dart';
+import '../../shared/presentation/pages/paywall_page.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -43,7 +44,16 @@ class AppRouter {
     routes: [
       GoRoute(
         path: '/splash',
-        builder: (context, state) => const SplashPage(),
+        builder: (context, state) => const NFCSharePage(),
+      ),
+      GoRoute(
+        path: '/paywall',
+        builder: (context, state) {
+          return PaywallPage(
+            feature: state.uri.queryParameters['feature'],
+            source: state.uri.queryParameters['source'],
+          );
+        },
       ),
       GoRoute(
         path: '/login',

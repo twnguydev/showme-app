@@ -144,15 +144,15 @@ class User {
     final now = DateTime.now();
     return User(
       id: 1,
-      username: 'jean.dupont',
-      email: 'jean.dupont@showme.com',
-      firstName: 'Jean',
-      lastName: 'Dupont',
+      username: 'tanguy.gbt',
+      email: 'tanguy.gbt@showme.com',
+      firstName: 'Tanguy',
+      lastName: 'Gbt',
       company: 'Showme Corp',
       position: 'Consultant Senior',
       phoneNumber: '+33 6 12 34 56 78',
-      linkedinUrl: 'https://linkedin.com/in/jean-dupont',
-      website: 'https://jeandupont.com',
+      linkedinUrl: 'https://linkedin.com/in/tanguy-gbt',
+      website: 'https://tanguygbt.com',
       profilePicture: UploadedFile(
         url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
         name: 'profile.jpg',

@@ -147,7 +147,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         return ShowmeCardWidget(
                           card: activeCard,
                           size: CardSize.large,
-                          onTap: () => context.go('/cards/${activeCard.id}'),
+                          // onTap: () => context.go('/cards/${activeCard.id}'),
+                          onTap: () => context.go('/splash'),
                         );
                       } else if (state is CardLoading) {
                         return _buildCardLoadingSkeleton();
@@ -164,7 +165,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-Widget _buildQuickActionsSection() {
+  Widget _buildQuickActionsSection() {
     return AnimatedBuilder(
       animation: _contentStaggerAnimation,
       builder: (context, child) {
@@ -598,6 +599,13 @@ Widget _buildQuickActionsSection() {
   }
 
   void _handleQuickAction(String action) {
+    // Vérifier si l'action est PRO et si l'utilisateur n'a pas l'abonnement
+    if (_isProAction(action) && !_hasProSubscription()) {
+      _redirectToPaywall(action);
+      return;
+    }
+
+    // Actions normales
     switch (action) {
       case 'share_nfc':
         _showNFCSharing();
@@ -620,6 +628,22 @@ Widget _buildQuickActionsSection() {
       default:
         _showComingSoon(action);
     }
+  }
+
+  bool _isProAction(String action) {
+    const proActions = {
+      'kiosk_mode',
+    };
+    return proActions.contains(action);
+  }
+
+  bool _hasProSubscription() {
+    // return context.read<SubscriptionBloc>().state.isPro;
+    return false;
+  }
+
+  void _redirectToPaywall(String feature) {
+    context.go('/paywall?feature=$feature&source=quick_actions');
   }
 
   void _showShareOptions() {
@@ -722,13 +746,12 @@ Widget _buildQuickActionsSection() {
     );
   }
 
-  // Fonctions de partage (stubs pour le moment)
   void _showNFCSharing() {
-    _showComingSoon('Partage NFC');
+    context.go('/splash');
   }
 
   void _showQRCode() {
-    _showComingSoon('QR Code');
+    context.go('/qr-share');
   }
 
   void _shareLink() {
@@ -736,11 +759,11 @@ Widget _buildQuickActionsSection() {
   }
 
   void _activateKioskMode() {
-    _showComingSoon('Mode kiosque');
+    context.go('/kiosk');
   }
 
   void _showPaymentOptions() {
-    _showComingSoon('Options de paiement');
+    context.go('/payment');
   }
 
   void _showComingSoon(String feature) {

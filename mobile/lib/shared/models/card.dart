@@ -97,7 +97,7 @@ class Card {
     final now = DateTime.now();
     return Card(
       id: 1,
-      slug: 'jean-dupont',
+      slug: 'tanguy-gbt',
       title: 'Ma carte premium',
       bio: 'Expert en transformation digitale avec 10+ ans d\'expérience. Je vous accompagne dans vos projets les plus ambitieux.',
       isPublic: true,
