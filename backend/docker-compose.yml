@@ -5,25 +5,24 @@ services:
     container_name: showme_mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
-      MYSQL_DATABASE: ${DB_NAME:-showme}
-      MYSQL_USER: ${DB_USER:-showme_user}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-showme_pass}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_CHARSET: utf8mb4
       MYSQL_COLLATION: utf8mb4_unicode_ci
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./docker/mysql/init:/docker-entrypoint-initdb.d
-      - ./docker/mysql/conf.d:/etc/mysql/conf.d
       - ./backups:/backups
     command: >
       --default-authentication-plugin=mysql_native_password
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
+      --bind-address=0.0.0.0
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DB_USER:-showme_user}", "-p${DB_PASSWORD:-showme_pass}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DB_USER}", "-p${DB_PASSWORD}"]
       timeout: 20s
       retries: 10
       interval: 10s
@@ -39,18 +38,16 @@ services:
     environment:
       PMA_HOST: mysql
       PMA_PORT: 3306
-      PMA_USER: ${DB_USER:-showme_user}
-      PMA_PASSWORD: ${DB_PASSWORD:-showme_pass}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      PMA_USER: ${DB_USER}
+      PMA_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       PMA_ARBITRARY: 1
       UPLOAD_LIMIT: 50M
     ports:
-      - "8080:8080"
+      - "8080:80"
     depends_on:
       mysql:
         condition: service_healthy
-    volumes:
-      - ./backups:/var/www/html/backups
     networks:
       - showme_network
 
@@ -77,17 +74,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: ${NODE_ENV:-development}
+      target: development
     container_name: showme_app
     restart: unless-stopped
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
+      NODE_ENV: ${NODE_ENV}
       PORT: 3000
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_NAME: ${DB_NAME:-showme}
-      DB_USER: ${DB_USER:-showme_user}
-      DB_PASSWORD: ${DB_PASSWORD:-showme_pass}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: ${JWT_SECRET}
@@ -95,10 +92,6 @@ services:
       EMAIL_FROM: ${EMAIL_FROM}
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASS: ${SMTP_PASS}
-      REVENUECAT_API_KEY: ${REVENUECAT_API_KEY}
-      REVENUECAT_WEBHOOK_SECRET: ${REVENUECAT_WEBHOOK_SECRET}
     ports:
       - "3000:3000"
     depends_on:
@@ -110,12 +103,14 @@ services:
       - ./uploads:/app/uploads
       - ./logs:/app/logs
       - ./src:/app/src:cached
+      - ./package.json:/app/package.json:ro
+      - /app/node_modules
     command: >
       sh -c "
         echo 'Waiting for database...' &&
         sleep 10 &&
-        npm run migration:run &&
-        npm run start:${NODE_ENV:-dev}
+        npm run migration:run || echo 'No migrations to run' &&
+        npm run start:dev
       "
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
@@ -133,9 +128,9 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_HOST: mysql
-      MYSQL_USER: ${DB_USER:-showme_user}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-showme_pass}
-      MYSQL_DATABASE: ${DB_NAME:-showme}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
     volumes:
       - ./backups:/backups
       - ./docker/backup/backup.sh:/backup.sh
@@ -153,96 +148,9 @@ services:
     networks:
       - showme_network
 
-  # Monitoring simple avec Grafana + Prometheus
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: showme_prometheus
-    restart: unless-stopped
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./docker/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-    networks:
-      - showme_network
-
-  # Grafana pour le monitoring visuel
-  grafana:
-    image: grafana/grafana:latest
-    container_name: showme_grafana
-    restart: unless-stopped
-    ports:
-      - "3001:3000"
-    environment:
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin123}
-      GF_INSTALL_PLUGINS: grafana-piechart-panel
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./docker/monitoring/grafana/dashboards:/var/lib/grafana/dashboards
-      - ./docker/monitoring/grafana/provisioning:/etc/grafana/provisioning
-    depends_on:
-      - prometheus
-    networks:
-      - showme_network
-
-  # Node Exporter pour les métriques système
-  node-exporter:
-    image: prom/node-exporter:latest
-    container_name: showme_node_exporter
-    restart: unless-stopped
-    ports:
-      - "9100:9100"
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.rootfs=/rootfs'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
-    networks:
-      - showme_network
-
-  # Log aggregator simple
-  loki:
-    image: grafana/loki:latest
-    container_name: showme_loki
-    restart: unless-stopped
-    ports:
-      - "3100:3100"
-    volumes:
-      - ./docker/monitoring/loki-config.yml:/etc/loki/local-config.yaml
-      - loki_data:/loki
-    command: -config.file=/etc/loki/local-config.yaml
-    networks:
-      - showme_network
-
-  # Promtail pour collecter les logs
-  promtail:
-    image: grafana/promtail:latest
-    container_name: showme_promtail
-    restart: unless-stopped
-    volumes:
-      - ./logs:/var/log/app:ro
-      - ./docker/monitoring/promtail-config.yml:/etc/promtail/config.yml
-    command: -config.file=/etc/promtail/config.yml
-    depends_on:
-      - loki
-    networks:
-      - showme_network
-
 volumes:
   mysql_data:
   redis_data:
-  prometheus_data:
-  grafana_data:
-  loki_data:
 
 networks:
   showme_network:

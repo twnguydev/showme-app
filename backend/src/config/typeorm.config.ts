@@ -39,9 +39,7 @@ const AppDataSource = new DataSource({
   timezone: 'Z',
   charset: 'utf8mb4',
   extra: {
-    connectionLimit: 10,
-    acquireTimeout: 60000,
-    timeout: 60000,
+    connectionLimit: 10
   },
 });
 
