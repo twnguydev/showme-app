@@ -6,6 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  Index,
 } from 'typeorm';
 import { Card } from './card.entity';
 
@@ -25,6 +26,7 @@ export class WalletPass {
   passTypeIdentifier: string;
 
   @Column({ unique: true })
+  @Index('IDX_WALLET_PASS_SERIAL', { unique: true })
   serialNumber: string;
 
   @Column({ nullable: true })
@@ -55,7 +57,8 @@ export class WalletPass {
   updatedAt: Date;
 
   // Relations
-  @ManyToOne(() => Card, (card) => card.walletPasses)
+  @ManyToOne(() => Card, (card) => card.walletPasses, { onDelete: 'CASCADE' })
+  @Index('IDX_WALLET_PASS_CARD')
   card: Card;
 
   // Getters

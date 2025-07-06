@@ -1,0 +1,79 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "ShowMe Backend Dashboard",
+    "tags": ["showme"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Services Status",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "up",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true,
+                "__name__": true
+              },
+              "renameByName": {
+                "Value": "Status",
+                "instance": "Instance",
+                "job": "Service"
+              }
+            }
+          }
+        ],
+        "fieldConfig": {
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "Status"},
+              "properties": [
+                {
+                  "id": "mappings",
+                  "value": [
+                    {"type": "value", "value": "0", "text": "❌ DOWN"},
+                    {"type": "value", "value": "1", "text": "✅ UP"}
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Error Logs (Last 24h)",
+        "type": "logs",
+        "targets": [
+          {
+            "expr": "{job=\"nestjs-app\"} |= \"ERROR\"",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "showTime": true,
+          "showLabels": false,
+          "showCommonLabels": false,
+          "wrapLogMessage": true,
+          "sortOrder": "Descending"
+        },
+        "gridPos": {"h": 10, "w": 24, "x": 0, "y": 8}
+      }
+    ],
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "refresh": "1m"
+  }
+}

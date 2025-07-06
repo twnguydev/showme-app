@@ -8,28 +8,30 @@ import { redisStore } from 'cache-manager-redis-yet';
 
 import { DatabaseConfig } from './config/database.config';
 import { AppConfig } from './config/app.config';
+import { SeedsModule } from './database/seeds/seeds.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
-import { CardsModule } from './modules/cards/cards.module';
-import { AnalyticsModule } from './modules/analytics/analytics.module';
-import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
-import { UploadsModule } from './modules/uploads/uploads.module';
-import { PaymentsModule } from './modules/payments/payments.module';
-import { AdminModule } from './modules/admin/admin.module';
-import { HealthModule } from './modules/health/health.module';
+// import { CardsModule } from './modules/cards/cards.module';
+// import { AnalyticsModule } from './modules/analytics/analytics.module';
+// import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
+// import { UploadsModule } from './modules/uploads/uploads.module';
+// import { PaymentsModule } from './modules/payments/payments.module';
+// import { AdminModule } from './modules/admin/admin.module';
+// import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
     // Configuration globale
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [AppConfig, DatabaseConfig],
+      load: [AppConfig],
       envFilePath: ['.env.local', '.env'],
     }),
 
     // Base de données TypeORM
     TypeOrmModule.forRootAsync({
       useClass: DatabaseConfig,
+      inject: [DatabaseConfig],
     }),
 
     // Rate limiting
@@ -57,13 +59,15 @@ import { HealthModule } from './modules/health/health.module';
     // Modules fonctionnels
     AuthModule,
     UsersModule,
-    CardsModule,
-    AnalyticsModule,
-    SubscriptionsModule,
-    UploadsModule,
-    PaymentsModule,
-    AdminModule,
-    HealthModule,
+    SeedsModule,
+    // CardsModule,
+    // AnalyticsModule,
+    // SubscriptionsModule,
+    // UploadsModule,
+    // PaymentsModule,
+    // AdminModule,
+    // HealthModule,
   ],
+  providers: [DatabaseConfig],
 })
 export class AppModule {}

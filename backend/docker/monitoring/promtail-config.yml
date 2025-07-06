@@ -1,0 +1,29 @@
+# docker/monitoring/promtail-config.yml
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Logs de l'application NestJS
+  - job_name: nestjs-app
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nestjs-app
+          __path__: /var/log/app/*.log
+
+  # Logs système (optionnel)
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: syslog
+          __path__: /var/log/syslog

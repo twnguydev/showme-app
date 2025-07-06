@@ -12,7 +12,6 @@ import {
 import { Exclude } from 'class-transformer';
 import { Card } from './card.entity';
 import { Subscription } from './subscription.entity';
-import { ContactExchange } from './contact-exchange.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -21,16 +20,16 @@ export enum UserRole {
 }
 
 @Entity('users')
-@Index(['email'], { unique: true })
-@Index(['username'], { unique: true })
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ unique: true })
+  @Index('IDX_USER_USERNAME', { unique: true })
   username: string;
 
   @Column({ unique: true })
+  @Index('IDX_USER_EMAIL', { unique: true })
   email: string;
 
   @Column({ nullable: true })

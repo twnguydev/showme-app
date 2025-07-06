@@ -1,6 +1,7 @@
 // src/modules/users/dto/update-profile.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsBoolean, IsEmail } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsEmail, IsEnum, Matches } from 'class-validator';
+import { UserRole } from '@/entities/user.entity';
 
 export class UpdateProfileDto {
   @ApiProperty({
@@ -90,4 +91,72 @@ export class UpdateProfileDto {
     required: false,
   })
   @IsOptional()
-  @IsString
+  @IsString()
+  @Matches(/^[a-zA-Z0-9_.-]+$/, {
+    message: 'Le nom d\'utilisateur ne peut contenir que des lettres, chiffres, points, tirets et underscores',
+  })
+  username?: string;
+
+  @ApiProperty({
+    description: 'Numéro de téléphone',
+    example: '+33 6 12 34 56 78',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
+
+  @ApiProperty({
+    description: 'Compte actif',
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @ApiProperty({
+    description: 'Email vérifié',
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  emailVerified?: boolean;
+
+  @ApiProperty({
+    description: 'Fuseau horaire',
+    example: 'Europe/Paris',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  timezone?: string;
+
+  @ApiProperty({
+    description: 'Langue préférée',
+    example: 'fr',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  language?: string;
+
+  @ApiProperty({
+    description: 'Rôle utilisateur (Admin seulement)',
+    enum: UserRole,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(UserRole)
+  role?: UserRole;
+
+  @ApiProperty({
+    description: 'Photo de profil (URL)',
+    example: 'https://example.com/profile.jpg',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  profilePicture?: string;
+}

@@ -1,41 +1,26 @@
-# Dockerfile
 FROM node:22-alpine AS base
 
-# Installer les dépendances système
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat curl bash
 WORKDIR /app
 
-# Copier les fichiers de dépendances
 COPY package*.json ./
 COPY tsconfig*.json ./
 
-# Installer les dépendances
-FROM base AS deps
-RUN npm ci --only=production && npm cache clean --force
-
-# Builder l'application
-FROM base AS builder
+FROM base AS development
+RUN npm ci --include=dev
 COPY . .
-RUN npm ci
-RUN npm run build
 
-# Image de production
-FROM node:22-alpine AS runner
-WORKDIR /app
-
-ENV NODE_ENV production
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nestjs
-
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./package.json
-
-USER nestjs
+RUN npm install -g ts-node
 
 EXPOSE 3000
+CMD ["npm", "run", "start:dev"]
 
-ENV PORT 3000
-
+FROM base AS production
+RUN npm ci --only=production
+COPY . .
+RUN npm run build
+EXPOSE 3000
+USER node
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
 CMD ["node", "dist/main"]

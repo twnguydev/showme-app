@@ -6,6 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { ContactExchange } from './contact-exchange.entity';
 
@@ -15,6 +16,7 @@ export class Visitor {
   id: number;
 
   @Column({ unique: true })
+  @Index('IDX_VISITOR_DEVICE_HASH', { unique: true })
   deviceHash: string;
 
   @Column({ nullable: true })

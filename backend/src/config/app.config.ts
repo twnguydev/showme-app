@@ -2,23 +2,23 @@
 import { registerAs } from '@nestjs/config';
 
 export const AppConfig = registerAs('app', () => ({
-  port: parseInt(process.env.PORT, 10) || 3000,
-  environment: process.env.NODE_ENV || 'development',
+  port: parseInt(process.env.PORT, 10),
+  environment: process.env.NODE_ENV,
   
   // JWT Configuration
   jwt: {
-    secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key',
-    refreshSecret: process.env.JWT_REFRESH_SECRET || 'your-super-secret-refresh-key',
-    expiresIn: process.env.JWT_EXPIRES_IN || '15m',
-    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+    secret: process.env.JWT_SECRET,
+    refreshSecret: process.env.JWT_REFRESH_SECRET,
+    expiresIn: process.env.JWT_EXPIRES_IN,
+    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN,
   },
 
   // Email Configuration
   email: {
-    from: process.env.EMAIL_FROM || 'noreply@showme.app',
+    from: process.env.EMAIL_FROM,
     smtp: {
       host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT, 10) || 587,
+      port: parseInt(process.env.SMTP_PORT, 10),
       secure: process.env.SMTP_SECURE === 'true',
       auth: {
         user: process.env.SMTP_USER,
@@ -52,10 +52,10 @@ export const AppConfig = registerAs('app', () => ({
 
   // Application URLs
   urls: {
-    frontend: process.env.FRONTEND_URL || 'https://app.showme.com',
-    admin: process.env.ADMIN_URL || 'https://admin.showme.com',
-    api: process.env.API_URL || 'https://api.showme.com',
-    cardBase: process.env.CARD_BASE_URL || 'https://showme.app/u',
+    frontend: process.env.FRONTEND_URL,
+    admin: process.env.ADMIN_URL,
+    api: process.env.API_URL,
+    cardBase: process.env.CARD_BASE_URL,
   },
 
   // Features flags

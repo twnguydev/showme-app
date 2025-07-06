@@ -28,12 +28,12 @@ export enum CardTheme {
 }
 
 @Entity('cards')
-@Index(['slug'], { unique: true })
 export class Card {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ unique: true })
+  @Index('IDX_CARD_SLUG', { unique: true })
   slug: string;
 
   @Column()
@@ -82,14 +82,15 @@ export class Card {
   updatedAt: Date;
 
   // Relations
-  @ManyToOne(() => User, (user) => user.cards)
+  @ManyToOne(() => User, (user) => user.cards, { onDelete: 'CASCADE' })
+  @Index('IDX_CARD_USER')
   user: User;
 
-  @OneToOne(() => Profile)
+  @OneToOne(() => Profile, { nullable: true })
   @JoinColumn()
-  profile: Profile;
+  profile?: Profile;
 
-  @ManyToOne(() => Subscription)
+  @ManyToOne(() => Subscription, { nullable: true })
   subscription?: Subscription;
 
   @OneToMany(() => ContactExchange, (exchange) => exchange.card)

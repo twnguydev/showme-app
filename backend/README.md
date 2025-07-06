@@ -1,99 +1,365 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# ShowMe Backend API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend API sécurisé et scalable pour l'application ShowMe - Cartes de contact digitales.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 🚀 Technologies
 
-## Description
+- **Backend**: NestJS + TypeScript
+- **Base de données**: MySQL 8.0 avec TypeORM
+- **Cache**: Redis
+- **Authentification**: JWT + Refresh Tokens
+- **Documentation**: Swagger/OpenAPI
+- **Stockage**: AWS S3 compatible (MinIO local)
+- **Conteneurisation**: Docker + Docker Compose
+- **Reverse Proxy**: NGINX
+- **Paiements**: Stripe
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 📋 Prérequis
 
-## Project setup
+- Node.js 18+ 
+- Docker & Docker Compose
+- npm ou yarn
+
+## ⚡ Installation rapide
 
 ```bash
-$ npm install
+# Cloner le repository
+git clone <repository-url>
+cd showme-backend
+
+# Configuration automatique
+npm run setup
+
+# Démarrer en mode développement
+npm run dev
 ```
 
-## Compile and run the project
+## 🔧 Configuration manuelle
+
+### 1. Variables d'environnement
 
 ```bash
-# development
-$ npm run start
+# Copier le fichier d'exemple
+cp .env.example .env
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+# Modifier les variables selon votre environnement
+nano .env
 ```
 
-## Run tests
+### 2. Démarrage des services
 
 ```bash
-# unit tests
-$ npm run test
+# Démarrer les services Docker (MySQL, Redis, MinIO)
+docker-compose up -d mysql redis minio
 
-# e2e tests
-$ npm run test:e2e
+# Installer les dépendances Node.js
+npm install
 
-# test coverage
-$ npm run test:cov
+# Exécuter les migrations de base de données
+npm run migration:run
+
+# Démarrer l'application
+npm run start:dev
 ```
 
-## Deployment
+## 🐳 Docker
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Développement
 
 ```bash
-$ npm install -g mau
-$ mau deploy
+# Démarrer tous les services
+docker-compose up -d
+
+# Voir les logs
+docker-compose logs -f
+
+# Arrêter les services
+docker-compose down
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Production
 
-## Resources
+```bash
+# Construire et démarrer en production
+npm run prod
 
-Check out a few resources that may come in handy when working with NestJS:
+# Ou avec Docker seulement
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## 📚 API Documentation
 
-## Support
+Une fois l'application démarrée, la documentation Swagger est disponible à :
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+- **Développement**: http://localhost:3000/api/docs
+- **Production**: https://api.showme.app/api/docs
 
-## Stay in touch
+## 🏗️ Architecture
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```
+src/
+├── config/              # Configuration (DB, app, etc.)
+├── entities/            # Entités TypeORM
+├── modules/             # Modules fonctionnels
+│   ├── auth/           # Authentification
+│   ├── users/          # Gestion utilisateurs
+│   ├── cards/          # Cartes de contact
+│   ├── analytics/      # Statistiques
+│   ├── subscriptions/  # Abonnements
+│   ├── payments/       # Paiements Stripe
+│   ├── uploads/        # Gestion fichiers
+│   └── admin/          # Panel administrateur
+├── common/             # Utilitaires communs
+└── database/           # Migrations et seeds
+```
 
-## License
+## 🔐 Authentification
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+L'API utilise JWT avec des refresh tokens pour l'authentification :
+
+```bash
+# S'enregistrer
+POST /api/v1/auth/register
+
+# Se connecter
+POST /api/v1/auth/login
+
+# Rafraîchir le token
+POST /api/v1/auth/refresh
+
+# Obtenir son profil
+GET /api/v1/auth/me
+```
+
+## 🃏 Endpoints principaux
+
+### Authentification
+- `POST /api/v1/auth/register` - Créer un compte
+- `POST /api/v1/auth/login` - Se connecter
+- `POST /api/v1/auth/refresh` - Rafraîchir le token
+- `POST /api/v1/auth/forgot-password` - Mot de passe oublié
+- `POST /api/v1/auth/reset-password` - Réinitialiser le mot de passe
+
+### Utilisateurs
+- `GET /api/v1/users/me` - Mon profil
+- `PUT /api/v1/users/me` - Modifier mon profil
+- `PUT /api/v1/users/me/password` - Changer mon mot de passe
+- `PUT /api/v1/users/me/avatar` - Uploader photo de profil
+
+### Cartes
+- `GET /api/v1/cards` - Mes cartes
+- `POST /api/v1/cards` - Créer une carte
+- `GET /api/v1/cards/:slug` - Voir une carte publique
+- `PUT /api/v1/cards/:id` - Modifier ma carte
+- `DELETE /api/v1/cards/:id` - Supprimer ma carte
+
+### Analytics
+- `GET /api/v1/analytics/cards/:id/stats` - Statistiques d'une carte
+- `GET /api/v1/analytics/dashboard` - Dashboard général
+
+## 📊 Base de données
+
+### Migrations
+
+```bash
+# Générer une nouvelle migration
+npm run migration:generate -- src/database/migrations/MigrationName
+
+# Exécuter les migrations
+npm run migration:run
+
+# Revenir en arrière
+npm run migration:revert
+
+# Supprimer le schéma (ATTENTION)
+npm run schema:drop
+```
+
+### Modèles principaux
+
+- **User** - Utilisateurs de l'application
+- **Profile** - Profils détaillés des utilisateurs
+- **Card** - Cartes de contact digitales
+- **ContactExchange** - Historique des partages
+- **Subscription** - Abonnements Pro
+- **Payment** - Paiements Stripe
+- **WalletPass** - Passes Apple Wallet
+
+## 🔧 Scripts disponibles
+
+```bash
+# Développement
+npm run start:dev          # Mode développement avec hot-reload
+npm run start:debug        # Mode debug
+
+# Production
+npm run build              # Construire l'application
+npm run start:prod         # Démarrer en production
+
+# Base de données
+npm run migration:run      # Exécuter les migrations
+npm run migration:revert   # Revenir en arrière
+npm run seed              # Peupler avec des données de test
+
+# Docker
+npm run docker:up         # Démarrer les services Docker
+npm run docker:down       # Arrêter les services Docker
+npm run docker:logs       # Voir les logs Docker
+
+# Utilitaires
+npm run reset-db          # Réinitialiser la base de données
+npm run setup             # Configuration complète
+npm run dev               # Environnement de développement complet
+```
+
+## 🧪 Tests
+
+```bash
+# Tests unitaires
+npm run test
+
+# Tests en mode watch
+npm run test:watch
+
+# Tests avec couverture
+npm run test:cov
+
+# Tests e2e
+npm run test:e2e
+```
+
+## 🚀 Déploiement
+
+### Variables d'environnement de production
+
+```bash
+NODE_ENV=production
+PORT=3000
+
+# Base de données
+DB_HOST=your-mysql-host
+DB_NAME=showme_prod
+DB_USER=your-db-user
+DB_PASSWORD=your-secure-password
+
+# JWT (générer des clés fortes)
+JWT_SECRET=your-super-secure-jwt-secret-min-32-chars
+JWT_REFRESH_SECRET=your-super-secure-refresh-secret-min-32-chars
+
+# Stripe
+STRIPE_SECRET_KEY=sk_live_your_live_key
+STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
+
+# Email
+SMTP_HOST=your-smtp-provider
+SMTP_USER=your-email-user
+SMTP_PASS=your-email-password
+
+# Stockage S3
+AWS_S3_BUCKET=your-production-bucket
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+```
+
+### Avec Docker
+
+```bash
+# Construire l'image
+docker build -t showme-backend .
+
+# Démarrer en production
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+## 🔒 Sécurité
+
+### Mesures implémentées
+
+- **Rate Limiting** - Protection contre les attaques DDoS
+- **Helmet** - Headers de sécurité HTTP
+- **CORS** - Configuration CORS stricte
+- **JWT** - Authentification sécurisée avec refresh tokens
+- **Bcrypt** - Hashage sécurisé des mots de passe
+- **Validation** - Validation stricte des données entrantes
+- **HTTPS** - Chiffrement des communications
+
+### Recommandations production
+
+1. **Générer des secrets JWT forts** (min 32 caractères)
+2. **Configurer HTTPS** avec des certificats SSL valides
+3. **Utiliser un WAF** (Web Application Firewall)
+4. **Monitorer les logs** et configurer des alertes
+5. **Sauvegarder régulièrement** la base de données
+6. **Mettre à jour** les dépendances régulièrement
+
+## 📈 Performance
+
+### Optimisations incluses
+
+- **Redis Cache** - Cache en mémoire pour les sessions
+- **Compression Gzip** - Compression des réponses HTTP
+- **Connection Pooling** - Pool de connexions MySQL
+- **Pagination** - Pagination automatique des listes
+- **Indexes** - Index de base de données optimisés
+
+### Monitoring
+
+- **Health Check** - Endpoint `/health` pour monitoring
+- **Logs structurés** - Logs JSON pour analyse
+- **Métriques** - Prêt pour Prometheus/Grafana
+
+## 🛠️ Développement
+
+### Structure des modules
+
+Chaque module suit la structure NestJS standard :
+
+```
+module/
+├── dto/                # Data Transfer Objects
+├── entities/           # Entités TypeORM (si nécessaire)
+├── guards/            # Guards personnalisés
+├── services/          # Logique métier
+├── controllers/       # Contrôleurs HTTP
+└── module.ts          # Définition du module
+```
+
+### Bonnes pratiques
+
+1. **Validation** - Utiliser les DTOs avec class-validator
+2. **Transformations** - Utiliser class-transformer pour les réponses
+3. **Documentation** - Documenter avec Swagger/OpenAPI
+4. **Tests** - Écrire des tests unitaires et d'intégration
+5. **Types** - Utiliser TypeScript strictement
+
+## 🤝 Contribution
+
+1. Fork le projet
+2. Créer une branche feature (`git checkout -b feature/nouvelle-fonctionnalite`)
+3. Commit les changements (`git commit -am 'Ajouter nouvelle fonctionnalité'`)
+4. Push vers la branche (`git push origin feature/nouvelle-fonctionnalite`)
+5. Créer une Pull Request
+
+## 📞 Support
+
+- **Documentation**: `/api/docs`
+- **Issues**: Utiliser GitHub Issues
+- **Email**: support@showme.app
+
+## 📝 Licence
+
+Ce projet est sous licence propriétaire ShowMe Corp.
+
+---
+
+## 🔄 Changelog
+
+### v1.0.0 (2024-07-04)
+- ✨ Configuration initiale NestJS + TypeORM
+- 🔐 Système d'authentification JWT complet
+- 👤 Gestion des utilisateurs et profils
+- 🃏 Module de cartes de contact
+- 📊 Analytics de base
+- 🐳 Configuration Docker complète
+- 📚 Documentation Swagger
+- 🔒 Mesures de sécurité de base

@@ -48,6 +48,7 @@ backend/exports/
 backend/.cache/
 backend/public/uploads/*
 !backend/public/uploads/.gitkeep
+backend/**/*.seed.ts
 
 # Flutter
 mobile/.dart_tool/
