@@ -169,7 +169,7 @@ Widget _buildQuickActionsSection() {
       animation: _contentStaggerAnimation,
       builder: (context, child) {
         return Transform.translate(
-          offset: Offset(0, 0),
+          offset: Offset(0, -40),
           child: Opacity(
             opacity: _contentStaggerAnimation.value,
             child: Padding(
@@ -317,7 +317,7 @@ Widget _buildQuickActionsSection() {
 
   Widget _buildCardLoadingSkeleton() {
     return Container(
-      height: 200,
+      height: 270,
       margin: EdgeInsets.all(ShowmeDesign.spacingMd),
       decoration: BoxDecoration(
         color: ShowmeDesign.neutral100,

@@ -103,7 +103,7 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
   Widget build(BuildContext context) {
     return Container(
       margin: EdgeInsets.only(
-        top: ShowmeDesign.spacingXl, // 32px de margin top
+        top: ShowmeDesign.spacingMd, // 32px de margin top
         left: 10, // Même marge que l'AppBar
         right: 10, // Même marge que l'AppBar
       ),

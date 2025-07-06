@@ -14,6 +14,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         super(AuthInitial()) {
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<AuthLoginRequested>(_onAuthLoginRequested);
+    on<AuthAppleLoginRequested>(_onAuthAppleLoginRequested);
+    on<AuthGoogleLoginRequested>(_onAuthGoogleLoginRequested);
     on<AuthRegisterRequested>(_onAuthRegisterRequested);
     on<AuthLogoutRequested>(_onAuthLogoutRequested);
     on<AuthUserUpdated>(_onAuthUserUpdated);
@@ -63,20 +65,56 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         user: result.user,
         token: result.token,
       ));
+    } on AuthException catch (e) {
+      emit(AuthError(e.message));
     } on DioException catch (e) {
-      String message = 'Erreur de connexion';
-      
-      if (e.response?.statusCode == 400) {
-        message = 'Email ou mot de passe incorrect';
-      } else if (e.response?.statusCode == 429) {
-        message = 'Trop de tentatives, veuillez réessayer plus tard';
-      } else if (e.type == DioExceptionType.connectionTimeout) {
-        message = 'Connexion impossible au serveur';
-      }
-      
-      emit(AuthError(message));
+      emit(AuthError(_handleDioError(e)));
     } catch (e) {
       emit(AuthError('Une erreur inattendue s\'est produite'));
+    }
+  }
+
+  Future<void> _onAuthAppleLoginRequested(
+    AuthAppleLoginRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+
+    try {
+      final result = await _authRepository.loginWithApple();
+
+      emit(AuthAuthenticated(
+        user: result.user,
+        token: result.token,
+      ));
+    } on AuthException catch (e) {
+      emit(AuthError(e.message));
+    } on DioException catch (e) {
+      emit(AuthError(_handleDioError(e)));
+    } catch (e) {
+      emit(AuthError('Connexion Apple annulée ou échouée'));
+    }
+  }
+
+  Future<void> _onAuthGoogleLoginRequested(
+    AuthGoogleLoginRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+
+    try {
+      final result = await _authRepository.loginWithGoogle();
+
+      emit(AuthAuthenticated(
+        user: result.user,
+        token: result.token,
+      ));
+    } on AuthException catch (e) {
+      emit(AuthError(e.message));
+    } on DioException catch (e) {
+      emit(AuthError(_handleDioError(e)));
+    } catch (e) {
+      emit(AuthError('Connexion Google annulée ou échouée'));
     }
   }
 
@@ -100,19 +138,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         user: result.user,
         token: result.token,
       ));
+    } on AuthException catch (e) {
+      emit(AuthError(e.message));
     } on DioException catch (e) {
-      String message = 'Erreur lors de l\'inscription';
-      
-      if (e.response?.statusCode == 400) {
-        final error = e.response?.data;
-        if (error?.toString().contains('email') == true) {
-          message = 'Cette adresse email est déjà utilisée';
-        } else if (error?.toString().contains('password') == true) {
-          message = 'Le mot de passe doit contenir au moins 6 caractères';
-        }
-      }
-      
-      emit(AuthError(message));
+      emit(AuthError(_handleDioError(e)));
     } catch (e) {
       emit(AuthError('Une erreur inattendue s\'est produite'));
     }
@@ -136,6 +165,30 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         user: event.user,
         token: currentState.token,
       ));
+    }
+  }
+
+  /// Gère les erreurs DioException de manière centralisée
+  String _handleDioError(DioException e) {
+    switch (e.response?.statusCode) {
+      case 400:
+        return 'Données d\'authentification invalides';
+      case 401:
+        return 'Email ou mot de passe incorrect';
+      case 403:
+        return 'Accès interdit';
+      case 404:
+        return 'Utilisateur non trouvé';
+      case 409:
+        return 'Un compte avec cet email existe déjà';
+      case 422:
+        return 'Données de validation invalides';
+      case 429:
+        return 'Trop de tentatives, veuillez réessayer plus tard';
+      case 500:
+        return 'Erreur serveur, veuillez réessayer';
+      default:
+        return 'Erreur de connexion: ${e.message}';
     }
   }
 }

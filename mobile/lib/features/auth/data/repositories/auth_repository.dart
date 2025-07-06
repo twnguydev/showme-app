@@ -1,5 +1,7 @@
 // mobile/lib/features/auth/data/repositories/auth_repository.dart
 import 'package:dio/dio.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../../core/services/api_service.dart';
 import '../../../../core/services/storage_service.dart';
@@ -16,7 +18,7 @@ class AuthResponse {
     required this.user,
     required this.token,
     this.expiresAt,
-    this.refreshToken,
+    this.refreshToken
   });
 
   factory AuthResponse.fromAuthResponseData(AuthResponseData data) {
@@ -44,11 +46,16 @@ class AuthRepository {
   final ApiService _apiService;
   final StorageService _storageService;
 
+  late final GoogleSignIn _googleSignIn;
+
   AuthRepository({
     required ApiService apiService,
     required StorageService storageService,
   })  : _apiService = apiService,
-        _storageService = storageService;
+        _storageService = storageService,
+        _googleSignIn = GoogleSignIn(
+          scopes: ['email', 'profile'],
+        );
 
   /// Vérifie si l'utilisateur est connecté
   Future<bool> isLoggedIn() async {
@@ -157,6 +164,82 @@ class AuthRepository {
     }
   }
 
+  /// Connexion avec Apple
+  Future<AuthResponse> loginWithApple() async {
+    try {
+      // Demander les credentials Apple
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      // Créer la requête pour votre API
+      final loginRequest = SocialLoginRequest(
+        provider: 'apple',
+        identityToken: credential.identityToken,
+        authorizationCode: credential.authorizationCode,
+        email: credential.email,
+        firstName: credential.givenName,
+        lastName: credential.familyName,
+        userIdentifier: credential.userIdentifier,
+      );
+
+      // Utiliser votre ApiService existant
+      final response = await _apiService.socialLogin(loginRequest);
+      final authData = response.data!;
+      
+      // Sauvegarder avec votre méthode existante
+      await _saveAuthData(authData);
+
+      return AuthResponse.fromAuthResponseData(authData);
+    } on DioException catch (e) {
+      throw _handleAuthError(e);
+    } catch (e) {
+      throw AuthException('Erreur lors de la connexion Apple: $e');
+    }
+  }
+
+  /// Connexion avec Google
+  Future<AuthResponse> loginWithGoogle() async {
+    try {
+      // Se connecter avec Google
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        throw AuthException('Connexion Google annulée');
+      }
+
+      // Obtenir les détails d'authentification
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      // Créer la requête pour votre API
+      final loginRequest = SocialLoginRequest(
+        provider: 'google',
+        idToken: googleAuth.idToken,
+        accessToken: googleAuth.accessToken,
+        email: googleUser.email,
+        firstName: googleUser.displayName?.split(' ').first,
+        lastName: googleUser.displayName?.split(' ').skip(1).join(' '),
+        photoUrl: googleUser.photoUrl,
+      );
+
+      // Utiliser votre ApiService existant
+      final response = await _apiService.socialLogin(loginRequest);
+      final authData = response.data!;
+      
+      // Sauvegarder avec votre méthode existante
+      await _saveAuthData(authData);
+
+      return AuthResponse.fromAuthResponseData(authData);
+    } on DioException catch (e) {
+      throw _handleAuthError(e);
+    } catch (e) {
+      throw AuthException('Erreur lors de la connexion Google: $e');
+    }
+  }
+
   /// Demande de réinitialisation de mot de passe
   Future<void> forgotPassword({required String email}) async {
     try {
@@ -256,6 +339,7 @@ class AuthRepository {
   }
 
   /// Déconnexion
+  @override
   Future<void> logout() async {
     try {
       // Notifier le serveur de la déconnexion
@@ -263,7 +347,14 @@ class AuthRepository {
     } catch (e) {
       // Continuer même si l'appel serveur échoue
     } finally {
-      // Nettoyer les données locales
+      // Déconnexion des services sociaux
+      try {
+        await _googleSignIn.signOut();
+      } catch (e) {
+        // Ignorer les erreurs de déconnexion Google
+      }
+      
+      // Nettoyer les données locales avec votre méthode existante
       await _clearAuthData();
     }
   }
@@ -386,4 +477,45 @@ class AuthException implements Exception {
 
   @override
   String toString() => 'AuthException: $message';
+}
+
+class SocialLoginRequest {
+  final String provider;
+  final String? identityToken;
+  final String? authorizationCode;
+  final String? idToken;
+  final String? accessToken;
+  final String? email;
+  final String? firstName;
+  final String? lastName;
+  final String? photoUrl;
+  final String? userIdentifier;
+
+  SocialLoginRequest({
+    required this.provider,
+    this.identityToken,
+    this.authorizationCode,
+    this.idToken,
+    this.accessToken,
+    this.email,
+    this.firstName,
+    this.lastName,
+    this.photoUrl,
+    this.userIdentifier,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'provider': provider,
+      if (identityToken != null) 'identityToken': identityToken,
+      if (authorizationCode != null) 'authorizationCode': authorizationCode,
+      if (idToken != null) 'idToken': idToken,
+      if (accessToken != null) 'accessToken': accessToken,
+      if (email != null) 'email': email,
+      if (firstName != null) 'firstName': firstName,
+      if (lastName != null) 'lastName': lastName,
+      if (photoUrl != null) 'photoUrl': photoUrl,
+      if (userIdentifier != null) 'userIdentifier': userIdentifier,
+    };
+  }
 }

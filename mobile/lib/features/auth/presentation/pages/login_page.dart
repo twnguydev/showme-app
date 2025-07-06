@@ -9,6 +9,7 @@ import '../../bloc/auth_event.dart';
 import '../../bloc/auth_state.dart';
 import '../widgets/auth_text_field.dart';
 import '../widgets/auth_button.dart';
+import '../widgets/social_login_button.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -121,6 +122,14 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     }
   }
 
+  void _handleAppleLogin() {
+    context.read<AuthBloc>().add(AuthAppleLoginRequested());
+  }
+
+  void _handleGoogleLogin() {
+    context.read<AuthBloc>().add(AuthGoogleLoginRequested());
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -153,20 +162,24 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               ],
             ),
           ),
-          child: Padding(
-                padding: EdgeInsets.all(ShowmeDesign.spacingXl),
-                child: Column(
-                  children: [
-                    SizedBox(height: ShowmeDesign.spacing3xl),
-                    
-                    // Logo animé
-                    _buildAnimatedLogo(),
-                    
-                    SizedBox(height: ShowmeDesign.spacing3xl),
-                    
-                    // Formulaire animé
-                    _buildAnimatedForm(),
-                  ],
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(ShowmeDesign.spacingXl),
+              child: Column(
+                children: [
+                  SizedBox(height: ShowmeDesign.spacingLg),
+                  
+                  // Logo animé
+                  _buildAnimatedLogo(),
+                  
+                  SizedBox(height: ShowmeDesign.spacingXl),
+                  
+                  // Formulaire animé
+                  _buildAnimatedForm(),
+                  
+                  SizedBox(height: ShowmeDesign.spacingLg),
+                ],
+              ),
             ),
           ),
         ),
@@ -248,8 +261,17 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SizedBox(height: ShowmeDesign.spacingXl),
+                    // Boutons de connexion sociale
+                    _buildSocialLoginSection(),
                     
+                    SizedBox(height: ShowmeDesign.spacingLg),
+                    
+                    // Séparateur "OU"
+                    _buildDivider(),
+                    
+                    SizedBox(height: ShowmeDesign.spacingLg),
+                    
+                    // Formulaire email/mot de passe
                     AuthTextField(
                       controller: _emailController,
                       label: 'Email',
@@ -334,6 +356,61 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSocialLoginSection() {
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, state) {
+        final isLoading = state is AuthLoading;
+        
+        return Column(
+          children: [
+            SocialLoginButton(
+              provider: SocialProvider.apple,
+              onPressed: isLoading ? null : _handleAppleLogin,
+              isLoading: isLoading,
+            ),
+            
+            SizedBox(height: ShowmeDesign.spacingMd),
+            
+            SocialLoginButton(
+              provider: SocialProvider.google,
+              onPressed: isLoading ? null : _handleGoogleLogin,
+              isLoading: isLoading,
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildDivider() {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            height: 1,
+            color: ShowmeDesign.neutral300,
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: ShowmeDesign.spacingMd),
+          child: Text(
+            'OU',
+            style: ShowmeDesign.bodySmall.copyWith(
+              color: ShowmeDesign.neutral500,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Container(
+            height: 1,
+            color: ShowmeDesign.neutral300,
+          ),
+        ),
+      ],
     );
   }
 }

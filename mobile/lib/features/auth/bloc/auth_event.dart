@@ -1,11 +1,5 @@
 // mobile/lib/features/auth/bloc/auth_event.dart
-import 'package:equatable/equatable.dart';
-import '../../../shared/models/user.dart';
-
-abstract class AuthEvent extends Equatable {
-  @override
-  List<Object?> get props => [];
-}
+abstract class AuthEvent {}
 
 class AuthCheckRequested extends AuthEvent {}
 
@@ -17,10 +11,11 @@ class AuthLoginRequested extends AuthEvent {
     required this.email,
     required this.password,
   });
-
-  @override
-  List<Object> get props => [email, password];
 }
+
+class AuthAppleLoginRequested extends AuthEvent {}
+
+class AuthGoogleLoginRequested extends AuthEvent {}
 
 class AuthRegisterRequested extends AuthEvent {
   final String email;
@@ -38,18 +33,12 @@ class AuthRegisterRequested extends AuthEvent {
     this.company,
     this.position,
   });
-
-  @override
-  List<Object?> get props => [email, password, firstName, lastName, company, position];
 }
 
 class AuthLogoutRequested extends AuthEvent {}
 
 class AuthUserUpdated extends AuthEvent {
-  final User user;
+  final dynamic user; // Remplacez par votre type User
 
-  AuthUserUpdated(this.user);
-
-  @override
-  List<Object> get props => [user];
+  AuthUserUpdated({required this.user});
 }

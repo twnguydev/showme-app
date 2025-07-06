@@ -1,106 +1,3 @@
-// // mobile/lib/core/services/api_service.dart
-// import 'dart:io';
-// import 'package:dio/dio.dart';
-// import 'package:retrofit/retrofit.dart';
-// import 'package:json_annotation/json_annotation.dart';
-
-// import '../config/app_config.dart';
-// import '../models/api_response.dart';
-// import '../../shared/models/user.dart';
-// import '../../shared/models/business_card.dart';
-// import '../../shared/models/contact_exchange.dart';
-// import '../../shared/models/payment.dart';
-
-// part 'api_service.g.dart';
-
-// @RestApi(baseUrl: AppConfig.apiUrl)
-// abstract class ApiService {
-//   factory ApiService([Dio? dio]) {
-//     dio ??= Dio();
-    
-//     // Configuration des interceptors
-//     dio.interceptors.add(
-//       InterceptorsWrapper(
-//         onRequest: (options, handler) {
-//           // Ajouter le token d'authentification
-//           final token = StorageService.getToken();
-//           if (token != null) {
-//             options.headers['Authorization'] = 'Bearer $token';
-//           }
-//           handler.next(options);
-//         },
-//         onError: (error, handler) {
-//           // Gestion globale des erreurs
-//           if (error.response?.statusCode == 401) {
-//             // Token expiré, rediriger vers la connexion
-//             StorageService.clearToken();
-//           }
-//           handler.next(error);
-//         },
-//       ),
-//     );
-    
-//     return _ApiService(dio);
-//   }
-
-//   // Auth endpoints
-//   @POST('/auth/local')
-//   Future<ApiResponse<AuthResponse>> login(@Body() LoginRequest request);
-
-//   @POST('/auth/local/register')
-//   Future<ApiResponse<AuthResponse>> register(@Body() RegisterRequest request);
-
-//   @GET('/users/me')
-//   Future<ApiResponse<User>> getCurrentUser();
-
-//   // Business Cards endpoints
-//   @GET('/business-cards')
-//   Future<ApiResponse<List<BusinessCard>>> getBusinessCards();
-
-//   @GET('/business-cards/{id}')
-//   Future<ApiResponse<BusinessCard>> getBusinessCard(@Path() String id);
-
-//   @GET('/business-cards/{id}/public')
-//   Future<ApiResponse<BusinessCard>> getPublicBusinessCard(@Path() String id);
-
-//   @POST('/business-cards')
-//   Future<ApiResponse<BusinessCard>> createBusinessCard(@Body() CreateBusinessCardRequest request);
-
-//   @PUT('/business-cards/{id}')
-//   Future<ApiResponse<BusinessCard>> updateBusinessCard(
-//     @Path() String id,
-//     @Body() UpdateBusinessCardRequest request,
-//   );
-
-//   @DELETE('/business-cards/{id}')
-//   Future<void> deleteBusinessCard(@Path() String id);
-
-//   @GET('/business-cards/{id}/wallet-pass')
-//   Future<Response> generateWalletPass(@Path() String id);
-
-//   // Contact Exchanges endpoints
-//   @GET('/contact-exchanges')
-//   Future<ApiResponse<List<ContactExchange>>> getContactExchanges();
-
-//   @POST('/contact-exchanges')
-//   Future<ApiResponse<ContactExchange>> createContactExchange(@Body() CreateContactExchangeRequest request);
-
-//   @GET('/contact-exchanges/stats')
-//   Future<ApiResponse<ContactStats>> getContactStats();
-
-//   // Payments endpoints
-//   @GET('/payments')
-//   Future<ApiResponse<List<Payment>>> getPayments();
-
-//   @POST('/payments/create-intent')
-//   Future<ApiResponse<PaymentIntentResponse>> createPaymentIntent(@Body() CreatePaymentIntentRequest request);
-
-//   // File upload
-//   @POST('/upload')
-//   @MultiPart()
-//   Future<ApiResponse<List<UploadedFile>>> uploadFiles(@Part() List<File> files);
-// }
-
 // mobile/lib/core/services/api_service.dart
 import 'dart:io';
 import 'package:dio/dio.dart';
@@ -109,10 +6,10 @@ import '../config/app_config.dart';
 import '../models/api_response.dart';
 import '../../core/services/storage_service.dart';
 import '../../shared/models/user.dart';
-import '../../shared/models/card.dart'; // Changed from business_card.dart to card.dart
+import '../../shared/models/card.dart';
 import '../../shared/models/contact_exchange.dart';
-import '../../shared/models/contact_stats.dart'; // Added missing import
-import '../../shared/models/auth_models.dart'; // Added auth models
+import '../../shared/models/contact_stats.dart';
+import '../../shared/models/auth_models.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
 
 class ApiService {
@@ -191,6 +88,22 @@ class ApiService {
     }
   }
 
+  Future<ApiResponse<AuthResponseData>> socialLogin(SocialLoginRequest request) async {
+    try {
+      final response = await _dio.post(
+        '/auth/social',
+        data: request.toJson(),
+      );
+
+      return ApiResponse<AuthResponseData>.fromJson(
+        response.data,
+        (json) => AuthResponseData.fromJson(json as Map<String, dynamic>),
+      );
+    } on DioException catch (e) {
+      throw _handleDioException(e);
+    }
+  }
+
   Future<ApiResponse<AuthResponseData>> register(RegisterRequest request) async {
     // Simulation de l'appel API
     await Future.delayed(const Duration(seconds: 1));
@@ -237,7 +150,7 @@ class ApiService {
     );
   }
 
-  // Business Cards endpoints (simulation) - Updated to use Card instead of BusinessCard
+  // Business Cards endpoints (simulation)
   Future<ApiResponse<List<Card>>> getBusinessCards() async {
     await Future.delayed(const Duration(milliseconds: 500));
     return ApiResponse<List<Card>>(data: [Card.demo()]);
@@ -415,5 +328,36 @@ class ApiService {
     );
     
     return ApiResponse<User>(data: updatedUser);
+  }
+
+  // MÉTHODE MANQUANTE : Gestion des erreurs DioException
+  Exception _handleDioException(DioException e) {
+    switch (e.response?.statusCode) {
+      case 400:
+        return AuthException('Données d\'authentification invalides');
+      case 401:
+        return AuthException('Non autorisé');
+      case 403:
+        return AuthException('Accès interdit');
+      case 404:
+        return AuthException('Ressource non trouvée');
+      case 409:
+        return AuthException('Conflit - ressource déjà existante');
+      case 422:
+        return AuthException('Données de validation invalides');
+      case 429:
+        return AuthException('Trop de tentatives, veuillez réessayer plus tard');
+      case 500:
+        return AuthException('Erreur serveur');
+      default:
+        if (e.type == DioExceptionType.connectionTimeout) {
+          return AuthException('Timeout de connexion');
+        } else if (e.type == DioExceptionType.receiveTimeout) {
+          return AuthException('Timeout de réception');
+        } else if (e.type == DioExceptionType.connectionError) {
+          return AuthException('Erreur de connexion réseau');
+        }
+        return AuthException('Erreur réseau: ${e.message}');
+    }
   }
 }
