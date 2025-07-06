@@ -20,7 +20,7 @@ import '../../shared/presentation/pages/paywall_page.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
-    initialLocation: '/splash',
+    initialLocation: '/home',
     redirect: (context, state) {
       final authState = context.read<AuthBloc>().state;
       final isLoggedIn = authState is AuthAuthenticated;

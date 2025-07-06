@@ -1,13 +1,9 @@
 // mobile/lib/shared/presentation/pages/nfc_share_page.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:math' as math;
 
 import '../../../core/design/showme_design_system.dart';
-import '../../../features/auth/bloc/auth_bloc.dart';
-import '../../../features/auth/bloc/auth_event.dart';
-import '../../../features/auth/bloc/auth_state.dart';
 
 class NFCSharePage extends StatefulWidget {
   const NFCSharePage({super.key});
@@ -27,8 +23,6 @@ class _NFCSharePageState extends State<NFCSharePage>
   late Animation<double> _cardScaleAnimation;
   late Animation<double> _cardSlideAnimation;
   late Animation<double> _particleAnimation;
-  late Animation<double> _successFadeAnimation;
-  late Animation<double> _successScaleAnimation;
 
   bool _isTransferring = false;
   bool _isComplete = false;
@@ -100,23 +94,6 @@ class _NFCSharePageState extends State<NFCSharePage>
     ).animate(CurvedAnimation(
       parent: _particleController,
       curve: Curves.easeInOut,
-    ));
-
-    // Animation de succès
-    _successFadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _successController,
-      curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
-    ));
-
-    _successScaleAnimation = Tween<double>(
-      begin: 0.5,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _successController,
-      curve: const Interval(0.0, 0.7, curve: Curves.elasticOut),
     ));
   }
 
@@ -202,12 +179,12 @@ class _NFCSharePageState extends State<NFCSharePage>
                 // Icône NFC animée
                 _buildNFCIcon(),
                 
-                SizedBox(height: ShowmeDesign.spacing3xl),
+                const SizedBox(height: ShowmeDesign.spacing3xl),
                 
                 // Carte de visite
                 _buildBusinessCard(),
                 
-                SizedBox(height: ShowmeDesign.spacing3xl),
+                const SizedBox(height: ShowmeDesign.spacing3xl),
                 
                 // Texte de statut
                 _buildStatusText(),
@@ -217,7 +194,7 @@ class _NFCSharePageState extends State<NFCSharePage>
                 // Bouton d'annulation
                 if (!_isComplete) _buildCancelButton(),
                 
-                SizedBox(height: ShowmeDesign.spacing2xl),
+                const SizedBox(height: ShowmeDesign.spacing2xl),
               ],
             ),
           ),
@@ -341,7 +318,7 @@ class _NFCSharePageState extends State<NFCSharePage>
                   
                   // Contenu de la carte
                   Padding(
-                    padding: EdgeInsets.all(ShowmeDesign.spacingLg),
+                    padding: const EdgeInsets.all(ShowmeDesign.spacingLg),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -361,7 +338,7 @@ class _NFCSharePageState extends State<NFCSharePage>
                                 size: 24,
                               ),
                             ),
-                            SizedBox(width: ShowmeDesign.spacingMd),
+                            const SizedBox(width: ShowmeDesign.spacingMd),
                             const Text(
                               'Showme',
                               style: TextStyle(
@@ -385,7 +362,7 @@ class _NFCSharePageState extends State<NFCSharePage>
                           ),
                         ),
                         
-                        SizedBox(height: ShowmeDesign.spacingSm),
+                        const SizedBox(height: ShowmeDesign.spacingSm),
                         
                         const Text(
                           'Partagez vos informations\ninstantanément',

@@ -4,12 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/design/showme_design_system.dart';
-import '../../../features/auth/bloc/auth_bloc.dart';
-import '../../../features/auth/bloc/auth_state.dart';
 import '../../../features/card/bloc/card_bloc.dart';
 import '../../../features/crm/bloc/crm_bloc.dart';
 import '../widgets/showme_card_widget.dart';
-import '../widgets/premium_action_card.dart';
 import '../widgets/stats_overview.dart';
 import '../widgets/quick_actions_grid.dart';
 import '../widgets/showme_app_bar.dart';
@@ -25,8 +22,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   late AnimationController _headerController;
   late AnimationController _contentController;
-  late Animation<double> _headerFadeAnimation;
-  late Animation<Offset> _headerSlideAnimation;
   late Animation<double> _contentStaggerAnimation;
 
   @override
@@ -46,22 +41,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       duration: ShowmeDesign.extraSlowDuration,
       vsync: this,
     );
-
-    _headerFadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _headerController,
-      curve: ShowmeDesign.primaryCurve,
-    ));
-
-    _headerSlideAnimation = Tween<Offset>(
-      begin: const Offset(0, -0.1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _headerController,
-      curve: ShowmeDesign.primaryCurve,
-    ));
 
     _contentStaggerAnimation = Tween<double>(
       begin: 0.0,
@@ -116,7 +95,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       _buildQuickActionsSection(),
                       _buildStatsSection(),
                       _buildRecentActivitySection(),
-                      SizedBox(height: ShowmeDesign.spacing3xl),
+                      const SizedBox(height: ShowmeDesign.spacing3xl),
                     ],
                   );
                 },
@@ -147,8 +126,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         return ShowmeCardWidget(
                           card: activeCard,
                           size: CardSize.large,
-                          // onTap: () => context.go('/cards/${activeCard.id}'),
-                          onTap: () => context.go('/splash'),
+                          onTap: () => context.go('/cards/${activeCard.id}'),
                         );
                       } else if (state is CardLoading) {
                         return _buildCardLoadingSkeleton();
@@ -170,11 +148,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       animation: _contentStaggerAnimation,
       builder: (context, child) {
         return Transform.translate(
-          offset: Offset(0, -40),
+          offset: const Offset(0, -40),
           child: Opacity(
             opacity: _contentStaggerAnimation.value,
             child: Padding(
-              padding: EdgeInsets.only(
+              padding: const EdgeInsets.only(
                 top: 0,
                 left: 20,
                 right: 20,
@@ -204,7 +182,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           child: Opacity(
             opacity: _contentStaggerAnimation.value,
             child: Padding(
-              padding: EdgeInsets.only(
+              padding: const EdgeInsets.only(
                 left: 20, // Même marge que la carte
                 right: 20, // Même marge que la carte
                 bottom: ShowmeDesign.spacingLg,
@@ -223,7 +201,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         ),
                       ),
                       Container(
-                        padding: EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: ShowmeDesign.spacingSm,
                           vertical: ShowmeDesign.spacingXs,
                         ),
@@ -241,7 +219,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       ),
                     ],
                   ),
-                  SizedBox(height: ShowmeDesign.spacingMd),
+                  const SizedBox(height: ShowmeDesign.spacingMd),
                   BlocBuilder<CrmBloc, CrmState>(
                     builder: (context, state) {
                       if (state is CrmStatsLoaded) {
@@ -268,7 +246,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           child: Opacity(
             opacity: _contentStaggerAnimation.value,
             child: Padding(
-              padding: EdgeInsets.only(
+              padding: const EdgeInsets.only(
                 left: 20, // Même marge que la carte
                 right: 20, // Même marge que la carte
                 bottom: ShowmeDesign.spacingLg,
@@ -298,7 +276,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       ),
                     ],
                   ),
-                  SizedBox(height: ShowmeDesign.spacingMd),
+                  const SizedBox(height: ShowmeDesign.spacingMd),
                   BlocBuilder<CrmBloc, CrmState>(
                     builder: (context, state) {
                       if (state is CrmContactsLoaded && state.contacts.isNotEmpty) {
@@ -319,7 +297,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget _buildCardLoadingSkeleton() {
     return Container(
       height: 270,
-      margin: EdgeInsets.all(ShowmeDesign.spacingMd),
+      margin: const EdgeInsets.all(ShowmeDesign.spacingMd),
       decoration: BoxDecoration(
         color: ShowmeDesign.neutral100,
         borderRadius: BorderRadius.circular(ShowmeDesign.radiusXl),
@@ -333,9 +311,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget _buildEmptyCardState() {
     return Container(
       height: 200,
-      margin: EdgeInsets.all(ShowmeDesign.spacingMd),
+      margin: const EdgeInsets.all(ShowmeDesign.spacingMd),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
@@ -366,7 +344,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               size: 32,
             ),
           ),
-          SizedBox(height: ShowmeDesign.spacingMd),
+          const SizedBox(height: ShowmeDesign.spacingMd),
           Text(
             'Créez votre première carte',
             style: ShowmeDesign.bodyLarge.copyWith(
@@ -374,19 +352,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               color: ShowmeDesign.neutral700,
             ),
           ),
-          SizedBox(height: ShowmeDesign.spacingXs),
+          const SizedBox(height: ShowmeDesign.spacingXs),
           Text(
             'Commencez à partager votre profil',
             style: ShowmeDesign.bodyMedium.copyWith(
               color: ShowmeDesign.neutral600,
             ),
           ),
-          SizedBox(height: ShowmeDesign.spacingLg),
+          const SizedBox(height: ShowmeDesign.spacingLg),
           ElevatedButton(
             onPressed: () => context.go('/cards/new'),
             style: ElevatedButton.styleFrom(
               backgroundColor: ShowmeDesign.primaryPurple,
-              padding: EdgeInsets.symmetric(
+              padding: const EdgeInsets.symmetric(
                 horizontal: ShowmeDesign.spacingLg,
                 vertical: ShowmeDesign.spacingSm,
               ),
@@ -427,14 +405,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     return Column(
       children: contacts.map((contact) {
         return Container(
-          margin: EdgeInsets.only(bottom: ShowmeDesign.spacingSm),
+          margin: const EdgeInsets.only(bottom: ShowmeDesign.spacingSm),
           decoration: BoxDecoration(
             color: ShowmeDesign.white,
             borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
             boxShadow: ShowmeDesign.cardShadow,
           ),
           child: ListTile(
-            contentPadding: EdgeInsets.all(ShowmeDesign.spacingMd),
+            contentPadding: const EdgeInsets.all(ShowmeDesign.spacingMd),
             leading: CircleAvatar(
               backgroundColor: ShowmeDesign.primaryPurple.withOpacity(0.1),
               child: Text(
@@ -458,7 +436,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             subtitle: Row(
               children: [
                 Container(
-                  padding: EdgeInsets.symmetric(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: ShowmeDesign.spacingXs,
                     vertical: ShowmeDesign.spacingXs / 2,
                   ),
@@ -474,7 +452,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     ),
                   ),
                 ),
-                SizedBox(width: ShowmeDesign.spacingXs),
+                const SizedBox(width: ShowmeDesign.spacingXs),
                 Text(
                   _formatTime(contact.createdAt),
                   style: ShowmeDesign.caption.copyWith(
@@ -501,7 +479,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   Widget _buildEmptyActivityState() {
     return Container(
-      padding: EdgeInsets.all(ShowmeDesign.spacingXl),
+      padding: const EdgeInsets.all(ShowmeDesign.spacingXl),
       decoration: BoxDecoration(
         color: ShowmeDesign.white,
         borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
@@ -516,13 +494,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               color: ShowmeDesign.neutral100,
               borderRadius: BorderRadius.circular(ShowmeDesign.radiusLg),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.timeline_rounded,
               color: ShowmeDesign.neutral400,
               size: 32,
             ),
           ),
-          SizedBox(height: ShowmeDesign.spacingMd),
+          const SizedBox(height: ShowmeDesign.spacingMd),
           Text(
             'Aucune activité récente',
             style: ShowmeDesign.bodyLarge.copyWith(
@@ -530,7 +508,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               color: ShowmeDesign.neutral700,
             ),
           ),
-          SizedBox(height: ShowmeDesign.spacingXs),
+          const SizedBox(height: ShowmeDesign.spacingXs),
           Text(
             'Partagez votre carte pour voir l\'activité',
             style: ShowmeDesign.bodyMedium.copyWith(
@@ -651,8 +629,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        padding: EdgeInsets.all(ShowmeDesign.spacingLg),
-        decoration: BoxDecoration(
+        padding: const EdgeInsets.all(ShowmeDesign.spacingLg),
+        decoration: const BoxDecoration(
           color: ShowmeDesign.white,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(ShowmeDesign.radiusXl),
@@ -670,14 +648,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 borderRadius: BorderRadius.circular(ShowmeDesign.radiusXs),
               ),
             ),
-            SizedBox(height: ShowmeDesign.spacingLg),
+            const SizedBox(height: ShowmeDesign.spacingLg),
             Text(
               'Partager ma carte',
               style: ShowmeDesign.h3.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: ShowmeDesign.spacingLg),
+            const SizedBox(height: ShowmeDesign.spacingLg),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -701,7 +679,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 ),
               ],
             ),
-            SizedBox(height: ShowmeDesign.spacingXl),
+            const SizedBox(height: ShowmeDesign.spacingXl),
           ],
         ),
       ),
@@ -734,7 +712,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               size: 28,
             ),
           ),
-          SizedBox(height: ShowmeDesign.spacingSm),
+          const SizedBox(height: ShowmeDesign.spacingSm),
           Text(
             label,
             style: ShowmeDesign.bodyMedium.copyWith(

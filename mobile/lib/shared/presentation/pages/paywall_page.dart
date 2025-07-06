@@ -117,43 +117,43 @@ class _PaywallPageState extends State<PaywallPage>
                       ),
                       // Contenu principal
                       SliverPadding(
-                        padding: EdgeInsets.symmetric(horizontal: ShowmeDesign.spacingLg),
+                        padding: const EdgeInsets.symmetric(horizontal: ShowmeDesign.spacingLg),
                         sliver: SliverList(
                           delegate: SliverChildListDelegate([
                             // Hero section
                             _buildHeroSection(),
                             
-                            SizedBox(height: ShowmeDesign.spacingXl),
+                            const SizedBox(height: ShowmeDesign.spacingXl),
                             
                             // Badge promotion
                             _buildPromoBadge(),
                             
-                            SizedBox(height: ShowmeDesign.spacingLg),
+                            const SizedBox(height: ShowmeDesign.spacingLg),
                             
                             // Plans de tarification
                             _buildPricingPlans(),
                             
-                            SizedBox(height: ShowmeDesign.spacingLg),
+                            const SizedBox(height: ShowmeDesign.spacingLg),
                             
                             // Fonctionnalités
                             _buildFeaturesList(),
                             
-                            SizedBox(height: ShowmeDesign.spacingXl),
+                            const SizedBox(height: ShowmeDesign.spacingXl),
                             
                             // CTA
                             _buildCTAButton(),
                             
-                            SizedBox(height: ShowmeDesign.spacingMd),
+                            const SizedBox(height: ShowmeDesign.spacingMd),
                             
                             // Informations légales
                             _buildLegalInfo(),
                             
-                            SizedBox(height: ShowmeDesign.spacingMd),
+                            const SizedBox(height: ShowmeDesign.spacingMd),
                             
                             // Bouton restaurer
                             _buildRestoreButton(),
                             
-                            SizedBox(height: ShowmeDesign.spacingXl),
+                            const SizedBox(height: ShowmeDesign.spacingXl),
                           ]),
                         ),
                       ),
@@ -186,7 +186,7 @@ class _PaywallPageState extends State<PaywallPage>
 
   Widget _buildHeader() {
     return Padding(
-      padding: EdgeInsets.all(ShowmeDesign.spacingMd),
+      padding: const EdgeInsets.all(ShowmeDesign.spacingMd),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -213,7 +213,7 @@ class _PaywallPageState extends State<PaywallPage>
                   ),
                 ],
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.close,
                 color: ShowmeDesign.neutral700,
                 size: 20,
@@ -252,7 +252,7 @@ class _PaywallPageState extends State<PaywallPage>
             ),
           ),
           
-          SizedBox(height: ShowmeDesign.spacingLg),
+          const SizedBox(height: ShowmeDesign.spacingLg),
           
           // Titre
           Text(
@@ -264,7 +264,7 @@ class _PaywallPageState extends State<PaywallPage>
             textAlign: TextAlign.center,
           ),
           
-          SizedBox(height: ShowmeDesign.spacingSm),
+          const SizedBox(height: ShowmeDesign.spacingSm),
           
           // Sous-titre
           Text(
@@ -284,7 +284,7 @@ class _PaywallPageState extends State<PaywallPage>
       opacity: _fadeAnimation,
       child: Center(
         child: Container(
-          padding: EdgeInsets.symmetric(
+          padding: const EdgeInsets.symmetric(
             horizontal: ShowmeDesign.spacingMd,
             vertical: ShowmeDesign.spacingSm,
           ),
@@ -299,12 +299,12 @@ class _PaywallPageState extends State<PaywallPage>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
+              const Icon(
                 Icons.local_fire_department,
                 color: ShowmeDesign.primaryAmber,
                 size: 16,
               ),
-              SizedBox(width: ShowmeDesign.spacingXs),
+              const SizedBox(width: ShowmeDesign.spacingXs),
               Text(
                 '7 jours d\'essai gratuit',
                 style: ShowmeDesign.bodySmall.copyWith(
@@ -334,7 +334,7 @@ class _PaywallPageState extends State<PaywallPage>
             ),
           ),
           
-          SizedBox(width: ShowmeDesign.spacingMd),
+          const SizedBox(width: ShowmeDesign.spacingMd),
           
           Expanded(
             child: _buildPlanCard(
@@ -371,7 +371,7 @@ class _PaywallPageState extends State<PaywallPage>
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.all(ShowmeDesign.spacingLg),
+        padding: const EdgeInsets.all(ShowmeDesign.spacingLg),
         decoration: BoxDecoration(
           color: isSelected ? ShowmeDesign.primaryBlue : Colors.white,
           borderRadius: BorderRadius.circular(ShowmeDesign.radiusLg),
@@ -394,11 +394,11 @@ class _PaywallPageState extends State<PaywallPage>
             // Badge populaire
             if (isPopular)
               Container(
-                padding: EdgeInsets.symmetric(
+                padding: const EdgeInsets.symmetric(
                   horizontal: ShowmeDesign.spacingSm,
                   vertical: ShowmeDesign.spacingXs / 2,
                 ),
-                margin: EdgeInsets.only(bottom: ShowmeDesign.spacingSm),
+                margin: const EdgeInsets.only(bottom: ShowmeDesign.spacingSm),
                 decoration: BoxDecoration(
                   gradient: ShowmeDesign.warmGradient,
                   borderRadius: BorderRadius.circular(ShowmeDesign.radiusXs),
@@ -422,7 +422,7 @@ class _PaywallPageState extends State<PaywallPage>
               ),
             ),
             
-            SizedBox(height: ShowmeDesign.spacingSm),
+            const SizedBox(height: ShowmeDesign.spacingSm),
             
             // Prix principal
             RichText(
@@ -449,7 +449,7 @@ class _PaywallPageState extends State<PaywallPage>
             
             // Prix barré et économies
             if (originalPrice != null) ...[
-              SizedBox(height: ShowmeDesign.spacingXs),
+              const SizedBox(height: ShowmeDesign.spacingXs),
               Text(
                 'au lieu de $originalPrice',
                 style: ShowmeDesign.caption.copyWith(
@@ -460,7 +460,7 @@ class _PaywallPageState extends State<PaywallPage>
             ],
             
             if (savings != null) ...[
-              SizedBox(height: ShowmeDesign.spacingXs),
+              const SizedBox(height: ShowmeDesign.spacingXs),
               Text(
                 savings,
                 style: ShowmeDesign.caption.copyWith(
@@ -487,7 +487,7 @@ class _PaywallPageState extends State<PaywallPage>
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Container(
-        padding: EdgeInsets.all(ShowmeDesign.spacingLg),
+        padding: const EdgeInsets.all(ShowmeDesign.spacingLg),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(ShowmeDesign.radiusLg),
@@ -513,10 +513,10 @@ class _PaywallPageState extends State<PaywallPage>
                 color: ShowmeDesign.neutral900,
               ),
             ),
-            SizedBox(height: ShowmeDesign.spacingMd),
+            const SizedBox(height: ShowmeDesign.spacingMd),
             ...features.map((feature) {
               return Padding(
-                padding: EdgeInsets.symmetric(vertical: ShowmeDesign.spacingXs),
+                padding: const EdgeInsets.symmetric(vertical: ShowmeDesign.spacingXs),
                 child: Row(
                   children: [
                     Text(
@@ -528,7 +528,7 @@ class _PaywallPageState extends State<PaywallPage>
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
@@ -613,14 +613,14 @@ class _PaywallPageState extends State<PaywallPage>
           borderRadius: BorderRadius.circular(ShowmeDesign.radiusLg),
         ),
         child: Padding(
-          padding: EdgeInsets.all(ShowmeDesign.spacingXl),
+          padding: const EdgeInsets.all(ShowmeDesign.spacingXl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(
+              const CircularProgressIndicator(
                 color: ShowmeDesign.primaryBlue,
               ),
-              SizedBox(height: ShowmeDesign.spacingLg),
+              const SizedBox(height: ShowmeDesign.spacingLg),
               Text(
                 'Activation en cours...',
                 style: ShowmeDesign.bodyLarge.copyWith(

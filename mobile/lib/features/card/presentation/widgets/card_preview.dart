@@ -1,12 +1,12 @@
 // mobile/lib/features/card/presentation/widgets/card_preview.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:showme/shared/models/card_theme.dart';
 import 'dart:math' as math;
-import '../../../../shared/models/card.dart';
-import '../../../../core/utils/app_theme.dart';
+import '../../../../shared/models/card.dart' as showme;
 
 class CardPreview extends StatefulWidget {
-  final Card card;
+  final showme.Card card;
   final VoidCallback? onTap;
   final bool showActions;
 
