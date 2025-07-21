@@ -71,24 +71,32 @@ export class AuthService {
     });
 
     const savedUser = await this.userRepository.save(user);
+    const userWithProfile = await this.userRepository.findOne({
+      where: { id: savedUser.id },
+      relations: ['profile'],
+    });
 
     // Générer les tokens
     const tokens = await this.generateTokens(savedUser);
 
     return {
-      user: this.sanitizeUser(savedUser),
+      user: this.sanitizeUser(userWithProfile),
       ...tokens,
     };
   }
 
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {
     const user = await this.validateUser(loginDto.identifier, loginDto.password);
-    
-    if (!user) {
+    const userWithProfile = await this.userRepository.findOne({
+      where: { id: user.id },
+      relations: ['profile'],
+    });
+
+    if (!userWithProfile) {
       throw new UnauthorizedException('Identifiants invalides');
     }
 
-    if (!user.isActive) {
+    if (!userWithProfile.isActive) {
       throw new UnauthorizedException('Compte désactivé');
     }
 
@@ -98,7 +106,7 @@ export class AuthService {
     const tokens = await this.generateTokens(user);
 
     return {
-      user: this.sanitizeUser(user),
+      user: this.sanitizeUser(userWithProfile),
       ...tokens,
     };
   }

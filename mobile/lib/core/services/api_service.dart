@@ -1,6 +1,7 @@
 // mobile/lib/core/services/api_service.dart
-import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:showme/shared/models/profile.dart';
 
 import '../config/app_config.dart';
 import '../models/api_response.dart';
@@ -14,28 +15,55 @@ import '../../features/auth/data/repositories/auth_repository.dart';
 
 class ApiService {
   late final Dio _dio;
+  
+  // Mode développement - utiliser les démos ou le vrai backend
+  static const bool USE_REAL_BACKEND = kDebugMode; // Changez à true pour utiliser le backend
+  static const String BACKEND_URL = kDebugMode 
+    ? 'http://localhost:3000/api/v1'  // URL locale pour développement
+    : 'https://votre-backend.com/api'; // URL production
 
   ApiService() {
     _dio = Dio();
     
     // Configuration de base
-    _dio.options.baseUrl = AppConfig.apiUrl;
-    _dio.options.connectTimeout = const Duration(seconds: 10);
-    _dio.options.receiveTimeout = const Duration(seconds: 10);
+    _dio.options.baseUrl = USE_REAL_BACKEND ? BACKEND_URL : AppConfig.apiUrl;
+    _dio.options.connectTimeout = const Duration(seconds: 30);
+    _dio.options.receiveTimeout = const Duration(seconds: 30);
     
     // Interceptors
     _dio.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (options, handler) {
+        onRequest: (options, handler) async {
           // Ajouter le token d'authentification
-          final token = StorageService.getToken();
+          final token = await StorageService.getToken();
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
           options.headers['Content-Type'] = 'application/json';
+          options.headers['Accept'] = 'application/json';
+          
+          if (kDebugMode && USE_REAL_BACKEND) {
+            print('🚀 API Request: ${options.method} ${options.path}');
+            print('📋 Headers: ${options.headers}');
+            if (options.data != null) {
+              print('📦 Data: ${options.data}');
+            }
+          }
+          
           handler.next(options);
         },
+        onResponse: (response, handler) {
+          if (kDebugMode && USE_REAL_BACKEND) {
+            print('✅ API Response: ${response.statusCode} ${response.requestOptions.path}');
+          }
+          handler.next(response);
+        },
         onError: (error, handler) {
+          if (kDebugMode && USE_REAL_BACKEND) {
+            print('❌ API Error: ${error.response?.statusCode} ${error.requestOptions.path}');
+            print('📄 Error data: ${error.response?.data}');
+          }
+          
           // Gestion globale des erreurs
           if (error.response?.statusCode == 401) {
             // Token expiré, rediriger vers la connexion
@@ -45,11 +73,140 @@ class ApiService {
         },
       ),
     );
+
+    // Logs pour debugging
+    if (kDebugMode) {
+      _dio.interceptors.add(LogInterceptor(
+        requestBody: true,
+        responseBody: true,
+        logPrint: (obj) => print(obj),
+      ));
+    }
   }
 
-  // Auth endpoints (simulation pour le développement)
+  // Auth endpoints
   Future<ApiResponse<AuthResponseData>> login(LoginRequest request) async {
-    // Simulation de l'appel API
+    if (!USE_REAL_BACKEND) {
+      return _demoLogin(request);
+    }
+
+    try {
+      final response = await _dio.post(
+        '/auth/login',
+        data: {
+          'identifier': request.identifier,
+          'password': request.password,
+          'rememberMe': request.rememberMe,
+        },
+      );
+
+      return ApiResponse<AuthResponseData>(
+        data: AuthResponseData.fromJson(response.data),
+      );
+    } on DioException catch (e) {
+      throw _handleDioException(e);
+    }
+  }
+
+  Future<ApiResponse<AuthResponseData>> register(RegisterRequest request) async {
+    if (!USE_REAL_BACKEND) {
+      return _demoRegister(request);
+    }
+
+    try {
+      final response = await _dio.post(
+        '/auth/register',
+        data: {
+          'email': request.email,
+          'password': request.password,
+          'firstName': request.firstName,
+          'lastName': request.lastName,
+          'company': request.company,
+          'position': request.position,
+          'phone': request.phone,
+          'acceptTerms': request.acceptTerms,
+          'acceptMarketing': request.acceptMarketing,
+        },
+      );
+
+      return ApiResponse<AuthResponseData>(
+        data: AuthResponseData.fromJson(response.data),
+      );
+    } on DioException catch (e) {
+      throw _handleDioException(e);
+    }
+  }
+
+  Future<ApiResponse<AuthResponseData>> socialLogin(SocialLoginRequest request) async {
+    if (!USE_REAL_BACKEND) {
+      return _demoSocialLogin(request);
+    }
+
+    try {
+      final response = await _dio.post(
+        '/auth/social-login',
+        data: request.toJson(),
+      );
+
+      return ApiResponse<AuthResponseData>(
+        data: AuthResponseData.fromJson(response.data),
+      );
+    } on DioException catch (e) {
+      throw _handleDioException(e);
+    }
+  }
+
+  Future<ApiResponse<User>> getCurrentUser() async {
+    if (!USE_REAL_BACKEND) {
+      return _demoGetCurrentUser();
+    }
+
+    try {
+      final response = await _dio.get('/auth/me');
+      
+      return ApiResponse<User>(
+        data: User.fromJson(response.data['user']),
+      );
+    } on DioException catch (e) {
+      throw _handleDioException(e);
+    }
+  }
+
+  Future<ApiResponse<AuthResponseData>> refreshToken(RefreshTokenRequest request) async {
+    if (!USE_REAL_BACKEND) {
+      return _demoRefreshToken(request);
+    }
+
+    try {
+      final response = await _dio.post(
+        '/auth/refresh',
+        data: {'refreshToken': request.refreshToken},
+      );
+
+      return ApiResponse<AuthResponseData>(
+        data: AuthResponseData.fromJson(response.data),
+      );
+    } on DioException catch (e) {
+      throw _handleDioException(e);
+    }
+  }
+
+  Future<ApiResponse<void>> logout() async {
+    if (!USE_REAL_BACKEND) {
+      return _demoLogout();
+    }
+
+    try {
+      await _dio.post('/auth/logout');
+      return ApiResponse<void>.success(message: 'Déconnexion réussie');
+    } on DioException catch (e) {
+      // Même si l'appel échoue, on considère la déconnexion comme réussie
+      return ApiResponse<void>.success(message: 'Déconnexion réussie');
+    }
+  }
+
+  // Méthodes démo (existantes)
+  Future<ApiResponse<AuthResponseData>> _demoLogin(LoginRequest request) async {
     await Future.delayed(const Duration(seconds: 1));
     
     if (request.identifier == 'demo@showme.com' && request.password == 'password') {
@@ -69,11 +226,14 @@ class ApiService {
         lastLoginAt: DateTime.now(),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        profile: Profile.demo(),
       );
       
       final authData = AuthResponseData(
         jwt: 'demo_jwt_token_123',
         user: user,
+        expiresAt: DateTime.now().add(const Duration(hours: 24)),
+        refreshToken: 'demo_refresh_token_123',
       );
       
       return ApiResponse<AuthResponseData>(data: authData);
@@ -82,30 +242,14 @@ class ApiService {
         requestOptions: RequestOptions(path: ''),
         response: Response(
           requestOptions: RequestOptions(path: ''),
-          statusCode: 400,
+          statusCode: 401,
+          data: {'message': 'Identifiants invalides'},
         ),
       );
     }
   }
 
-  Future<ApiResponse<AuthResponseData>> socialLogin(SocialLoginRequest request) async {
-    try {
-      final response = await _dio.post(
-        '/auth/social',
-        data: request.toJson(),
-      );
-
-      return ApiResponse<AuthResponseData>.fromJson(
-        response.data,
-        (json) => AuthResponseData.fromJson(json as Map<String, dynamic>),
-      );
-    } on DioException catch (e) {
-      throw _handleDioException(e);
-    }
-  }
-
-  Future<ApiResponse<AuthResponseData>> register(RegisterRequest request) async {
-    // Simulation de l'appel API
+  Future<ApiResponse<AuthResponseData>> _demoRegister(RegisterRequest request) async {
     await Future.delayed(const Duration(seconds: 1));
     
     final user = User(
@@ -124,19 +268,54 @@ class ApiService {
       lastLoginAt: DateTime.now(),
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      profile: Profile.demo()
     );
     
     final authData = AuthResponseData(
       jwt: 'demo_jwt_token_456',
       user: user,
+      expiresAt: DateTime.now().add(const Duration(hours: 24)),
+      refreshToken: 'demo_refresh_token_456',
     );
     
     return ApiResponse<AuthResponseData>(data: authData);
   }
 
-  Future<ApiResponse<User>> getCurrentUser() async {
+  Future<ApiResponse<AuthResponseData>> _demoSocialLogin(SocialLoginRequest request) async {
+    await Future.delayed(const Duration(seconds: 1));
+    
+    final user = User(
+      id: DateTime.now().millisecondsSinceEpoch,
+      username: request.email ?? 'user@${request.provider}.com',
+      email: request.email ?? 'user@${request.provider}.com',
+      firstName: request.firstName ?? 'Utilisateur',
+      lastName: request.lastName ?? request.provider.toUpperCase(),
+      company: null,
+      position: null,
+      phoneNumber: null,
+      linkedinUrl: null,
+      website: null,
+      profilePicture: request.photoUrl,
+      isActive: true,
+      lastLoginAt: DateTime.now(),
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      profile: Profile.demo(),
+    );
+    
+    final authData = AuthResponseData(
+      jwt: 'demo_${request.provider}_token_${DateTime.now().millisecondsSinceEpoch}',
+      user: user,
+      expiresAt: DateTime.now().add(const Duration(hours: 24)),
+      refreshToken: 'demo_${request.provider}_refresh_${DateTime.now().millisecondsSinceEpoch}',
+    );
+    
+    return ApiResponse<AuthResponseData>(data: authData);
+  }
+
+  Future<ApiResponse<User>> _demoGetCurrentUser() async {
     // Simulation - récupérer depuis le storage local
-    final userData = StorageService.getUser();
+    final userData = await StorageService.getUser();
     if (userData != null) {
       return ApiResponse<User>(data: User.fromJson(userData));
     }
@@ -146,11 +325,32 @@ class ApiService {
       response: Response(
         requestOptions: RequestOptions(path: ''),
         statusCode: 401,
+        data: {'message': 'Utilisateur non authentifié'},
       ),
     );
   }
 
-  // Business Cards endpoints (simulation)
+  Future<ApiResponse<AuthResponseData>> _demoRefreshToken(RefreshTokenRequest request) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    // Simulation - générer un nouveau token
+    final user = User.demo();
+    final authData = AuthResponseData(
+      jwt: 'refreshed_jwt_token_${DateTime.now().millisecondsSinceEpoch}',
+      user: user,
+      expiresAt: DateTime.now().add(const Duration(hours: 24)),
+      refreshToken: 'new_refresh_token_${DateTime.now().millisecondsSinceEpoch}',
+    );
+    
+    return ApiResponse<AuthResponseData>(data: authData);
+  }
+
+  Future<ApiResponse<void>> _demoLogout() async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    return ApiResponse<void>.success(message: 'Déconnexion réussie');
+  }
+
+  // Business Cards endpoints (gardés en démo pour l'instant)
   Future<ApiResponse<List<Card>>> getBusinessCards() async {
     await Future.delayed(const Duration(milliseconds: 500));
     return ApiResponse<List<Card>>(data: [Card.demo()]);
@@ -166,7 +366,6 @@ class ApiService {
     return ApiResponse<Card>(data: Card.demo());
   }
 
-  // Méthodes futures pour les autres endpoints
   Future<ApiResponse<Card>> createBusinessCard(Map<String, dynamic> request) async {
     await Future.delayed(const Duration(seconds: 1));
     return ApiResponse<Card>(data: Card.demo());
@@ -225,83 +424,112 @@ class ApiService {
 
   // Méthodes d'authentification additionnelles
   Future<ApiResponse<AuthResponseData>> forgotPassword(ForgotPasswordRequest request) async {
-    await Future.delayed(const Duration(seconds: 1));
-    // Simulation - dans la vraie vie, cela enverrait un email
-    return ApiResponse<AuthResponseData>.success(
-      message: 'Email de réinitialisation envoyé',
-    );
-  }
-
-  Future<ApiResponse<AuthResponseData>> resetPassword(ResetPasswordRequest request) async {
-    await Future.delayed(const Duration(seconds: 1));
-    // Simulation de réinitialisation
-    if (request.passwordsMatch) {
+    if (!USE_REAL_BACKEND) {
+      await Future.delayed(const Duration(seconds: 1));
       return ApiResponse<AuthResponseData>.success(
-        message: 'Mot de passe réinitialisé avec succès',
+        message: 'Email de réinitialisation envoyé',
       );
-    } else {
-      throw DioException(
-        requestOptions: RequestOptions(path: ''),
-        response: Response(
-          requestOptions: RequestOptions(path: ''),
-          statusCode: 400,
-          data: {'message': 'Les mots de passe ne correspondent pas'},
-        ),
+    }
+
+    try {
+      await _dio.post('/auth/forgot-password', data: request.toJson());
+      return ApiResponse<AuthResponseData>.success(
+        message: 'Email de réinitialisation envoyé',
       );
+    } on DioException catch (e) {
+      throw _handleDioException(e);
     }
   }
 
-  Future<ApiResponse<AuthResponseData>> refreshToken(RefreshTokenRequest request) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    // Simulation - générer un nouveau token
-    final user = User.demo();
-    final authData = AuthResponseData(
-      jwt: 'refreshed_jwt_token_${DateTime.now().millisecondsSinceEpoch}',
-      user: user,
-      expiresAt: DateTime.now().add(const Duration(hours: 24)),
-      refreshToken: 'new_refresh_token_${DateTime.now().millisecondsSinceEpoch}',
-    );
-    
-    return ApiResponse<AuthResponseData>(data: authData);
+  Future<ApiResponse<AuthResponseData>> resetPassword(ResetPasswordRequest request) async {
+    if (!USE_REAL_BACKEND) {
+      await Future.delayed(const Duration(seconds: 1));
+      if (request.passwordsMatch) {
+        return ApiResponse<AuthResponseData>.success(
+          message: 'Mot de passe réinitialisé avec succès',
+        );
+      } else {
+        throw DioException(
+          requestOptions: RequestOptions(path: ''),
+          response: Response(
+            requestOptions: RequestOptions(path: ''),
+            statusCode: 400,
+            data: {'message': 'Les mots de passe ne correspondent pas'},
+          ),
+        );
+      }
+    }
+
+    try {
+      await _dio.post('/auth/reset-password', data: request.toJson());
+      return ApiResponse<AuthResponseData>.success(
+        message: 'Mot de passe réinitialisé avec succès',
+      );
+    } on DioException catch (e) {
+      throw _handleDioException(e);
+    }
   }
 
   Future<ApiResponse<void>> verifyEmail(String token) async {
-    await Future.delayed(const Duration(seconds: 1));
-    return ApiResponse<void>.success(
-      message: 'Email vérifié avec succès',
-    );
+    if (!USE_REAL_BACKEND) {
+      await Future.delayed(const Duration(seconds: 1));
+      return ApiResponse<void>.success(message: 'Email vérifié avec succès');
+    }
+
+    try {
+      await _dio.post('/auth/verify-email', data: {'token': token});
+      return ApiResponse<void>.success(message: 'Email vérifié avec succès');
+    } on DioException catch (e) {
+      throw _handleDioException(e);
+    }
   }
 
   Future<ApiResponse<void>> resendVerificationEmail() async {
-    await Future.delayed(const Duration(seconds: 1));
-    return ApiResponse<void>.success(
-      message: 'Email de vérification renvoyé',
-    );
+    if (!USE_REAL_BACKEND) {
+      await Future.delayed(const Duration(seconds: 1));
+      return ApiResponse<void>.success(message: 'Email de vérification renvoyé');
+    }
+
+    try {
+      await _dio.post('/auth/resend-verification');
+      return ApiResponse<void>.success(message: 'Email de vérification renvoyé');
+    } on DioException catch (e) {
+      throw _handleDioException(e);
+    }
   }
 
   Future<ApiResponse<void>> changePassword({
     required String currentPassword,
     required String newPassword,
   }) async {
-    await Future.delayed(const Duration(seconds: 1));
-    return ApiResponse<void>.success(
-      message: 'Mot de passe modifié avec succès',
-    );
-  }
+    if (!USE_REAL_BACKEND) {
+      await Future.delayed(const Duration(seconds: 1));
+      return ApiResponse<void>.success(message: 'Mot de passe modifié avec succès');
+    }
 
-  Future<ApiResponse<void>> logout() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return ApiResponse<void>.success(
-      message: 'Déconnexion réussie',
-    );
+    try {
+      await _dio.post('/auth/change-password', data: {
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+      });
+      return ApiResponse<void>.success(message: 'Mot de passe modifié avec succès');
+    } on DioException catch (e) {
+      throw _handleDioException(e);
+    }
   }
 
   Future<ApiResponse<void>> deleteAccount({required String password}) async {
-    await Future.delayed(const Duration(seconds: 2));
-    return ApiResponse<void>.success(
-      message: 'Compte supprimé avec succès',
-    );
+    if (!USE_REAL_BACKEND) {
+      await Future.delayed(const Duration(seconds: 2));
+      return ApiResponse<void>.success(message: 'Compte supprimé avec succès');
+    }
+
+    try {
+      await _dio.delete('/auth/account', data: {'password': password});
+      return ApiResponse<void>.success(message: 'Compte supprimé avec succès');
+    } on DioException catch (e) {
+      throw _handleDioException(e);
+    }
   }
 
   Future<ApiResponse<User>> updateProfile({
@@ -313,51 +541,84 @@ class ApiService {
     String? website,
     String? linkedinUrl,
   }) async {
-    await Future.delayed(const Duration(seconds: 1));
-    
-    // Simulation - récupérer l'utilisateur actuel et le mettre à jour
-    final currentUser = User.demo();
-    final updatedUser = currentUser.copyWith(
-      firstName: firstName,
-      lastName: lastName,
-      company: company,
-      position: position,
-      phoneNumber: phoneNumber,
-      website: website,
-      linkedinUrl: linkedinUrl,
-    );
-    
-    return ApiResponse<User>(data: updatedUser);
+    if (!USE_REAL_BACKEND) {
+      await Future.delayed(const Duration(seconds: 1));
+      final currentUser = User.demo();
+      final updatedUser = currentUser.copyWith(
+        firstName: firstName,
+        lastName: lastName,
+        company: company,
+        position: position,
+        phoneNumber: phoneNumber,
+        website: website,
+        linkedinUrl: linkedinUrl,
+      );
+      return ApiResponse<User>(data: updatedUser);
+    }
+
+    try {
+      final response = await _dio.put('/auth/profile', data: {
+        'firstName': firstName,
+        'lastName': lastName,
+        'company': company,
+        'position': position,
+        'phoneNumber': phoneNumber,
+        'website': website,
+        'linkedinUrl': linkedinUrl,
+      });
+
+      return ApiResponse<User>(data: User.fromJson(response.data['user']));
+    } on DioException catch (e) {
+      throw _handleDioException(e);
+    }
   }
 
-  // MÉTHODE MANQUANTE : Gestion des erreurs DioException
+  // Gestion des erreurs DioException améliorée
   Exception _handleDioException(DioException e) {
+    print('🚨 DioException: ${e.toString()}');
+    print('🚨 Response: ${e.response?.data}');
+    
+    // Essayer d'extraire le message d'erreur du backend
+    String errorMessage = 'Erreur inconnue';
+    
+    if (e.response?.data != null) {
+      final data = e.response!.data;
+      if (data is Map<String, dynamic>) {
+        errorMessage = data['message'] ?? 
+                     data['error'] ?? 
+                     data['details'] ?? 
+                     'Erreur serveur';
+      } else if (data is String) {
+        errorMessage = data;
+      }
+    }
+
     switch (e.response?.statusCode) {
       case 400:
-        return AuthException('Données d\'authentification invalides');
+        return AuthException(errorMessage.isEmpty ? 'Données invalides' : errorMessage);
       case 401:
-        return AuthException('Non autorisé');
+        return AuthException(errorMessage.isEmpty ? 'Non autorisé' : errorMessage);
       case 403:
-        return AuthException('Accès interdit');
+        return AuthException(errorMessage.isEmpty ? 'Accès interdit' : errorMessage);
       case 404:
-        return AuthException('Ressource non trouvée');
+        return AuthException(errorMessage.isEmpty ? 'Ressource non trouvée' : errorMessage);
       case 409:
-        return AuthException('Conflit - ressource déjà existante');
+        return AuthException(errorMessage.isEmpty ? 'Conflit - ressource déjà existante' : errorMessage);
       case 422:
-        return AuthException('Données de validation invalides');
+        return AuthException(errorMessage.isEmpty ? 'Données de validation invalides' : errorMessage);
       case 429:
         return AuthException('Trop de tentatives, veuillez réessayer plus tard');
       case 500:
         return AuthException('Erreur serveur');
       default:
         if (e.type == DioExceptionType.connectionTimeout) {
-          return AuthException('Timeout de connexion');
+          return AuthException('Timeout de connexion - vérifiez votre connexion');
         } else if (e.type == DioExceptionType.receiveTimeout) {
           return AuthException('Timeout de réception');
         } else if (e.type == DioExceptionType.connectionError) {
-          return AuthException('Erreur de connexion réseau');
+          return AuthException('Erreur de connexion réseau - vérifiez votre connexion');
         }
-        return AuthException('Erreur réseau: ${e.message}');
+        return AuthException(errorMessage.isNotEmpty ? errorMessage : 'Erreur réseau: ${e.message}');
     }
   }
 }

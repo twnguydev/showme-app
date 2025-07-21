@@ -17,21 +17,25 @@ User _$UserFromJson(Map<String, dynamic> json) => User(
       phoneNumber: json['phoneNumber'] as String?,
       linkedinUrl: json['linkedinUrl'] as String?,
       website: json['website'] as String?,
-      profilePicture: json['profilePicture'] == null
-          ? null
-          : UploadedFile.fromJson(
-              json['profilePicture'] as Map<String, dynamic>),
+      profilePicture: json['profilePicture'] as String?,
       isActive: json['isActive'] as bool,
       lastLoginAt: json['lastLoginAt'] == null
           ? null
           : DateTime.parse(json['lastLoginAt'] as String),
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
-      role:
-          $enumDecodeNullable(_$UserRoleEnumMap, json['role']) ?? UserRole.user,
+      role: json['role'] as String? ?? 'user',
       emailVerified: json['emailVerified'] as bool? ?? false,
       timezone: json['timezone'] as String?,
       language: json['language'] as String?,
+      profile: json['profile'] == null
+          ? null
+          : Profile.fromJson(json['profile'] as Map<String, dynamic>),
+      emailVerificationToken: json['emailVerificationToken'] as String?,
+      passwordResetToken: json['passwordResetToken'] as String?,
+      passwordResetExpires: json['passwordResetExpires'] == null
+          ? null
+          : DateTime.parse(json['passwordResetExpires'] as String),
     );
 
 Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
@@ -50,14 +54,12 @@ Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
       'lastLoginAt': instance.lastLoginAt?.toIso8601String(),
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
-      'role': _$UserRoleEnumMap[instance.role]!,
+      'role': instance.role,
       'emailVerified': instance.emailVerified,
       'timezone': instance.timezone,
       'language': instance.language,
+      'profile': instance.profile,
+      'emailVerificationToken': instance.emailVerificationToken,
+      'passwordResetToken': instance.passwordResetToken,
+      'passwordResetExpires': instance.passwordResetExpires?.toIso8601String(),
     };
-
-const _$UserRoleEnumMap = {
-  UserRole.user: 'user',
-  UserRole.moderator: 'moderator',
-  UserRole.admin: 'admin',
-};

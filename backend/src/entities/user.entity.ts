@@ -12,6 +12,7 @@ import {
 import { Exclude } from 'class-transformer';
 import { Card } from './card.entity';
 import { Subscription } from './subscription.entity';
+import { Profile } from './profile.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -105,6 +106,9 @@ export class User {
 
   @OneToOne(() => Subscription, (subscription) => subscription.user)
   subscription?: Subscription;
+
+  @OneToOne(() => Profile, (profile) => profile.user)
+  profile?: Profile;
 
   // Getters
   get fullName(): string {

@@ -17,6 +17,7 @@ class ShowmeSliverAppBar extends StatefulWidget {
   final bool showBrandedTitle;
   final bool pinned;
   final bool floating;
+  final dynamic user; // Paramètre user ajouté
 
   const ShowmeSliverAppBar({
     super.key,
@@ -31,6 +32,7 @@ class ShowmeSliverAppBar extends StatefulWidget {
     this.showBrandedTitle = false,
     this.pinned = true,
     this.floating = false,
+    this.user, // Ajout du paramètre user
   });
 
   @override
@@ -40,7 +42,6 @@ class ShowmeSliverAppBar extends StatefulWidget {
 class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  late Animation<double> _contentStaggerAnimation;
 
   @override
   void initState() {
@@ -49,14 +50,6 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
-    _contentStaggerAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
-    ));
 
     if (widget.showWelcomeSection) {
       _animationController.forward();
@@ -72,7 +65,7 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
   @override
   Widget build(BuildContext context) {
     return SliverAppBar(
-      expandedHeight: null, // Pas de section étendue !
+      expandedHeight: null,
       floating: widget.floating,
       pinned: widget.pinned,
       backgroundColor: ShowmeDesign.neutral50,
@@ -82,7 +75,7 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
       shadowColor: Colors.transparent,
       leading: widget.leading ?? (widget.showBackButton && Navigator.canPop(context)
           ? IconButton(
-              icon: Icon(
+              icon: const Icon(
                 Icons.arrow_back_ios_rounded,
                 size: 20,
                 color: ShowmeDesign.neutral700,
@@ -92,7 +85,7 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
           : null),
       title: _buildTitle(),
       centerTitle: false,
-      titleSpacing: 20, // Toujours un espacement pour éviter le collage
+      titleSpacing: 20,
       actions: _buildActions(),
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(0.5),
@@ -122,7 +115,7 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
               size: 16,
             ),
           ),
-          SizedBox(width: 10),
+          const SizedBox(width: 10),
           Text(
             widget.title,
             style: ShowmeDesign.h4.copyWith(
@@ -135,45 +128,19 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
       );
     }
     
-    // Pour les pages avec section de bienvenue, afficher le message dans la barre de titre
+    // Pour les pages avec section de bienvenue, afficher le message personnalisé
     if (widget.showWelcomeSection) {
-      return BlocBuilder<AuthBloc, AuthState>(
-        builder: (context, state) {
-          final userName = state is AuthAuthenticated 
-              ? state.user.firstName 
-              : 'Utilisateur';
-          
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    'Bonjour $userName',
-                    style: ShowmeDesign.h4.copyWith(
-                      color: ShowmeDesign.neutral900,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  SizedBox(width: 6),
-                  Text(
-                    '👋🏻',
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ],
-              ),
-              Text(
-                'Prêt à networker ?',
-                style: ShowmeDesign.bodyMedium.copyWith(
-                  color: ShowmeDesign.neutral500,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          );
-        },
-      );
+      // Utiliser le user passé en paramètre, sinon fallback sur AuthBloc
+      if (widget.user != null) {
+        return _buildWelcomeTitle(widget.user);
+      } else {
+        return BlocBuilder<AuthBloc, AuthState>(
+          builder: (context, state) {
+            final user = state is AuthAuthenticated ? state.user : null;
+            return _buildWelcomeTitle(user);
+          },
+        );
+      }
     }
     
     return Text(
@@ -185,32 +152,51 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
     );
   }
 
+  Widget _buildWelcomeTitle(dynamic user) {
+    final userName = _getUserName(user);
+    final timeGreeting = _getTimeBasedGreeting();
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Text(
+              '$timeGreeting $userName',
+              style: ShowmeDesign.h4.copyWith(
+                color: ShowmeDesign.neutral900,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              _getTimeBasedEmoji(),
+              style: const TextStyle(fontSize: 18),
+            ),
+          ],
+        ),
+        Text(
+          _getMotivationalMessage(),
+          style: ShowmeDesign.bodyMedium.copyWith(
+            color: ShowmeDesign.neutral500,
+            fontSize: 14,
+          ),
+        ),
+      ],
+    );
+  }
+
   List<Widget>? _buildActions() {
     List<Widget> actionsList = [];
     
     if (widget.showProfileIcon) {
       actionsList.add(
         Container(
-          margin: EdgeInsets.only(right: 16),
-          child: IconButton(
-            icon: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: ShowmeDesign.neutral50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: ShowmeDesign.neutral200,
-                  width: 0.5,
-                ),
-              ),
-              child: Icon(
-                Icons.person_outline_rounded,
-                size: 18,
-                color: ShowmeDesign.neutral600,
-              ),
-            ),
-            onPressed: widget.onProfilePressed,
+          margin: const EdgeInsets.only(right: 16),
+          child: GestureDetector(
+            onTap: widget.onProfilePressed,
+            child: _buildProfileAvatar(),
           ),
         ),
       );
@@ -223,56 +209,166 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
     return actionsList.isEmpty ? null : actionsList;
   }
 
-  Widget _buildExpandedWelcomeSection() {
-    return AnimatedBuilder(
-      animation: _contentStaggerAnimation,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(0, (1 - _contentStaggerAnimation.value) * 15),
-          child: Opacity(
-            opacity: _contentStaggerAnimation.value,
-            child: BlocBuilder<AuthBloc, AuthState>(
-              builder: (context, state) {
-                final userName = state is AuthAuthenticated 
-                    ? state.user.firstName 
-                    : 'Utilisateur';
-                
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          'Prêt à faire du networking ?',
-                          style: ShowmeDesign.h3.copyWith(
-                            color: ShowmeDesign.neutral900,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          '👋',
-                          style: TextStyle(fontSize: 20),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Découvrez de nouveaux contacts et opportunités',
-                      style: ShowmeDesign.bodyMedium.copyWith(
-                        color: ShowmeDesign.neutral500,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
+  Widget _buildProfileAvatar() {
+    // Utiliser le user passé en paramètre, sinon fallback sur AuthBloc
+    if (widget.user != null) {
+      return _buildAvatarFromUser(widget.user);
+    } else {
+      return BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, state) {
+          final user = state is AuthAuthenticated ? state.user : null;
+          return _buildAvatarFromUser(user);
+        },
+      );
+    }
+  }
+
+  Widget _buildAvatarFromUser(dynamic user) {
+    if (user?.profilePicture != null) {
+      // Avatar avec photo de profil
+      return Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: ShowmeDesign.neutral200,
+            width: 1,
           ),
-        );
-      },
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(7),
+          child: Image.network(
+            user.profilePicture!,
+            width: 36,
+            height: 36,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildDefaultAvatar(user);
+            },
+          ),
+        ),
+      );
+    } else {
+      // Avatar par défaut avec initiales
+      return _buildDefaultAvatar(user);
+    }
+  }
+
+  Widget _buildDefaultAvatar(dynamic user) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        gradient: ShowmeDesign.primaryGradient,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: ShowmeDesign.neutral200,
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          _getUserInitials(user),
+          style: ShowmeDesign.bodySmall.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        ),
+      ),
     );
+  }
+
+  // Méthodes utilitaires
+  String _getUserName(dynamic user) {
+    if (user?.firstName != null && user.firstName!.isNotEmpty) {
+      return user.firstName!;
+    } else if (user?.email != null) {
+      return user.email!.split('@').first;
+    }
+    return 'Utilisateur';
+  }
+
+  String _getUserInitials(dynamic user) {
+    final firstName = user?.firstName ?? '';
+    final lastName = user?.lastName ?? '';
+    
+    if (firstName.isNotEmpty && lastName.isNotEmpty) {
+      return '${firstName[0]}${lastName[0]}'.toUpperCase();
+    } else if (firstName.isNotEmpty) {
+      return firstName.substring(0, firstName.length > 1 ? 2 : 1).toUpperCase();
+    } else if (lastName.isNotEmpty) {
+      return lastName.substring(0, lastName.length > 1 ? 2 : 1).toUpperCase();
+    } else {
+      final email = user?.email;
+      if (email != null && email.isNotEmpty) {
+        return email.substring(0, email.length > 1 ? 2 : 1).toUpperCase();
+      }
+      return 'US';
+    }
+  }
+
+  String _getTimeBasedGreeting() {
+    final hour = DateTime.now().hour;
+    
+    if (hour < 6) {
+      return 'Bonne nuit';
+    } else if (hour < 12) {
+      return 'Bonjour';
+    } else if (hour < 17) {
+      return 'Bon après-midi';
+    } else if (hour < 22) {
+      return 'Bonsoir';
+    } else {
+      return 'Bonne soirée';
+    }
+  }
+
+  String _getTimeBasedEmoji() {
+    final hour = DateTime.now().hour;
+    
+    if (hour < 6) {
+      return '🌙';
+    } else if (hour < 12) {
+      return '👋🏻';
+    } else if (hour < 17) {
+      return '☀️';
+    } else if (hour < 22) {
+      return '🌅';
+    } else {
+      return '✨';
+    }
+  }
+
+  String _getMotivationalMessage() {
+    final messages = [
+      'Prêt à networker ?',
+      'Votre réseau vous attend !',
+      'Partagez votre expertise !',
+      'Créez des connexions !',
+      'Développez votre réseau !',
+      'Montrez votre talent !',
+    ];
+    
+    final hour = DateTime.now().hour;
+    final dayOfYear = DateTime.now().difference(DateTime(DateTime.now().year)).inDays;
+    final index = (hour + dayOfYear) % messages.length;
+    
+    return messages[index];
   }
 }

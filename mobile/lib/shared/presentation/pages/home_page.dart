@@ -11,6 +11,11 @@ import '../widgets/stats_overview.dart';
 import '../widgets/quick_actions_grid.dart';
 import '../widgets/showme_app_bar.dart';
 import '../../models/contact_exchange.dart';
+import '../../../features/auth/bloc/auth_bloc.dart';
+import '../../../features/auth/bloc/auth_state.dart';
+import '../../../shared/models/profile.dart';
+import '../../../shared/models/card.dart' as CardModel;
+import '../../../shared/models/card_theme.dart' as CardTheme;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -79,11 +84,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         color: ShowmeDesign.primaryPurple,
         child: CustomScrollView(
           slivers: [
-            ShowmeSliverAppBar(
-              title: 'Accueil',
-              showWelcomeSection: true,
-              showProfileIcon: true,
-              onProfilePressed: () => context.go('/profile'),
+            BlocBuilder<AuthBloc, AuthState>(
+              builder: (context, authState) {
+                return ShowmeSliverAppBar(
+                  title: authState is AuthAuthenticated 
+                    ? 'Bonjour ${authState.user.firstName ?? 'Utilisateur'} !'
+                    : 'Accueil',
+                  showWelcomeSection: true,
+                  showProfileIcon: true,
+                  onProfilePressed: () => context.go('/profile'),
+                  // Passer l'utilisateur pour afficher son avatar dans l'AppBar
+                  user: authState is AuthAuthenticated ? authState.user : null,
+                );
+              },
             ),
             SliverToBoxAdapter(
               child: AnimatedBuilder(
@@ -116,30 +129,179 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           offset: Offset(0, (1 - _contentStaggerAnimation.value) * 30),
           child: Opacity(
             opacity: _contentStaggerAnimation.value,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  BlocBuilder<CardBloc, CardState>(
-                    builder: (context, state) {
-                      if (state is CardLoaded && state.cards.isNotEmpty) {
-                        final activeCard = state.cards.first;
-                        return ShowmeCardWidget(
-                          card: activeCard,
-                          size: CardSize.large,
-                          onTap: () => context.go('/cards/${activeCard.id}'),
-                        );
-                      } else if (state is CardLoading) {
-                        return _buildCardLoadingSkeleton();
-                      } else {
-                        return _buildEmptyCardState();
-                      }
-                    },
-                  ),
-                ],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                BlocBuilder<CardBloc, CardState>(
+                  builder: (context, cardState) {
+                    return BlocBuilder<AuthBloc, AuthState>(
+                      builder: (context, authState) {
+                        if (cardState is CardLoaded && cardState.cards.isNotEmpty) {
+                          final activeCard = cardState.cards.first;
+                          return ShowmeCardWidget(
+                            card: activeCard,
+                            profile: authState is AuthAuthenticated ? authState.user.profileOrDefault : Profile.demo(),
+                            size: CardSize.large,
+                            onTap: () => context.go('/cards/${activeCard.id}'),
+                          );
+                        } else if (cardState is CardLoading) {
+                          return _buildCardLoadingSkeleton();
+                        } else {
+                          // Créer une carte basée sur les infos utilisateur réelles
+                          if (authState is AuthAuthenticated) {
+                            return _buildDynamicCardFromUser(authState.user);
+                          } else {
+                            return _buildEmptyCardState();
+                          }
+                        }
+                      },
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildDynamicCardFromUser(dynamic user) {
+    // Créer un slug basé sur le nom utilisateur
+    String generateSlug() {
+      final firstName = user.firstName ?? '';
+      final lastName = user.lastName ?? '';
+      if (firstName.isNotEmpty && lastName.isNotEmpty) {
+        return '${firstName.toLowerCase()}-${lastName.toLowerCase()}';
+      } else if (firstName.isNotEmpty) {
+        return firstName.toLowerCase();
+      } else if (user.email != null) {
+        return user.email!.split('@').first.toLowerCase();
+      }
+      return 'utilisateur-${user.id}';
+    }
+
+    // Utiliser profileOrDefault qui gère automatiquement le cas null
+    final profile = user.profileOrDefault;
+
+    // Créer une carte temporaire basée sur le profile
+    final dynamicCard = CardModel.Card(
+      id: 0, // ID temporaire
+      slug: generateSlug(),
+      title: profile.company != null && profile.company!.isNotEmpty
+          ? 'Carte ${profile.company}'
+          : 'Ma carte de visite',
+      bio: profile.position != null && profile.position!.isNotEmpty
+          ? 'Découvrez mon parcours professionnel et connectons-nous !'
+          : 'Créez votre première carte pour personnaliser cette description.',
+      isPublic: true,
+      viewsCount: 0,
+      walletPassUrl: null,
+      allowPayment: false,
+      nfcEnabled: true,
+      qrCodeUrl: null,
+      totalShared: 0,
+      totalLeads: 0,
+      profile: profile,
+      subscription: null,
+      theme: CardTheme.CardTheme.purple,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    return Container(
+      margin: const EdgeInsets.only(
+        top: ShowmeDesign.spacingMd,
+        left: 10,
+        right: 10,
+      ),
+      child: Stack(
+        children: [
+          ShowmeCardWidget(
+            card: dynamicCard,
+            profile: profile,
+            size: CardSize.large,
+            onTap: () => context.go('/cards/new'),
+          ),
+          // Overlay pour indiquer que c'est un aperçu
+          Positioned(
+            top: ShowmeDesign.spacingLg,
+            left: ShowmeDesign.spacingLg,
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: ShowmeDesign.spacingSm,
+                vertical: ShowmeDesign.spacingXs,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(ShowmeDesign.radiusSm),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.preview,
+                    color: Colors.white,
+                    size: 12,
+                  ),
+                  SizedBox(width: ShowmeDesign.spacingXs),
+                  Text(
+                    'Aperçu - Cliquez pour créer',
+                    style: ShowmeDesign.caption.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Badge encourageant à créer une vraie carte
+          Positioned(
+            bottom: ShowmeDesign.spacingLg,
+            right: ShowmeDesign.spacingLg,
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: ShowmeDesign.spacingSm,
+                vertical: ShowmeDesign.spacingXs,
+              ),
+              decoration: BoxDecoration(
+                gradient: ShowmeDesign.primaryGradient,
+                borderRadius: BorderRadius.circular(ShowmeDesign.radiusSm),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.add_circle_outline,
+                    color: Colors.white,
+                    size: 12,
+                  ),
+                  SizedBox(width: ShowmeDesign.spacingXs),
+                  Text(
+                    'Créer ma carte',
+                    style: ShowmeDesign.caption.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

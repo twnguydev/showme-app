@@ -36,7 +36,12 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _setupAnimations();
-    _startAnimations();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _startAnimations();
+      }
+    });
   }
 
   void _setupAnimations() {
@@ -96,14 +101,25 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   }
 
   void _startAnimations() {
+    // Vérifier que le widget est toujours monté avant de démarrer les animations
+    if (!mounted) return;
+    
     _logoController.forward();
+    
+    // Utiliser un timer sécurisé avec vérification mounted
     Future.delayed(const Duration(milliseconds: 800), () {
-      _formController.forward();
+      if (mounted && !_formController.isCompleted) {
+        _formController.forward();
+      }
     });
   }
 
   @override
   void dispose() {
+    // Arrêter les animations en cours avant de disposer
+    _logoController.stop();
+    _formController.stop();
+    
     _logoController.dispose();
     _formController.dispose();
     _emailController.dispose();

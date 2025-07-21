@@ -1,6 +1,7 @@
 // mobile/lib/shared/widgets/showme_card_widget.dart
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:showme/shared/models/profile.dart';
 
 import '../../../core/design/showme_design_system.dart';
 import '../../models/card.dart' as CardModel;
@@ -8,6 +9,7 @@ import '../../models/card_theme.dart';
 
 class ShowmeCardWidget extends StatefulWidget {
   final CardModel.Card card;
+  final Profile profile;
   final VoidCallback? onTap;
   final bool showActions;
   final bool showQR;
@@ -16,6 +18,7 @@ class ShowmeCardWidget extends StatefulWidget {
   const ShowmeCardWidget({
     super.key,
     required this.card,
+    required this.profile,
     this.onTap,
     this.showActions = true,
     this.showQR = false,
@@ -102,7 +105,7 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(
+      margin: const EdgeInsets.only(
         top: ShowmeDesign.spacingMd, // 32px de margin top
         left: 10, // Même marge que l'AppBar
         right: 10, // Même marge que l'AppBar
@@ -238,7 +241,7 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
 
   Widget _buildCardContent() {
     return Padding(
-      padding: EdgeInsets.all(ShowmeDesign.spacingLg),
+      padding: const EdgeInsets.all(ShowmeDesign.spacingLg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -246,7 +249,7 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
           const Spacer(),
           _buildMainInfo(),
           if (widget.showActions) ...[
-            SizedBox(height: ShowmeDesign.spacingMd),
+            const SizedBox(height: ShowmeDesign.spacingMd),
             _buildActions(),
           ],
         ],
@@ -284,10 +287,10 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
                 child: CircleAvatar(
                   radius: widget.size == CardSize.compact ? 18 : 26,
                   backgroundColor: Colors.white.withOpacity(0.2),
-                  backgroundImage: widget.card.profile.avatar != null
-                      ? NetworkImage(widget.card.profile.avatar!.url)
+                  backgroundImage: widget.profile.avatar != null
+                      ? NetworkImage(widget.profile.avatar!.url)
                       : null,
-                  child: widget.card.profile.avatar == null
+                  child: widget.profile.avatar == null
                       ? Text(
                           _getInitials(),
                           style: TextStyle(
@@ -306,9 +309,9 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
         const Spacer(),
         
         // Logo entreprise ou icône
-        if (widget.card.profile.company != null)
+        if (widget.profile.company != null)
           Container(
-            padding: EdgeInsets.all(ShowmeDesign.spacingSm),
+            padding: const EdgeInsets.all(ShowmeDesign.spacingSm),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.15),
               borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
@@ -347,12 +350,12 @@ Widget _buildMainInfo() {
           overflow: TextOverflow.ellipsis,
         ),
         
-        SizedBox(height: ShowmeDesign.spacingXs),
+        const SizedBox(height: ShowmeDesign.spacingXs),
         
         // Titre/Poste
-        if (widget.card.profile.position != null)
+        if (widget.profile.position != null)
           Text(
-            widget.card.profile.position!,
+            widget.profile.position!,
             style: (widget.size == CardSize.compact 
                 ? ShowmeDesign.bodySmall 
                 : ShowmeDesign.bodyMedium).copyWith(
@@ -364,8 +367,8 @@ Widget _buildMainInfo() {
           ),
         
         // Entreprise
-        if (widget.card.profile.company != null) ...[
-          SizedBox(height: ShowmeDesign.spacingXs),
+        if (widget.profile.company != null) ...[
+          const SizedBox(height: ShowmeDesign.spacingXs),
           Row(
             children: [
               Icon(
@@ -373,10 +376,10 @@ Widget _buildMainInfo() {
                 color: Colors.white.withOpacity(0.8),
                 size: 12,
               ),
-              SizedBox(width: ShowmeDesign.spacingXs),
+              const SizedBox(width: ShowmeDesign.spacingXs),
               Expanded(
                 child: Text(
-                  widget.card.profile.company!,
+                  widget.profile.company!,
                   style: ShowmeDesign.caption.copyWith(
                     color: Colors.white.withOpacity(0.8),
                   ),
@@ -390,14 +393,14 @@ Widget _buildMainInfo() {
         
         // Stats pour les grandes cartes
         if (widget.size != CardSize.compact) ...[
-          SizedBox(height: ShowmeDesign.spacingSm),
+          const SizedBox(height: ShowmeDesign.spacingSm),
           Row(
             children: [
               _buildStatChip(Icons.visibility, '${widget.card.viewsCount}'),
-              SizedBox(width: ShowmeDesign.spacingSm),
+              const SizedBox(width: ShowmeDesign.spacingSm),
               _buildStatChip(Icons.share, '${widget.card.totalShared}'),
               if (widget.card.totalLeads > 0) ...[
-                SizedBox(width: ShowmeDesign.spacingSm),
+                const SizedBox(width: ShowmeDesign.spacingSm),
                 _buildStatChip(Icons.person_add, '${widget.card.totalLeads}'),
               ],
             ],
@@ -409,7 +412,7 @@ Widget _buildMainInfo() {
 
   Widget _buildStatChip(IconData icon, String value) {
     return Container(
-      padding: EdgeInsets.symmetric(
+      padding: const EdgeInsets.symmetric(
         horizontal: ShowmeDesign.spacingSm,
         vertical: ShowmeDesign.spacingXs,
       ),
@@ -425,7 +428,7 @@ Widget _buildMainInfo() {
             color: Colors.white.withOpacity(0.9),
             size: 12,
           ),
-          SizedBox(width: ShowmeDesign.spacingXs),
+          const SizedBox(width: ShowmeDesign.spacingXs),
           Text(
             value,
             style: ShowmeDesign.caption.copyWith(
@@ -446,7 +449,7 @@ Widget _buildMainInfo() {
           label: 'Partager',
           onTap: () => _handleAction('share'),
         ),
-        SizedBox(width: ShowmeDesign.spacingSm),
+        const SizedBox(width: ShowmeDesign.spacingSm),
         _buildActionButton(
           icon: Icons.qr_code,
           label: 'QR',
@@ -470,7 +473,7 @@ Widget _buildMainInfo() {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           horizontal: ShowmeDesign.spacingSm,
           vertical: ShowmeDesign.spacingXs,
         ),
@@ -490,7 +493,7 @@ Widget _buildMainInfo() {
               color: Colors.white,
               size: 14,
             ),
-            SizedBox(width: ShowmeDesign.spacingXs),
+            const SizedBox(width: ShowmeDesign.spacingXs),
             Text(
               label,
               style: ShowmeDesign.caption.copyWith(
@@ -509,7 +512,7 @@ Widget _buildMainInfo() {
       top: ShowmeDesign.spacingSm,
       right: ShowmeDesign.spacingSm,
       child: Container(
-        padding: EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           horizontal: ShowmeDesign.spacingSm,
           vertical: ShowmeDesign.spacingXs,
         ),
@@ -527,12 +530,12 @@ Widget _buildMainInfo() {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            const Icon(
               Icons.star,
               color: Colors.white,
               size: 12,
             ),
-            SizedBox(width: ShowmeDesign.spacingXs),
+            const SizedBox(width: ShowmeDesign.spacingXs),
             Text(
               'PRO',
               style: ShowmeDesign.caption.copyWith(
@@ -557,7 +560,7 @@ Widget _buildMainInfo() {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: EdgeInsets.all(ShowmeDesign.spacingMd),
+              padding: const EdgeInsets.all(ShowmeDesign.spacingMd),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
@@ -570,7 +573,7 @@ Widget _buildMainInfo() {
                 foregroundColor: Colors.black,
               ),
             ),
-            SizedBox(height: ShowmeDesign.spacingMd),
+            const SizedBox(height: ShowmeDesign.spacingMd),
             Text(
               'Scannez pour voir ma carte',
               style: ShowmeDesign.bodySmall.copyWith(
@@ -585,21 +588,21 @@ Widget _buildMainInfo() {
   }
 
   String _getFullName() {
-    final firstName = widget.card.profile.firstName ?? '';
-    final lastName = widget.card.profile.lastName ?? '';
+    final firstName = widget.profile.firstName ?? '';
+    final lastName = widget.profile.lastName ?? '';
     final fullName = '$firstName $lastName'.trim();
     
     // If both are empty, fallback to email or a default
     if (fullName.isEmpty) {
-      return widget.card.profile.email ?? 'Utilisateur';
+      return widget.profile.email ?? 'Utilisateur';
     }
     
     return fullName;
   }
 
   String _getInitials() {
-    final firstName = widget.card.profile.firstName ?? '';
-    final lastName = widget.card.profile.lastName ?? '';
+    final firstName = widget.profile.firstName ?? '';
+    final lastName = widget.profile.lastName ?? '';
     
     if (firstName.isNotEmpty && lastName.isNotEmpty) {
       return '${firstName[0]}${lastName[0]}'.toUpperCase();
@@ -609,7 +612,7 @@ Widget _buildMainInfo() {
       return lastName.substring(0, lastName.length > 1 ? 2 : 1).toUpperCase();
     } else {
       // Fallback to email or default
-      final email = widget.card.profile.email;
+      final email = widget.profile.email;
       if (email != null && email.isNotEmpty) {
         return email.substring(0, email.length > 1 ? 2 : 1).toUpperCase();
       }

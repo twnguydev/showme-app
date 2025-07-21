@@ -1,5 +1,6 @@
 // mobile/lib/features/auth/data/repositories/auth_repository.dart
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -167,12 +168,22 @@ class AuthRepository {
   /// Connexion avec Apple
   Future<AuthResponse> loginWithApple() async {
     try {
-      // Demander les credentials Apple
+      // Vérifier la disponibilité d'Apple Sign In
+      final isAvailable = await SignInWithApple.isAvailable();
+      if (!isAvailable) {
+        throw const AuthException('Apple Sign In n\'est pas disponible sur cet appareil');
+      }
+
+      // Demander les credentials Apple avec gestion d'erreur améliorée
       final credential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
           AppleIDAuthorizationScopes.fullName,
         ],
+        webAuthenticationOptions: WebAuthenticationOptions(
+          clientId: 'com.votre.bundle.id', // Remplacez par votre bundle ID
+          redirectUri: Uri.parse('http://localhost:3000/api/v1/auth/apple/callback'),
+        ),
       );
 
       // Créer la requête pour votre API
@@ -194,9 +205,25 @@ class AuthRepository {
       await _saveAuthData(authData);
 
       return AuthResponse.fromAuthResponseData(authData);
+    } on SignInWithAppleAuthorizationException catch (e) {
+      // Gestion spécifique des erreurs Apple
+      switch (e.code) {
+        case AuthorizationErrorCode.canceled:
+          throw const AuthException('Connexion Apple annulée');
+        case AuthorizationErrorCode.failed:
+          throw const AuthException('Échec de la connexion Apple');
+        case AuthorizationErrorCode.invalidResponse:
+          throw const AuthException('Réponse Apple invalide');
+        case AuthorizationErrorCode.notHandled:
+          throw const AuthException('Connexion Apple non gérée');
+        case AuthorizationErrorCode.unknown:
+        default:
+          throw AuthException('Erreur Apple inconnue: ${e.code}');
+      }
     } on DioException catch (e) {
       throw _handleAuthError(e);
     } catch (e) {
+      print('🚨 Apple Login Error: $e');
       throw AuthException('Erreur lors de la connexion Apple: $e');
     }
   }
@@ -208,11 +235,16 @@ class AuthRepository {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       
       if (googleUser == null) {
-        throw AuthException('Connexion Google annulée');
+        throw const AuthException('Connexion Google annulée');
       }
 
       // Obtenir les détails d'authentification
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      // Vérifier que nous avons les tokens nécessaires
+      if (googleAuth.idToken == null) {
+        throw const AuthException('Token Google ID manquant');
+      }
 
       // Créer la requête pour votre API
       final loginRequest = SocialLoginRequest(
@@ -235,7 +267,20 @@ class AuthRepository {
       return AuthResponse.fromAuthResponseData(authData);
     } on DioException catch (e) {
       throw _handleAuthError(e);
+    } on PlatformException catch (e) {
+      // Gestion des erreurs spécifiques à Google Sign In
+      switch (e.code) {
+        case 'sign_in_canceled':
+          throw const AuthException('Connexion Google annulée');
+        case 'sign_in_failed':
+          throw const AuthException('Échec de la connexion Google');
+        case 'network_error':
+          throw const AuthException('Erreur réseau lors de la connexion Google');
+        default:
+          throw AuthException('Erreur Google: ${e.message}');
+      }
     } catch (e) {
+      print('🚨 Google Login Error: $e');
       throw AuthException('Erreur lors de la connexion Google: $e');
     }
   }
@@ -257,7 +302,7 @@ class AuthRepository {
     required String confirmPassword,
   }) async {
     if (newPassword != confirmPassword) {
-      throw AuthException('Les mots de passe ne correspondent pas');
+      throw const AuthException('Les mots de passe ne correspondent pas');
     }
 
     try {
@@ -325,7 +370,7 @@ class AuthRepository {
     required String confirmPassword,
   }) async {
     if (newPassword != confirmPassword) {
-      throw AuthException('Les nouveaux mots de passe ne correspondent pas');
+      throw const AuthException('Les nouveaux mots de passe ne correspondent pas');
     }
 
     try {
@@ -339,7 +384,6 @@ class AuthRepository {
   }
 
   /// Déconnexion
-  @override
   Future<void> logout() async {
     try {
       // Notifier le serveur de la déconnexion
@@ -397,21 +441,21 @@ class AuthRepository {
   AuthException _handleAuthError(DioException e) {
     switch (e.response?.statusCode) {
       case 400:
-        return AuthException('Données d\'authentification invalides');
+        return const AuthException('Données d\'authentification invalides');
       case 401:
-        return AuthException('Email ou mot de passe incorrect');
+        return const AuthException('Email ou mot de passe incorrect');
       case 403:
-        return AuthException('Accès interdit');
+        return const AuthException('Accès interdit');
       case 404:
-        return AuthException('Utilisateur non trouvé');
+        return const AuthException('Utilisateur non trouvé');
       case 409:
-        return AuthException('Un compte avec cet email existe déjà');
+        return const AuthException('Un compte avec cet email existe déjà');
       case 422:
-        return AuthException('Données de validation invalides');
+        return const AuthException('Données de validation invalides');
       case 429:
-        return AuthException('Trop de tentatives, veuillez réessayer plus tard');
+        return const AuthException('Trop de tentatives, veuillez réessayer plus tard');
       case 500:
-        return AuthException('Erreur serveur, veuillez réessayer');
+        return const AuthException('Erreur serveur, veuillez réessayer');
       default:
         return AuthException('Erreur de connexion: ${e.message}');
     }
@@ -432,7 +476,7 @@ class AuthRepository {
   }
 
   /// Récupère le rôle de l'utilisateur
-  Future<UserRole?> getUserRole() async {
+  Future<String?> getUserRole() async {
     final user = await getCurrentUser();
     return user?.role;
   }

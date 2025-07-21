@@ -5,12 +5,14 @@ class ProfileInfoTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
+  final Color valueColor;
 
   const ProfileInfoTile({
     super.key,
     required this.icon,
     required this.label,
     required this.value,
+    required this.valueColor
   });
 
   @override

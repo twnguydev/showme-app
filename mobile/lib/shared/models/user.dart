@@ -1,5 +1,6 @@
 // mobile/lib/shared/models/user.dart
 import 'package:json_annotation/json_annotation.dart';
+import 'package:showme/shared/models/profile.dart';
 import 'uploaded_file.dart';
 
 part 'user.g.dart';
@@ -16,15 +17,21 @@ class User {
   final String? phoneNumber;
   final String? linkedinUrl;
   final String? website;
-  final UploadedFile? profilePicture;
+  final String? profilePicture;
   final bool isActive;
   final DateTime? lastLoginAt;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final UserRole role;
+  final String role; // API renvoie String, pas enum
   final bool emailVerified;
   final String? timezone;
   final String? language;
+  final Profile? profile;
+  
+  // Champs supplémentaires de l'API que vous n'aviez pas
+  final String? emailVerificationToken;
+  final String? passwordResetToken;
+  final DateTime? passwordResetExpires;
 
   const User({
     required this.id,
@@ -42,10 +49,14 @@ class User {
     this.lastLoginAt,
     required this.createdAt,
     required this.updatedAt,
-    this.role = UserRole.user,
+    this.role = 'user',
     this.emailVerified = false,
     this.timezone,
     this.language,
+    this.profile,
+    this.emailVerificationToken,
+    this.passwordResetToken,
+    this.passwordResetExpires,
   });
 
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
@@ -70,11 +81,11 @@ class User {
     return result.isNotEmpty ? result : email[0].toUpperCase();
   }
 
-  bool get hasProfilePicture => profilePicture != null;
+  bool get hasProfilePicture => profilePicture != null && profilePicture!.isNotEmpty;
   
-  bool get isAdmin => role == UserRole.admin;
-  bool get isModerator => role == UserRole.moderator;
-  bool get isStandardUser => role == UserRole.user;
+  bool get isAdmin => role == 'admin';
+  bool get isModerator => role == 'moderator';
+  bool get isStandardUser => role == 'user';
 
   bool get hasCompanyInfo => company != null || position != null;
   bool get hasContactInfo => phoneNumber != null || linkedinUrl != null || website != null;
@@ -99,6 +110,38 @@ class User {
     return DateTime.now().difference(lastLoginAt!).inMinutes < 15;
   }
 
+  // Créer un Profile par défaut basé sur les données User
+  Profile get profileOrDefault {
+    if (profile != null) {
+      return profile!;
+    }
+    
+    // Créer un profile par défaut basé sur les données de User
+    return Profile(
+      id: id,
+      firstName: firstName ?? '',
+      lastName: lastName ?? '',
+      email: email,
+      company: company,
+      position: position,
+      phone: phoneNumber,
+      website: website,
+      linkedinUrl: linkedinUrl,
+      isPublic: true,
+      avatar: profilePicture != null 
+        ? UploadedFile(
+            mimeType: 'image/jpeg',
+            size: 0,
+            url: profilePicture!,
+            name: profilePicture!.split('/').last,
+            uploadedAt: createdAt,
+          )
+        : null,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+  }
+
   User copyWith({
     String? username,
     String? email,
@@ -109,13 +152,14 @@ class User {
     String? phoneNumber,
     String? linkedinUrl,
     String? website,
-    UploadedFile? profilePicture,
+    String? profilePicture,
     bool? isActive,
     DateTime? lastLoginAt,
-    UserRole? role,
+    String? role,
     bool? emailVerified,
     String? timezone,
     String? language,
+    Profile? profile,
   }) {
     return User(
       id: id,
@@ -137,6 +181,10 @@ class User {
       emailVerified: emailVerified ?? this.emailVerified,
       timezone: timezone ?? this.timezone,
       language: language ?? this.language,
+      profile: profile ?? this.profile,
+      emailVerificationToken: emailVerificationToken,
+      passwordResetToken: passwordResetToken,
+      passwordResetExpires: passwordResetExpires,
     );
   }
 
@@ -153,30 +201,16 @@ class User {
       phoneNumber: '+33 6 12 34 56 78',
       linkedinUrl: 'https://linkedin.com/in/tanguy-gbt',
       website: 'https://tanguygbt.com',
-      profilePicture: UploadedFile(
-        url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-        name: 'profile.jpg',
-        size: 1024 * 150, // 150KB
-        mimeType: 'image/jpeg',
-      ),
+      profilePicture: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
       isActive: true,
       lastLoginAt: now.subtract(const Duration(minutes: 5)),
       createdAt: now.subtract(const Duration(days: 180)),
       updatedAt: now.subtract(const Duration(hours: 2)),
-      role: UserRole.user,
+      role: 'user',
       emailVerified: true,
       timezone: 'Europe/Paris',
       language: 'fr',
+      profile: Profile.demo(),
     );
   }
-}
-
-@JsonEnum()
-enum UserRole {
-  @JsonValue('user')
-  user,
-  @JsonValue('moderator')
-  moderator,
-  @JsonValue('admin')
-  admin,
 }

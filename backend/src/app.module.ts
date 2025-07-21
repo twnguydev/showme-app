@@ -67,8 +67,7 @@ import { HealthModule } from './modules/health/health.module';
     // SubscriptionsModule,
     // UploadsModule,
     // PaymentsModule,
-    // AdminModule,
-    // HealthModule,
+    // AdminModule
   ],
   providers: [DatabaseConfig],
 })
