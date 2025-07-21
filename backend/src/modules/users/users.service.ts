@@ -51,12 +51,14 @@ export class UsersService {
 
   async updateUser(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findById(id);
+    const normalizedEmailDto = updateUserDto.email.toLowerCase().trim();
+    const normalizedEmailUser = user.email.toLowerCase().trim();
 
     // Vérifier l'unicité de l'email si modifié
-    if (updateUserDto.email && updateUserDto.email !== user.email) {
-      const existingUser = await this.findByEmail(updateUserDto.email);
+    if (normalizedEmailDto !== normalizedEmailUser) {
+      const existingUser = await this.findByEmail(normalizedEmailDto);
       if (existingUser) {
-        throw new ConflictException('Cet email est déjà utilisé');
+        throw new ConflictException('Un utilisateur avec cet email existe déjà');
       }
     }
 

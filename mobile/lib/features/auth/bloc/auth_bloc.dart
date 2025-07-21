@@ -70,7 +70,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     } on DioException catch (e) {
       emit(AuthError(_handleDioError(e)));
     } catch (e) {
-      emit(AuthError('Une erreur inattendue s\'est produite'));
+      emit(AuthError('Une erreur inattendue s\'est produite : $e'));
     }
   }
 

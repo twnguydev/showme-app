@@ -22,7 +22,7 @@ class ProfileAvatar extends StatelessWidget {
               radius: 60,
               backgroundColor: Theme.of(context).colorScheme.primary,
               backgroundImage: user.profilePicture != null
-                  ? NetworkImage(user.profilePicture!)
+                  ? NetworkImage(user.profilePicture!.url)
                   : null,
               child: user.profilePicture == null
                   ? Text(

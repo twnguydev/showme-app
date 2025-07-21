@@ -1,7 +1,9 @@
 // mobile/lib/core/services/api_service.dart
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:showme/shared/models/profile.dart';
+import 'package:showme/shared/models/uploaded_file.dart';
 
 import '../config/app_config.dart';
 import '../models/api_response.dart';
@@ -82,6 +84,11 @@ class ApiService {
         logPrint: (obj) => print(obj),
       ));
     }
+  }
+
+  void dispose() {
+    // Annuler les requêtes en cours si nécessaire
+    _dio.close(force: true);
   }
 
   // Auth endpoints
@@ -295,7 +302,7 @@ class ApiService {
       phoneNumber: null,
       linkedinUrl: null,
       website: null,
-      profilePicture: request.photoUrl,
+      profilePicture: UploadedFile(url: request.photoUrl ?? 'https://example.com/default.jpg'),
       isActive: true,
       lastLoginAt: DateTime.now(),
       createdAt: DateTime.now(),
@@ -503,16 +510,18 @@ class ApiService {
     required String newPassword,
   }) async {
     if (!USE_REAL_BACKEND) {
-      await Future.delayed(const Duration(seconds: 1));
-      return ApiResponse<void>.success(message: 'Mot de passe modifié avec succès');
+      return _demoChangePassword(currentPassword, newPassword);
     }
 
     try {
-      await _dio.post('/auth/change-password', data: {
+      await _dio.put('/users/me/password', data: {
         'currentPassword': currentPassword,
         'newPassword': newPassword,
       });
-      return ApiResponse<void>.success(message: 'Mot de passe modifié avec succès');
+      
+      return ApiResponse<void>.success(
+        message: 'Mot de passe modifié avec succès',
+      );
     } on DioException catch (e) {
       throw _handleDioException(e);
     }
@@ -532,44 +541,155 @@ class ApiService {
     }
   }
 
-  Future<ApiResponse<User>> updateProfile({
-    String? firstName,
-    String? lastName,
-    String? company,
-    String? position,
-    String? phoneNumber,
-    String? website,
-    String? linkedinUrl,
-  }) async {
+  Future<ApiResponse<User>> updateProfile(Map<String, dynamic> updateData) async {
     if (!USE_REAL_BACKEND) {
-      await Future.delayed(const Duration(seconds: 1));
-      final currentUser = User.demo();
-      final updatedUser = currentUser.copyWith(
-        firstName: firstName,
-        lastName: lastName,
-        company: company,
-        position: position,
-        phoneNumber: phoneNumber,
-        website: website,
-        linkedinUrl: linkedinUrl,
-      );
-      return ApiResponse<User>(data: updatedUser);
+      return _demoUpdateProfile(updateData);
     }
 
     try {
-      final response = await _dio.put('/auth/profile', data: {
-        'firstName': firstName,
-        'lastName': lastName,
-        'company': company,
-        'position': position,
-        'phoneNumber': phoneNumber,
-        'website': website,
-        'linkedinUrl': linkedinUrl,
-      });
+      final response = await _dio.put(
+        '/users/me',
+        data: updateData,
+      );
 
-      return ApiResponse<User>(data: User.fromJson(response.data['user']));
+      return ApiResponse<User>(
+        data: User.fromJson(response.data['user'] ?? response.data),
+      );
     } on DioException catch (e) {
       throw _handleDioException(e);
+    }
+  }
+
+  /// Mise à jour du profil détaillé
+  Future<ApiResponse<dynamic>> updateDetailedProfile(Map<String, dynamic> updateData) async {
+    if (!USE_REAL_BACKEND) {
+      return _demoUpdateDetailedProfile(updateData);
+    }
+
+    try {
+      final response = await _dio.put(
+        '/users/me/profile',
+        data: updateData,
+      );
+
+      return ApiResponse<dynamic>(
+        data: response.data,
+      );
+    } on DioException catch (e) {
+      throw _handleDioException(e);
+    }
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> uploadAvatar(File imageFile) async {
+    if (!USE_REAL_BACKEND) {
+      return _demoUploadAvatar(imageFile);
+    }
+
+    try {
+      // Créer FormData pour l'upload multipart
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          imageFile.path,
+          filename: imageFile.path.split('/').last,
+        ),
+      });
+
+      final response = await _dio.put(
+        '/users/me/avatar',
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+        ),
+      );
+
+      return ApiResponse<Map<String, dynamic>>(
+        data: response.data as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
+      throw _handleDioException(e);
+    }
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> _demoUploadAvatar(File imageFile) async {
+    await Future.delayed(const Duration(seconds: 2));
+    
+    // Simuler un upload réussi avec une URL d'image de démo
+    const demoUrl = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face';
+    
+    return ApiResponse<Map<String, dynamic>>(
+      data: {
+        'url': demoUrl,
+        'filename': imageFile.path.split('/').last,
+        'size': await imageFile.length(),
+        'uploadedAt': DateTime.now().toIso8601String(),
+      },
+    );
+  }
+
+  Future<ApiResponse<User>> _demoUpdateProfile(Map<String, dynamic> updateData) async {
+    await Future.delayed(const Duration(seconds: 1));
+    
+    // Récupérer l'utilisateur actuel depuis le storage
+    final userData = StorageService.getUser();
+    if (userData == null) {
+      throw DioException(
+        requestOptions: RequestOptions(path: ''),
+        response: Response(
+          requestOptions: RequestOptions(path: ''),
+          statusCode: 401,
+          data: {'message': 'Utilisateur non authentifié'},
+        ),
+      );
+    }
+    
+    // Créer un utilisateur mis à jour avec les nouvelles données
+    final currentUser = User.fromJson(userData);
+    final updatedUser = currentUser.copyWith(
+      firstName: updateData['firstName'],
+      lastName: updateData['lastName'],
+      email: updateData['email'],
+      phoneNumber: updateData['phoneNumber'],
+      company: updateData['company'],
+      position: updateData['position'],
+      website: updateData['website'],
+      linkedinUrl: updateData['linkedinUrl'],
+    );
+    
+    // Sauvegarder les données mises à jour
+    await StorageService.setUser(updatedUser.toJson());
+    
+    return ApiResponse<User>(data: updatedUser);
+  }
+
+  Future<ApiResponse<dynamic>> _demoUpdateDetailedProfile(Map<String, dynamic> updateData) async {
+    await Future.delayed(const Duration(seconds: 1));
+    
+    return ApiResponse<dynamic>(
+      data: {
+        'message': 'Profil détaillé mis à jour avec succès',
+        'profile': updateData,
+        'updatedAt': DateTime.now().toIso8601String(),
+      },
+    );
+  }
+
+  Future<ApiResponse<void>> _demoChangePassword(String currentPassword, String newPassword) async {
+    await Future.delayed(const Duration(seconds: 1));
+    
+    // Simuler la vérification du mot de passe actuel
+    if (currentPassword == 'password') {
+      return ApiResponse<void>.success(
+        message: 'Mot de passe modifié avec succès',
+      );
+    } else {
+      throw DioException(
+        requestOptions: RequestOptions(path: ''),
+        response: Response(
+          requestOptions: RequestOptions(path: ''),
+          statusCode: 400,
+          data: {'message': 'Mot de passe actuel incorrect'},
+        ),
+      );
     }
   }
 

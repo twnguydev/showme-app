@@ -154,6 +154,18 @@ class ShowmeDesign {
     letterSpacing: -0.005,
   );
 
+  static TextStyle get h5 => const TextStyle(
+    fontSize: textLg,
+    fontWeight: FontWeight.w500,
+    height: 1.4,
+  );
+
+  static TextStyle get h6 => const TextStyle(
+    fontSize: textBase,
+    fontWeight: FontWeight.w500,
+    height: 1.5,
+  );
+
   static TextStyle get bodyLarge => const TextStyle(
     fontSize: textLg,
     fontWeight: FontWeight.w400,

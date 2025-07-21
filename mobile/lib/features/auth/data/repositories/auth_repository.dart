@@ -480,36 +480,6 @@ class AuthRepository {
     final user = await getCurrentUser();
     return user?.role;
   }
-
-  /// Met à jour le profil utilisateur
-  Future<User> updateProfile({
-    String? firstName,
-    String? lastName,
-    String? company,
-    String? position,
-    String? phoneNumber,
-    String? website,
-    String? linkedinUrl,
-  }) async {
-    try {
-      final response = await _apiService.updateProfile(
-        firstName: firstName,
-        lastName: lastName,
-        company: company,
-        position: position,
-        phoneNumber: phoneNumber,
-        website: website,
-        linkedinUrl: linkedinUrl,
-      );
-
-      final updatedUser = response.data!;
-      await StorageService.setUser(updatedUser.toJson());
-      
-      return updatedUser;
-    } on DioException catch (e) {
-      throw _handleAuthError(e);
-    }
-  }
 }
 
 /// Exception personnalisée pour les erreurs d'authentification

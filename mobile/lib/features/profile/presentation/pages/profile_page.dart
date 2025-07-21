@@ -472,7 +472,7 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 12),
           
           Text(
-            'Champs manquants : ${missingFields.join(', ')}',
+            'Informations manquantes : ${missingFields.join(', ')}',
             style: ShowmeDesign.bodySmall.copyWith(
               color: ShowmeDesign.neutral600,
             ),
@@ -623,17 +623,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _showEditProfile() {
-    // TODO: Implémenter l'édition du profil
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Édition du profil en cours de développement'),
-        backgroundColor: ShowmeDesign.primaryTeal,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
-        ),
-      ),
-    );
+    context.go('/profile/edit');
   }
 
   void _showSettings() {

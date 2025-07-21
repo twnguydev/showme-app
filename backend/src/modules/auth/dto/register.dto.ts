@@ -7,8 +7,9 @@ import {
   MinLength, 
   IsOptional, 
   IsBoolean,
-  Matches,
+  Matches
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class RegisterDto {
   @ApiProperty({
@@ -17,6 +18,7 @@ export class RegisterDto {
   })
   @IsEmail({}, { message: 'Adresse email invalide' })
   @IsNotEmpty()
+  @Transform(({ value }) => value?.toLowerCase().trim())
   email: string;
 
   @ApiProperty({

@@ -1,6 +1,7 @@
 // src/modules/users/dto/update-profile.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsOptional, IsBoolean, IsEmail, IsEnum, Matches } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { UserRole } from '@/entities/user.entity';
 
 export class UpdateProfileDto {
@@ -29,6 +30,7 @@ export class UpdateProfileDto {
   })
   @IsOptional()
   @IsEmail()
+  @Transform(({ value }) => value?.toLowerCase().trim())
   email?: string;
 
   @ApiProperty({

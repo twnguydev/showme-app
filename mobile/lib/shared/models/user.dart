@@ -17,7 +17,7 @@ class User {
   final String? phoneNumber;
   final String? linkedinUrl;
   final String? website;
-  final String? profilePicture;
+  final UploadedFile? profilePicture;
   final bool isActive;
   final DateTime? lastLoginAt;
   final DateTime createdAt;
@@ -81,7 +81,7 @@ class User {
     return result.isNotEmpty ? result : email[0].toUpperCase();
   }
 
-  bool get hasProfilePicture => profilePicture != null && profilePicture!.isNotEmpty;
+  bool get hasProfilePicture => profilePicture != null && profilePicture!.url.isNotEmpty;
   
   bool get isAdmin => role == 'admin';
   bool get isModerator => role == 'moderator';
@@ -132,8 +132,8 @@ class User {
         ? UploadedFile(
             mimeType: 'image/jpeg',
             size: 0,
-            url: profilePicture!,
-            name: profilePicture!.split('/').last,
+            url: profilePicture!.url,
+            name: profilePicture!.url.split('/').last,
             uploadedAt: createdAt,
           )
         : null,
@@ -152,7 +152,7 @@ class User {
     String? phoneNumber,
     String? linkedinUrl,
     String? website,
-    String? profilePicture,
+    UploadedFile? profilePicture,
     bool? isActive,
     DateTime? lastLoginAt,
     String? role,
@@ -201,7 +201,13 @@ class User {
       phoneNumber: '+33 6 12 34 56 78',
       linkedinUrl: 'https://linkedin.com/in/tanguy-gbt',
       website: 'https://tanguygbt.com',
-      profilePicture: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+      profilePicture: UploadedFile(
+        mimeType: 'image/jpeg',
+        size: 0,
+        url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+        name: 'photo-1507003211169-0a1dd7228f2d.jpg',
+        uploadedAt: now,
+      ),
       isActive: true,
       lastLoginAt: now.subtract(const Duration(minutes: 5)),
       createdAt: now.subtract(const Duration(days: 180)),

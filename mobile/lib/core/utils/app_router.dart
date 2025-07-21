@@ -8,6 +8,7 @@ import '../../features/auth/bloc/auth_state.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
+import '../../features/profile/presentation/pages/edit_profile_page.dart';
 import '../../features/card/presentation/pages/card_list_page.dart';
 import '../../features/card/presentation/pages/card_detail_page.dart';
 import '../../features/card/presentation/pages/card_form_page.dart';
@@ -72,6 +73,10 @@ class AppRouter {
         builder: (context, state) => const ProfilePage(),
       ),
       GoRoute(
+        path: '/profile/edit',
+        builder: (context, state) => const EditProfilePage(),
+      ),
+      GoRoute(
         path: '/cards',
         builder: (context, state) => const CardListPage(),
       ),
@@ -97,10 +102,7 @@ class AppRouter {
           cardId: state.pathParameters['id']!,
         ),
       ),
-      GoRoute(
-        path: '/sharing',
-        builder: (context, state) => const SharingPageStub(),
-      ),
+
       GoRoute(
         path: '/crm',
         builder: (context, state) => const CrmPage(),
@@ -113,19 +115,4 @@ class AppRouter {
       ),
     ],
   );
-}
-
-// Page temporaire pour éviter l'erreur de compilation
-class SharingPageStub extends StatelessWidget {
-  const SharingPageStub({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Partager ma carte')),
-      body: const Center(
-        child: Text('Page de partage - En développement'),
-      ),
-    );
-  }
 }

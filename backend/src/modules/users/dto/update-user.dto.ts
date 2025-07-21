@@ -8,6 +8,7 @@ import {
   Matches,
   IsEnum,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { UserRole } from '../../../entities/user.entity';
 
 export class UpdateUserDto {
@@ -24,12 +25,13 @@ export class UpdateUserDto {
   username?: string;
 
   @ApiProperty({
-    description: 'Adresse email',
+    description: 'Email de contact',
     example: 'jean.dupont@example.com',
     required: false,
   })
   @IsOptional()
-  @IsEmail({}, { message: 'Adresse email invalide' })
+  @IsEmail()
+  @Transform(({ value }) => value?.toLowerCase().trim())
   email?: string;
 
   @ApiProperty({
