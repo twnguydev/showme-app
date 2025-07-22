@@ -78,7 +78,6 @@ export class Subscription {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  // Relations
   @OneToOne(() => User, (user) => user.subscription)
   @JoinColumn()
   user: User;

@@ -64,11 +64,8 @@ class ShowmeApp extends StatelessWidget {
                     authRepository: context.read<AuthRepository>(),
                   )..add(AuthCheckRequested()),
                 ),
-                
-                // CardBloc avec ApiService
-                BlocProvider<CardBloc>(
-                  create: (context) => CardBloc(),
-                ),
+
+                BlocProvider<CardBloc>(create: (context) => CardBloc()),
                 
                 // CrmBloc avec ApiService  
                 BlocProvider<CrmBloc>(

@@ -4,16 +4,12 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
-import 'package:showme/shared/models/profile.dart';
-import 'package:showme/shared/models/uploaded_file.dart';
+import 'package:showme/shared/models/card.dart';
 
 import '../config/app_config.dart';
 import '../models/api_response.dart';
 import '../../core/services/storage_service.dart';
 import '../../shared/models/user.dart';
-import '../../shared/models/card.dart';
-import '../../shared/models/contact_exchange.dart';
-import '../../shared/models/contact_stats.dart';
 import '../../shared/models/auth_models.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
 
@@ -210,7 +206,7 @@ class ApiService {
     try {
       await _dio.post('/auth/logout');
       return ApiResponse<void>.success(message: 'Déconnexion réussie');
-    } on DioException catch (e) {
+    } on DioException {
       // Même si l'appel échoue, on considère la déconnexion comme réussie
       return ApiResponse<void>.success(message: 'Déconnexion réussie');
     }
@@ -435,18 +431,145 @@ class ApiService {
       case 422:
         return AuthException(errorMessage.isEmpty ? 'Données de validation invalides' : errorMessage);
       case 429:
-        return AuthException('Trop de tentatives, veuillez réessayer plus tard');
+        return const AuthException('Trop de tentatives, veuillez réessayer plus tard');
       case 500:
-        return AuthException('Erreur serveur');
+        return const AuthException('Erreur serveur');
       default:
         if (e.type == DioExceptionType.connectionTimeout) {
-          return AuthException('Timeout de connexion - vérifiez votre connexion');
+          return const AuthException('Timeout de connexion - vérifiez votre connexion');
         } else if (e.type == DioExceptionType.receiveTimeout) {
-          return AuthException('Timeout de réception');
+          return const AuthException('Timeout de réception');
         } else if (e.type == DioExceptionType.connectionError) {
-          return AuthException('Erreur de connexion réseau - vérifiez votre connexion');
+          return const AuthException('Erreur de connexion réseau - vérifiez votre connexion');
         }
         return AuthException(errorMessage.isNotEmpty ? errorMessage : 'Erreur réseau: ${e.message}');
+    }
+  }
+
+  Future<ApiResponse<List<Card>>> getBusinessCards() async {
+    try {
+      final response = await _dio.get('/cards');
+      
+      final List<dynamic> cardsData = response.data['data'] ?? response.data;
+      final cards = cardsData.map((cardJson) => Card.fromJson(cardJson)).toList();
+      
+      return ApiResponse<List<Card>>(data: cards);
+    } on DioException catch (e) {
+      throw _handleDioException(e);
+    }
+  }
+
+  Future<ApiResponse<Card>> getBusinessCard(String id) async {
+    try {
+      final response = await _dio.get('/cards/$id');
+      
+      return ApiResponse<Card>(
+        data: Card.fromJson(response.data['data'] ?? response.data),
+      );
+    } on DioException catch (e) {
+      throw _handleDioException(e);
+    }
+  }
+
+  Future<ApiResponse<Card>> getPublicBusinessCard(String id) async {
+    try {
+      final response = await _dio.get('/public/cards/$id');
+      
+      return ApiResponse<Card>(
+        data: Card.fromJson(response.data['data'] ?? response.data),
+      );
+    } on DioException catch (e) {
+      throw _handleDioException(e);
+    }
+  }
+
+  Future<ApiResponse<Card>> createBusinessCard(Map<String, dynamic> cardData) async {
+    try {
+      final response = await _dio.post('/cards', data: cardData);
+      
+      return ApiResponse<Card>(
+        data: Card.fromJson(response.data['data'] ?? response.data),
+      );
+    } on DioException catch (e) {
+      throw _handleDioException(e);
+    }
+  }
+
+  Future<ApiResponse<Card>> updateBusinessCard(String id, Map<String, dynamic> updateData) async {
+    try {
+      final response = await _dio.put('/cards/$id', data: updateData);
+      
+      return ApiResponse<Card>(
+        data: Card.fromJson(response.data['data'] ?? response.data),
+      );
+    } on DioException catch (e) {
+      throw _handleDioException(e);
+    }
+  }
+
+  Future<void> deleteBusinessCard(String id) async {
+    try {
+      await _dio.delete('/cards/$id');
+    } on DioException catch (e) {
+      throw _handleDioException(e);
+    }
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> uploadCardImage(
+    String cardId,
+    File imageFile,
+    String imageType,
+  ) async {
+    try {
+      // Déterminer le type MIME du fichier
+      final mimeType = lookupMimeType(imageFile.path) ?? 'image/jpeg';
+      
+      if (!mimeType.startsWith('image/')) {
+        throw Exception('Le fichier sélectionné n\'est pas une image valide');
+      }
+
+      // Créer FormData pour l'upload multipart
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          imageFile.path,
+          filename: imageFile.path.split('/').last,
+          contentType: MediaType.parse(mimeType),
+        ),
+        'type': imageType, // 'avatar', 'logo', 'background'
+      });
+
+      final response = await _dio.post(
+        '/cards/$cardId/upload-image',
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+          headers: {
+            'Accept': 'application/json',
+          },
+        ),
+      );
+
+      return ApiResponse<Map<String, dynamic>>(
+        data: response.data as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
+      throw _handleDioException(e);
+    }
+  }
+
+  Future<Response> generateWalletPass(String id) async {
+    try {
+      return await _dio.get(
+        '/cards/$id/wallet-pass',
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: {
+            'Accept': 'application/vnd.apple.pkpass',
+          },
+        ),
+      );
+    } on DioException catch (e) {
+      throw _handleDioException(e);
     }
   }
 }

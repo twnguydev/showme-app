@@ -22,12 +22,16 @@ import {
   RefreshTokenDto,
 } from './dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
+import { UsersService } from '../users/users.service';
 
 @ApiTags('auth')
 @Controller('auth')
 @UseGuards(ThrottlerGuard)
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly userService: UsersService,
+  ) {}
 
   @Post('register')
   @ApiOperation({ summary: 'Créer un nouveau compte utilisateur' })
@@ -78,8 +82,8 @@ export class AuthController {
   @ApiOperation({ summary: 'Obtenir les informations de l\'utilisateur connecté' })
   @ApiResponse({ status: 200, description: 'Informations utilisateur' })
   @ApiResponse({ status: 401, description: 'Token invalide' })
-  async getProfile(@Request() req) {
-    return req.user;
+  async getUserWithProfile(@Request() req) {
+    return this.userService.findById(req.user.id);
   }
 
   @Post('logout')

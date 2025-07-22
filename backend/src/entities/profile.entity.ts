@@ -75,8 +75,7 @@ export class Profile {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  // Relations
-  @OneToOne(() => User)
+  @OneToOne(() => User, (user) => user.profile)
   @JoinColumn()
   user: User;
 }
