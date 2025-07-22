@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 import '../data/repositories/auth_repository.dart';
+import '../../../core/services/api_service.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _authRepository;
@@ -19,6 +20,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthRegisterRequested>(_onAuthRegisterRequested);
     on<AuthLogoutRequested>(_onAuthLogoutRequested);
     on<AuthUserUpdated>(_onAuthUserUpdated);
+    on<AuthTokenExpired>(_onAuthTokenExpired);
+
+    // Configurer le callback pour la déconnexion automatique
+    ApiService.setUnauthorizedCallback(() {
+      add(AuthTokenExpired());
+    });
   }
 
   Future<void> _onAuthCheckRequested(
@@ -166,6 +173,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         token: currentState.token,
       ));
     }
+  }
+
+  // Nouvelle méthode pour gérer l'expiration du token
+  Future<void> _onAuthTokenExpired(
+    AuthTokenExpired event,
+    Emitter<AuthState> emit,
+  ) async {
+    print('🔐 Token expiré - Déconnexion automatique');
+    
+    // Nettoyer les données d'authentification
+    await _authRepository.logout();
+    
+    // Émettre l'état non authentifié
+    emit(AuthUnauthenticated());
   }
 
   /// Gère les erreurs DioException de manière centralisée

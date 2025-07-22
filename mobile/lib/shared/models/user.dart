@@ -12,12 +12,6 @@ class User {
   final String email;
   final String? firstName;
   final String? lastName;
-  final String? company;
-  final String? position;
-  final String? phoneNumber;
-  final String? linkedinUrl;
-  final String? website;
-  final UploadedFile? profilePicture;
   final bool isActive;
   final DateTime? lastLoginAt;
   final DateTime createdAt;
@@ -39,12 +33,6 @@ class User {
     required this.email,
     this.firstName,
     this.lastName,
-    this.company,
-    this.position,
-    this.phoneNumber,
-    this.linkedinUrl,
-    this.website,
-    this.profilePicture,
     required this.isActive,
     this.lastLoginAt,
     required this.createdAt,
@@ -81,14 +69,14 @@ class User {
     return result.isNotEmpty ? result : email[0].toUpperCase();
   }
 
-  bool get hasProfilePicture => profilePicture != null && profilePicture!.url.isNotEmpty;
-  
+  bool get hasProfilePicture => profile?.avatar != null && profile!.avatar!.url.isNotEmpty;
+
   bool get isAdmin => role == 'admin';
   bool get isModerator => role == 'moderator';
   bool get isStandardUser => role == 'user';
 
-  bool get hasCompanyInfo => company != null || position != null;
-  bool get hasContactInfo => phoneNumber != null || linkedinUrl != null || website != null;
+  bool get hasCompanyInfo => profile?.company != null || profile?.position != null;
+  bool get hasContactInfo => profile?.phone != null || profile?.linkedinUrl != null || profile?.website != null;
 
   String get memberSince {
     final now = DateTime.now();
@@ -108,38 +96,6 @@ class User {
   bool get isOnline {
     if (lastLoginAt == null) return false;
     return DateTime.now().difference(lastLoginAt!).inMinutes < 15;
-  }
-
-  // Créer un Profile par défaut basé sur les données User
-  Profile get profileOrDefault {
-    if (profile != null) {
-      return profile!;
-    }
-    
-    // Créer un profile par défaut basé sur les données de User
-    return Profile(
-      id: id,
-      firstName: firstName ?? '',
-      lastName: lastName ?? '',
-      email: email,
-      company: company,
-      position: position,
-      phone: phoneNumber,
-      website: website,
-      linkedinUrl: linkedinUrl,
-      isPublic: true,
-      avatar: profilePicture != null 
-        ? UploadedFile(
-            mimeType: 'image/jpeg',
-            size: 0,
-            url: profilePicture!.url,
-            name: profilePicture!.url.split('/').last,
-            uploadedAt: createdAt,
-          )
-        : null,
-      createdAt: createdAt,
-      updatedAt: updatedAt,
-    );
   }
 
   User copyWith({
@@ -167,12 +123,6 @@ class User {
       email: email ?? this.email,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
-      company: company ?? this.company,
-      position: position ?? this.position,
-      phoneNumber: phoneNumber ?? this.phoneNumber,
-      linkedinUrl: linkedinUrl ?? this.linkedinUrl,
-      website: website ?? this.website,
-      profilePicture: profilePicture ?? this.profilePicture,
       isActive: isActive ?? this.isActive,
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
       createdAt: createdAt,
@@ -195,19 +145,7 @@ class User {
       username: 'tanguy.gbt',
       email: 'tanguy.gbt@showme.com',
       firstName: 'Tanguy',
-      lastName: 'Gbt',
-      company: 'Showme Corp',
-      position: 'Consultant Senior',
-      phoneNumber: '+33 6 12 34 56 78',
-      linkedinUrl: 'https://linkedin.com/in/tanguy-gbt',
-      website: 'https://tanguygbt.com',
-      profilePicture: UploadedFile(
-        mimeType: 'image/jpeg',
-        size: 0,
-        url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-        name: 'photo-1507003211169-0a1dd7228f2d.jpg',
-        uploadedAt: now,
-      ),
+      lastName: 'Gbty',
       isActive: true,
       lastLoginAt: now.subtract(const Duration(minutes: 5)),
       createdAt: now.subtract(const Duration(days: 180)),

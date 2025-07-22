@@ -2,6 +2,8 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
 import 'package:showme/shared/models/profile.dart';
 import 'package:showme/shared/models/uploaded_file.dart';
 
@@ -18,11 +20,19 @@ import '../../features/auth/data/repositories/auth_repository.dart';
 class ApiService {
   late final Dio _dio;
   
+  // Callback pour gérer la déconnexion automatique
+  static void Function()? _onUnauthorized;
+  
   // Mode développement - utiliser les démos ou le vrai backend
-  static const bool USE_REAL_BACKEND = kDebugMode; // Changez à true pour utiliser le backend
+  static const bool USE_REAL_BACKEND = kDebugMode;
   static const String BACKEND_URL = kDebugMode 
-    ? 'http://localhost:3000/api/v1'  // URL locale pour développement
-    : 'https://votre-backend.com/api'; // URL production
+    ? 'http://localhost:3000/api/v1'
+    : 'https://votre-backend.com/api';
+
+  // Méthode statique pour configurer le callback de déconnexion
+  static void setUnauthorizedCallback(void Function() callback) {
+    _onUnauthorized = callback;
+  }
 
   ApiService() {
     _dio = Dio();
@@ -60,17 +70,25 @@ class ApiService {
           }
           handler.next(response);
         },
-        onError: (error, handler) {
+        onError: (error, handler) async {
           if (kDebugMode && USE_REAL_BACKEND) {
             print('❌ API Error: ${error.response?.statusCode} ${error.requestOptions.path}');
             print('📄 Error data: ${error.response?.data}');
           }
           
-          // Gestion globale des erreurs
+          // Gestion globale des erreurs 401
           if (error.response?.statusCode == 401) {
-            // Token expiré, rediriger vers la connexion
-            StorageService.clearToken();
+            print('🔐 Token expiré ou invalide - Déconnexion automatique');
+            
+            // Nettoyer les données d'authentification
+            await _handleUnauthorized();
+            
+            // Déclencher la déconnexion via le callback
+            if (_onUnauthorized != null) {
+              _onUnauthorized!();
+            }
           }
+          
           handler.next(error);
         },
       ),
@@ -86,17 +104,23 @@ class ApiService {
     }
   }
 
+  // Méthode privée pour nettoyer les données d'authentification
+  Future<void> _handleUnauthorized() async {
+    try {
+      await StorageService.clearToken();
+      await StorageService.clearUser();
+      print('🧹 Données d\'authentification nettoyées');
+    } catch (e) {
+      print('❌ Erreur lors du nettoyage: $e');
+    }
+  }
+
   void dispose() {
-    // Annuler les requêtes en cours si nécessaire
     _dio.close(force: true);
   }
 
   // Auth endpoints
   Future<ApiResponse<AuthResponseData>> login(LoginRequest request) async {
-    if (!USE_REAL_BACKEND) {
-      return _demoLogin(request);
-    }
-
     try {
       final response = await _dio.post(
         '/auth/login',
@@ -116,10 +140,6 @@ class ApiService {
   }
 
   Future<ApiResponse<AuthResponseData>> register(RegisterRequest request) async {
-    if (!USE_REAL_BACKEND) {
-      return _demoRegister(request);
-    }
-
     try {
       final response = await _dio.post(
         '/auth/register',
@@ -145,10 +165,6 @@ class ApiService {
   }
 
   Future<ApiResponse<AuthResponseData>> socialLogin(SocialLoginRequest request) async {
-    if (!USE_REAL_BACKEND) {
-      return _demoSocialLogin(request);
-    }
-
     try {
       final response = await _dio.post(
         '/auth/social-login',
@@ -164,10 +180,6 @@ class ApiService {
   }
 
   Future<ApiResponse<User>> getCurrentUser() async {
-    if (!USE_REAL_BACKEND) {
-      return _demoGetCurrentUser();
-    }
-
     try {
       final response = await _dio.get('/auth/me');
       
@@ -180,10 +192,6 @@ class ApiService {
   }
 
   Future<ApiResponse<AuthResponseData>> refreshToken(RefreshTokenRequest request) async {
-    if (!USE_REAL_BACKEND) {
-      return _demoRefreshToken(request);
-    }
-
     try {
       final response = await _dio.post(
         '/auth/refresh',
@@ -199,10 +207,6 @@ class ApiService {
   }
 
   Future<ApiResponse<void>> logout() async {
-    if (!USE_REAL_BACKEND) {
-      return _demoLogout();
-    }
-
     try {
       await _dio.post('/auth/logout');
       return ApiResponse<void>.success(message: 'Déconnexion réussie');
@@ -212,225 +216,54 @@ class ApiService {
     }
   }
 
-  // Méthodes démo (existantes)
-  Future<ApiResponse<AuthResponseData>> _demoLogin(LoginRequest request) async {
-    await Future.delayed(const Duration(seconds: 1));
-    
-    if (request.identifier == 'demo@showme.com' && request.password == 'password') {
-      final user = User(
-        id: 1,
-        username: request.identifier,
-        email: request.identifier,
-        firstName: 'Tanguy',
-        lastName: 'Gbt',
-        company: 'Showme Corp',
-        position: 'Consultant Senior',
-        phoneNumber: '+33 6 12 34 56 78',
-        linkedinUrl: 'https://linkedin.com/in/exemple',
-        website: 'https://exemple.com',
-        profilePicture: null,
-        isActive: true,
-        lastLoginAt: DateTime.now(),
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        profile: Profile.demo(),
-      );
+  // Méthodes pour upload d'avatar
+  Future<ApiResponse<Map<String, dynamic>>> uploadAvatar(File imageFile) async {
+    try {
+      final mimeType = lookupMimeType(imageFile.path) ?? 'image/jpeg';
+      print('Uploading file with MIME type: $mimeType');
       
-      final authData = AuthResponseData(
-        jwt: 'demo_jwt_token_123',
-        user: user,
-        expiresAt: DateTime.now().add(const Duration(hours: 24)),
-        refreshToken: 'demo_refresh_token_123',
-      );
-      
-      return ApiResponse<AuthResponseData>(data: authData);
-    } else {
-      throw DioException(
-        requestOptions: RequestOptions(path: ''),
-        response: Response(
-          requestOptions: RequestOptions(path: ''),
-          statusCode: 401,
-          data: {'message': 'Identifiants invalides'},
+      if (!mimeType.startsWith('image/')) {
+        throw Exception('Le fichier sélectionné n\'est pas une image valide');
+      }
+
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          imageFile.path,
+          filename: imageFile.path.split('/').last,
+          contentType: MediaType.parse(mimeType),
+        ),
+      });
+
+      print('Uploading file: ${imageFile.path}');
+      print('File size: ${await imageFile.length()} bytes');
+
+      final response = await _dio.put(
+        '/users/me/avatar',
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+          headers: {
+            'Accept': 'application/json',
+          },
         ),
       );
+
+      print('Upload response: ${response.data}');
+
+      return ApiResponse<Map<String, dynamic>>(
+        data: response.data as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
+      print('Upload error: ${e.message}');
+      print('Upload error response: ${e.response?.data}');
+      throw _handleDioException(e);
+    } catch (e) {
+      print('Upload error (general): $e');
+      throw Exception('Erreur lors de l\'upload de l\'avatar: $e');
     }
   }
 
-  Future<ApiResponse<AuthResponseData>> _demoRegister(RegisterRequest request) async {
-    await Future.delayed(const Duration(seconds: 1));
-    
-    final user = User(
-      id: DateTime.now().millisecondsSinceEpoch,
-      username: request.email,
-      email: request.email,
-      firstName: request.firstName,
-      lastName: request.lastName,
-      company: request.company,
-      position: request.position,
-      phoneNumber: null,
-      linkedinUrl: null,
-      website: null,
-      profilePicture: null,
-      isActive: true,
-      lastLoginAt: DateTime.now(),
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-      profile: Profile.demo()
-    );
-    
-    final authData = AuthResponseData(
-      jwt: 'demo_jwt_token_456',
-      user: user,
-      expiresAt: DateTime.now().add(const Duration(hours: 24)),
-      refreshToken: 'demo_refresh_token_456',
-    );
-    
-    return ApiResponse<AuthResponseData>(data: authData);
-  }
-
-  Future<ApiResponse<AuthResponseData>> _demoSocialLogin(SocialLoginRequest request) async {
-    await Future.delayed(const Duration(seconds: 1));
-    
-    final user = User(
-      id: DateTime.now().millisecondsSinceEpoch,
-      username: request.email ?? 'user@${request.provider}.com',
-      email: request.email ?? 'user@${request.provider}.com',
-      firstName: request.firstName ?? 'Utilisateur',
-      lastName: request.lastName ?? request.provider.toUpperCase(),
-      company: null,
-      position: null,
-      phoneNumber: null,
-      linkedinUrl: null,
-      website: null,
-      profilePicture: UploadedFile(url: request.photoUrl ?? 'https://example.com/default.jpg'),
-      isActive: true,
-      lastLoginAt: DateTime.now(),
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-      profile: Profile.demo(),
-    );
-    
-    final authData = AuthResponseData(
-      jwt: 'demo_${request.provider}_token_${DateTime.now().millisecondsSinceEpoch}',
-      user: user,
-      expiresAt: DateTime.now().add(const Duration(hours: 24)),
-      refreshToken: 'demo_${request.provider}_refresh_${DateTime.now().millisecondsSinceEpoch}',
-    );
-    
-    return ApiResponse<AuthResponseData>(data: authData);
-  }
-
-  Future<ApiResponse<User>> _demoGetCurrentUser() async {
-    // Simulation - récupérer depuis le storage local
-    final userData = await StorageService.getUser();
-    if (userData != null) {
-      return ApiResponse<User>(data: User.fromJson(userData));
-    }
-    
-    throw DioException(
-      requestOptions: RequestOptions(path: ''),
-      response: Response(
-        requestOptions: RequestOptions(path: ''),
-        statusCode: 401,
-        data: {'message': 'Utilisateur non authentifié'},
-      ),
-    );
-  }
-
-  Future<ApiResponse<AuthResponseData>> _demoRefreshToken(RefreshTokenRequest request) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    // Simulation - générer un nouveau token
-    final user = User.demo();
-    final authData = AuthResponseData(
-      jwt: 'refreshed_jwt_token_${DateTime.now().millisecondsSinceEpoch}',
-      user: user,
-      expiresAt: DateTime.now().add(const Duration(hours: 24)),
-      refreshToken: 'new_refresh_token_${DateTime.now().millisecondsSinceEpoch}',
-    );
-    
-    return ApiResponse<AuthResponseData>(data: authData);
-  }
-
-  Future<ApiResponse<void>> _demoLogout() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return ApiResponse<void>.success(message: 'Déconnexion réussie');
-  }
-
-  // Business Cards endpoints (gardés en démo pour l'instant)
-  Future<ApiResponse<List<Card>>> getBusinessCards() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return ApiResponse<List<Card>>(data: [Card.demo()]);
-  }
-
-  Future<ApiResponse<Card>> getBusinessCard(String id) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return ApiResponse<Card>(data: Card.demo());
-  }
-
-  Future<ApiResponse<Card>> getPublicBusinessCard(String id) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return ApiResponse<Card>(data: Card.demo());
-  }
-
-  Future<ApiResponse<Card>> createBusinessCard(Map<String, dynamic> request) async {
-    await Future.delayed(const Duration(seconds: 1));
-    return ApiResponse<Card>(data: Card.demo());
-  }
-
-  Future<ApiResponse<Card>> updateBusinessCard(String id, Map<String, dynamic> request) async {
-    await Future.delayed(const Duration(seconds: 1));
-    return ApiResponse<Card>(data: Card.demo());
-  }
-
-  Future<void> deleteBusinessCard(String id) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-  }
-
-  Future<Response> generateWalletPass(String id) async {
-    await Future.delayed(const Duration(seconds: 2));
-    return Response(
-      requestOptions: RequestOptions(path: ''),
-      statusCode: 200,
-    );
-  }
-
-  Future<ApiResponse<List<ContactExchange>>> getContactExchanges() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return ApiResponse<List<ContactExchange>>(data: []);
-  }
-
-  Future<ApiResponse<ContactExchange>> createContactExchange(Map<String, dynamic> request) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    final exchange = ContactExchange(
-      id: DateTime.now().millisecondsSinceEpoch,
-      timestamp: DateTime.now(),
-      geoLocation: request['location'],
-      userAgent: request['userAgent'],
-      referrer: ExchangeMethod.values.firstWhere(
-        (e) => e.toString().split('.').last == (request['method'] ?? 'link').toLowerCase(),
-        orElse: () => ExchangeMethod.link,
-      ),
-      openedOnWallet: false,
-      contactAdded: false,
-      emailSubmitted: request['receiverEmail'],
-      deviceType: DeviceType.unknown,
-      card: Card.demo(),
-      visitor: null,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-    return ApiResponse<ContactExchange>(data: exchange);
-  }
-
-  Future<ApiResponse<ContactStats>> getContactStats() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    final stats = ContactStats.demo();
-    return ApiResponse<ContactStats>(data: stats);
-  }
-
-  // Méthodes d'authentification additionnelles
-  Future<ApiResponse<AuthResponseData>> forgotPassword(ForgotPasswordRequest request) async {
+    Future<ApiResponse<AuthResponseData>> forgotPassword(ForgotPasswordRequest request) async {
     if (!USE_REAL_BACKEND) {
       await Future.delayed(const Duration(seconds: 1));
       return ApiResponse<AuthResponseData>.success(
@@ -509,10 +342,6 @@ class ApiService {
     required String currentPassword,
     required String newPassword,
   }) async {
-    if (!USE_REAL_BACKEND) {
-      return _demoChangePassword(currentPassword, newPassword);
-    }
-
     try {
       await _dio.put('/users/me/password', data: {
         'currentPassword': currentPassword,
@@ -542,10 +371,6 @@ class ApiService {
   }
 
   Future<ApiResponse<User>> updateProfile(Map<String, dynamic> updateData) async {
-    if (!USE_REAL_BACKEND) {
-      return _demoUpdateProfile(updateData);
-    }
-
     try {
       final response = await _dio.put(
         '/users/me',
@@ -562,10 +387,6 @@ class ApiService {
 
   /// Mise à jour du profil détaillé
   Future<ApiResponse<dynamic>> updateDetailedProfile(Map<String, dynamic> updateData) async {
-    if (!USE_REAL_BACKEND) {
-      return _demoUpdateDetailedProfile(updateData);
-    }
-
     try {
       final response = await _dio.put(
         '/users/me/profile',
@@ -577,119 +398,6 @@ class ApiService {
       );
     } on DioException catch (e) {
       throw _handleDioException(e);
-    }
-  }
-
-  Future<ApiResponse<Map<String, dynamic>>> uploadAvatar(File imageFile) async {
-    if (!USE_REAL_BACKEND) {
-      return _demoUploadAvatar(imageFile);
-    }
-
-    try {
-      // Créer FormData pour l'upload multipart
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(
-          imageFile.path,
-          filename: imageFile.path.split('/').last,
-        ),
-      });
-
-      final response = await _dio.put(
-        '/users/me/avatar',
-        data: formData,
-        options: Options(
-          contentType: 'multipart/form-data',
-        ),
-      );
-
-      return ApiResponse<Map<String, dynamic>>(
-        data: response.data as Map<String, dynamic>,
-      );
-    } on DioException catch (e) {
-      throw _handleDioException(e);
-    }
-  }
-
-  Future<ApiResponse<Map<String, dynamic>>> _demoUploadAvatar(File imageFile) async {
-    await Future.delayed(const Duration(seconds: 2));
-    
-    // Simuler un upload réussi avec une URL d'image de démo
-    const demoUrl = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face';
-    
-    return ApiResponse<Map<String, dynamic>>(
-      data: {
-        'url': demoUrl,
-        'filename': imageFile.path.split('/').last,
-        'size': await imageFile.length(),
-        'uploadedAt': DateTime.now().toIso8601String(),
-      },
-    );
-  }
-
-  Future<ApiResponse<User>> _demoUpdateProfile(Map<String, dynamic> updateData) async {
-    await Future.delayed(const Duration(seconds: 1));
-    
-    // Récupérer l'utilisateur actuel depuis le storage
-    final userData = StorageService.getUser();
-    if (userData == null) {
-      throw DioException(
-        requestOptions: RequestOptions(path: ''),
-        response: Response(
-          requestOptions: RequestOptions(path: ''),
-          statusCode: 401,
-          data: {'message': 'Utilisateur non authentifié'},
-        ),
-      );
-    }
-    
-    // Créer un utilisateur mis à jour avec les nouvelles données
-    final currentUser = User.fromJson(userData);
-    final updatedUser = currentUser.copyWith(
-      firstName: updateData['firstName'],
-      lastName: updateData['lastName'],
-      email: updateData['email'],
-      phoneNumber: updateData['phoneNumber'],
-      company: updateData['company'],
-      position: updateData['position'],
-      website: updateData['website'],
-      linkedinUrl: updateData['linkedinUrl'],
-    );
-    
-    // Sauvegarder les données mises à jour
-    await StorageService.setUser(updatedUser.toJson());
-    
-    return ApiResponse<User>(data: updatedUser);
-  }
-
-  Future<ApiResponse<dynamic>> _demoUpdateDetailedProfile(Map<String, dynamic> updateData) async {
-    await Future.delayed(const Duration(seconds: 1));
-    
-    return ApiResponse<dynamic>(
-      data: {
-        'message': 'Profil détaillé mis à jour avec succès',
-        'profile': updateData,
-        'updatedAt': DateTime.now().toIso8601String(),
-      },
-    );
-  }
-
-  Future<ApiResponse<void>> _demoChangePassword(String currentPassword, String newPassword) async {
-    await Future.delayed(const Duration(seconds: 1));
-    
-    // Simuler la vérification du mot de passe actuel
-    if (currentPassword == 'password') {
-      return ApiResponse<void>.success(
-        message: 'Mot de passe modifié avec succès',
-      );
-    } else {
-      throw DioException(
-        requestOptions: RequestOptions(path: ''),
-        response: Response(
-          requestOptions: RequestOptions(path: ''),
-          statusCode: 400,
-          data: {'message': 'Mot de passe actuel incorrect'},
-        ),
-      );
     }
   }
 

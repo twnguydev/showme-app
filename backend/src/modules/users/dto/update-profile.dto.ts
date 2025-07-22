@@ -1,47 +1,10 @@
 // src/modules/users/dto/update-profile.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsBoolean, IsEmail, IsEnum, Matches } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsEmail, IsEnum, Matches, IsObject } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { UserRole } from '@/entities/user.entity';
 
 export class UpdateProfileDto {
-  @ApiProperty({
-    description: 'Prénom',
-    example: 'Jean',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  firstName?: string;
-
-  @ApiProperty({
-    description: 'Nom de famille',
-    example: 'Dupont',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  lastName?: string;
-
-  @ApiProperty({
-    description: 'Email de contact',
-    example: 'jean.dupont@example.com',
-    required: false,
-  })
-  @IsOptional()
-  @IsEmail()
-  @Transform(({ value }) => value?.toLowerCase().trim())
-  email?: string;
-
-  @ApiProperty({
-    description: 'Numéro de téléphone',
-    example: '+33 6 12 34 56 78',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  phone?: string;
-
   @ApiProperty({
     description: 'Nom de l\'entreprise',
     example: 'ShowMe Corp',
@@ -59,6 +22,48 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   position?: string;
+
+  @ApiProperty({
+    description: 'Adresse complète',
+    example: '123 Rue de l\'Innovation, Paris, France',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @ApiProperty({
+    description: 'Ville',
+    example: 'Paris',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @ApiProperty({
+    description: 'Pays',
+    example: 'France',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @ApiProperty({
+    description: 'Avatar Object',
+    example: '{"url": "https://example.com/avatar.jpg", "name": "Avatar de Jean Dupont", "size": 2048, "mimeType": "image/jpeg", "uploadedAt": "2023-10-01T12:00:00Z"}',
+    required: false,
+  })
+  @IsOptional()
+  @IsObject()
+  avatar?: {
+    url: string;
+    name: string;
+    size: number;
+    mimeType: string;
+    uploadedAt: string;
+  };
 
   @ApiProperty({
     description: 'Biographie personnelle',
@@ -88,16 +93,22 @@ export class UpdateProfileDto {
   linkedinUrl?: string;
 
   @ApiProperty({
-    description: 'URL Twitter',
-    example: 'https://twitter.com/jeandupont',
+    description: 'URL Instagram',
+    example: '',
     required: false,
   })
   @IsOptional()
   @IsString()
-  @Matches(/^[a-zA-Z0-9_.-]+$/, {
-    message: 'Le nom d\'utilisateur ne peut contenir que des lettres, chiffres, points, tirets et underscores',
+  instagramUrl?: string;
+
+  @ApiProperty({
+    description: 'URL Twitter/X',
+    example: '',
+    required: false,
   })
-  username?: string;
+  @IsOptional()
+  @IsString()
+  twitterUrl?: string;
 
   @ApiProperty({
     description: 'Numéro de téléphone',
@@ -106,59 +117,14 @@ export class UpdateProfileDto {
   })
   @IsOptional()
   @IsString()
-  phoneNumber?: string;
+  phone?: string;
 
   @ApiProperty({
-    description: 'Compte actif',
+    description: 'Compte publique',
     example: true,
     required: false,
   })
   @IsOptional()
   @IsBoolean()
-  isActive?: boolean;
-
-  @ApiProperty({
-    description: 'Email vérifié',
-    example: true,
-    required: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  emailVerified?: boolean;
-
-  @ApiProperty({
-    description: 'Fuseau horaire',
-    example: 'Europe/Paris',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  timezone?: string;
-
-  @ApiProperty({
-    description: 'Langue préférée',
-    example: 'fr',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  language?: string;
-
-  @ApiProperty({
-    description: 'Rôle utilisateur (Admin seulement)',
-    enum: UserRole,
-    required: false,
-  })
-  @IsOptional()
-  @IsEnum(UserRole)
-  role?: UserRole;
-
-  @ApiProperty({
-    description: 'Photo de profil (URL)',
-    example: 'https://example.com/profile.jpg',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  profilePicture?: string;
+  isPublic?: boolean;
 }

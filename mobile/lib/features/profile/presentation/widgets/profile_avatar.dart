@@ -21,10 +21,10 @@ class ProfileAvatar extends StatelessWidget {
             CircleAvatar(
               radius: 60,
               backgroundColor: Theme.of(context).colorScheme.primary,
-              backgroundImage: user.profilePicture != null
-                  ? NetworkImage(user.profilePicture!.url)
+              backgroundImage: user.profile?.avatar != null
+                  ? NetworkImage(user.profile!.avatar!.url)
                   : null,
-              child: user.profilePicture == null
+              child: user.profile?.avatar == null
                   ? Text(
                       user.initials,
                       style: const TextStyle(
@@ -67,9 +67,9 @@ class ProfileAvatar extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        if (user.position != null && user.company != null)
+        if (user.profile?.position != null && user.profile?.company != null)
           Text(
-            '${user.position} chez ${user.company}',
+            '${user.profile!.position} chez ${user.profile!.company}',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: Colors.grey[600],
             ),

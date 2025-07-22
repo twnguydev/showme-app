@@ -39,30 +39,6 @@ export class User {
   @Column({ nullable: true })
   lastName?: string;
 
-  @Column({ nullable: true })
-  company?: string;
-
-  @Column({ nullable: true })
-  position?: string;
-
-  @Column({ nullable: true })
-  phoneNumber?: string;
-
-  @Column({ nullable: true })
-  linkedinUrl?: string;
-
-  @Column({ nullable: true })
-  website?: string;
-
-  @Column({ type: 'json', nullable: true })
-  profilePicture?: {
-    url: string;
-    name?: string;
-    size?: number;
-    mimeType?: string;
-    uploadedAt?: Date;
-  };
-
   @Column({ select: false })
   @Exclude()
   passwordHash: string;

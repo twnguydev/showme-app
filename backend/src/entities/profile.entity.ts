@@ -16,15 +16,6 @@ export class Profile {
   id: number;
 
   @Column({ nullable: true })
-  firstName?: string;
-
-  @Column({ nullable: true })
-  lastName?: string;
-
-  @Column({ nullable: true })
-  email?: string;
-
-  @Column({ nullable: true })
   phone?: string;
 
   @Column({ nullable: true })
@@ -88,16 +79,4 @@ export class Profile {
   @OneToOne(() => User)
   @JoinColumn()
   user: User;
-
-  // Getters
-  get fullName(): string {
-    const first = this.firstName || '';
-    const last = this.lastName || '';
-    return `${first} ${last}`.trim();
-  }
-
-  get displayName(): string {
-    const name = this.fullName;
-    return name.length > 0 ? name : this.email || 'Utilisateur';
-  }
 }

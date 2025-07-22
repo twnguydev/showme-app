@@ -1,6 +1,7 @@
 // mobile/lib/shared/presentation/widgets/showme_sliver_app_bar.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:showme/shared/models/user.dart';
 import '../../../core/design/showme_design_system.dart';
 import '../../../features/auth/bloc/auth_bloc.dart';
 import '../../../features/auth/bloc/auth_state.dart';
@@ -223,8 +224,8 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
     }
   }
 
-  Widget _buildAvatarFromUser(dynamic user) {
-    if (user?.profilePicture != null) {
+  Widget _buildAvatarFromUser(User? user) {
+    if (user?.profile?.avatar != null) {
       // Avatar avec photo de profil
       return Container(
         width: 36,
@@ -246,7 +247,7 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
         child: ClipRRect(
           borderRadius: BorderRadius.circular(7),
           child: Image.network(
-            user.profilePicture!,
+            user?.profile?.avatar?.url ?? '',
             width: 36,
             height: 36,
             fit: BoxFit.cover,

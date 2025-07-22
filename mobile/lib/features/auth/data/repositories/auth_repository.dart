@@ -95,7 +95,7 @@ class AuthRepository {
       return response.data;
     } catch (e) {
       // Si l'API échoue, essayer de récupérer depuis le cache local
-      final userData = StorageService.getUser();
+      final userData = await StorageService.getUser();
       if (userData != null) {
         return User.fromJson(userData);
       }
@@ -343,7 +343,7 @@ class AuthRepository {
       await _apiService.verifyEmail(token);
       
       // Mettre à jour le statut de vérification de l'utilisateur local
-      final userData = StorageService.getUser();
+      final userData = await StorageService.getUser();
       if (userData != null) {
         final user = User.fromJson(userData);
         final updatedUser = user.copyWith(emailVerified: true);

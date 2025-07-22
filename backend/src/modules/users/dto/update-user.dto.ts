@@ -13,18 +13,6 @@ import { UserRole } from '../../../entities/user.entity';
 
 export class UpdateUserDto {
   @ApiProperty({
-    description: 'Nom d\'utilisateur',
-    example: 'jean.dupont',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  @Matches(/^[a-zA-Z0-9_.-]+$/, {
-    message: 'Le nom d\'utilisateur ne peut contenir que des lettres, chiffres, points, tirets et underscores',
-  })
-  username?: string;
-
-  @ApiProperty({
     description: 'Email de contact',
     example: 'jean.dupont@example.com',
     required: false,
@@ -51,51 +39,6 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   lastName?: string;
-
-  @ApiProperty({
-    description: 'Nom de l\'entreprise',
-    example: 'ShowMe Corp',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  company?: string;
-
-  @ApiProperty({
-    description: 'Poste occupé',
-    example: 'Consultant Senior',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  position?: string;
-
-  @ApiProperty({
-    description: 'Numéro de téléphone',
-    example: '+33 6 12 34 56 78',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  phoneNumber?: string;
-
-  @ApiProperty({
-    description: 'URL LinkedIn',
-    example: 'https://linkedin.com/in/jean-dupont',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  linkedinUrl?: string;
-
-  @ApiProperty({
-    description: 'Site web personnel',
-    example: 'https://jeandupont.com',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  website?: string;
 
   @ApiProperty({
     description: 'Compte actif',

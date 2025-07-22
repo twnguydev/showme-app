@@ -1,4 +1,6 @@
 // mobile/lib/features/auth/bloc/auth_event.dart
+import '../../../shared/models/user.dart';
+
 abstract class AuthEvent {}
 
 class AuthCheckRequested extends AuthEvent {}
@@ -38,7 +40,13 @@ class AuthRegisterRequested extends AuthEvent {
 class AuthLogoutRequested extends AuthEvent {}
 
 class AuthUserUpdated extends AuthEvent {
-  final dynamic user; // Remplacez par votre type User
+  final User user;
 
   AuthUserUpdated({required this.user});
 }
+
+// Nouvel event pour gérer l'expiration automatique du token
+class AuthTokenExpired extends AuthEvent {}
+
+// Event optionnel pour forcer la vérification du token
+class AuthTokenValidationRequested extends AuthEvent {}

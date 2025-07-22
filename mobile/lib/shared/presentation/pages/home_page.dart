@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:showme/shared/models/user.dart';
 
 import '../../../core/design/showme_design_system.dart';
 import '../../../features/card/bloc/card_bloc.dart';
@@ -140,19 +141,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           final activeCard = cardState.cards.first;
                           return ShowmeCardWidget(
                             card: activeCard,
-                            profile: authState is AuthAuthenticated ? authState.user.profileOrDefault : Profile.demo(),
+                            user: authState is AuthAuthenticated ? authState.user : User.demo(),
+                            profile: authState is AuthAuthenticated
+                              ? (authState.user.profile ?? Profile.demo())
+                              : Profile.demo(),
                             size: CardSize.large,
                             onTap: () => context.go('/cards/${activeCard.id}'),
                           );
                         } else if (cardState is CardLoading) {
                           return _buildCardLoadingSkeleton();
                         } else {
-                          // Créer une carte basée sur les infos utilisateur réelles
-                          if (authState is AuthAuthenticated) {
-                            return _buildDynamicCardFromUser(authState.user);
-                          } else {
-                            return _buildEmptyCardState();
-                          }
+                          return _buildEmptyCardState();
                         }
                       },
                     );
@@ -182,7 +181,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     }
 
     // Utiliser profileOrDefault qui gère automatiquement le cas null
-    final profile = user.profileOrDefault;
+    final profile = user.profile;
 
     // Créer une carte temporaire basée sur le profile
     final dynamicCard = CardModel.Card(
@@ -219,6 +218,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         children: [
           ShowmeCardWidget(
             card: dynamicCard,
+            user: user,
             profile: profile,
             size: CardSize.large,
             onTap: () => context.go('/cards/new'),
@@ -228,7 +228,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             top: ShowmeDesign.spacingLg,
             left: ShowmeDesign.spacingLg,
             child: Container(
-              padding: EdgeInsets.symmetric(
+              padding: const EdgeInsets.symmetric(
                 horizontal: ShowmeDesign.spacingSm,
                 vertical: ShowmeDesign.spacingXs,
               ),

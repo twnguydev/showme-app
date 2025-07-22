@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:showme/shared/models/profile.dart';
+import 'package:showme/shared/models/user.dart';
 
 import '../../../core/design/showme_design_system.dart';
 import '../../models/card.dart' as CardModel;
@@ -9,6 +10,7 @@ import '../../models/card_theme.dart';
 
 class ShowmeCardWidget extends StatefulWidget {
   final CardModel.Card card;
+  final User user;
   final Profile profile;
   final VoidCallback? onTap;
   final bool showActions;
@@ -18,6 +20,7 @@ class ShowmeCardWidget extends StatefulWidget {
   const ShowmeCardWidget({
     super.key,
     required this.card,
+    required this.user,
     required this.profile,
     this.onTap,
     this.showActions = true,
@@ -158,11 +161,13 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
 
   BoxDecoration _buildCardDecoration() {
     final gradient = CardThemeHelper.getGradient(widget.card.theme);
-    
+
     return BoxDecoration(
       gradient: gradient,
       borderRadius: BorderRadius.circular(ShowmeDesign.radiusXl),
-      boxShadow: _isHovered ? CardThemeHelper.getShadows(widget.card.theme) : ShowmeDesign.cardShadow,
+      boxShadow: _isHovered
+          ? CardThemeHelper.getShadows(widget.card.theme)
+          : ShowmeDesign.cardShadow,
       border: Border.all(
         color: Colors.white.withOpacity(0.2),
         width: 1,
@@ -198,7 +203,7 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
               );
             },
           ),
-          
+
           // Motifs géométriques
           Positioned.fill(
             child: CustomPaint(
@@ -207,7 +212,7 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
               ),
             ),
           ),
-          
+
           // Cercles décoratifs
           Positioned(
             top: -50,
@@ -221,7 +226,7 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
               ),
             ),
           ),
-          
+
           Positioned(
             bottom: -30,
             left: -30,
@@ -305,9 +310,9 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
             );
           },
         ),
-        
+
         const Spacer(),
-        
+
         // Logo entreprise ou icône
         if (widget.profile.company != null)
           Container(
@@ -326,16 +331,17 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
     );
   }
 
-Widget _buildMainInfo() {
+  Widget _buildMainInfo() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Nom - Fixed null safety
         Text(
           _getFullName(),
-          style: (widget.size == CardSize.compact 
-              ? ShowmeDesign.bodyLarge 
-              : ShowmeDesign.h3).copyWith(
+          style: (widget.size == CardSize.compact
+                  ? ShowmeDesign.bodyLarge
+                  : ShowmeDesign.h3)
+              .copyWith(
             color: Colors.white,
             fontWeight: FontWeight.bold,
             shadows: [
@@ -349,23 +355,24 @@ Widget _buildMainInfo() {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        
+
         const SizedBox(height: ShowmeDesign.spacingXs),
-        
+
         // Titre/Poste
         if (widget.profile.position != null)
           Text(
             widget.profile.position!,
-            style: (widget.size == CardSize.compact 
-                ? ShowmeDesign.bodySmall 
-                : ShowmeDesign.bodyMedium).copyWith(
+            style: (widget.size == CardSize.compact
+                    ? ShowmeDesign.bodySmall
+                    : ShowmeDesign.bodyMedium)
+                .copyWith(
               color: Colors.white.withOpacity(0.9),
               fontWeight: FontWeight.w500,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-        
+
         // Entreprise
         if (widget.profile.company != null) ...[
           const SizedBox(height: ShowmeDesign.spacingXs),
@@ -390,7 +397,7 @@ Widget _buildMainInfo() {
             ],
           ),
         ],
-        
+
         // Stats pour les grandes cartes
         if (widget.size != CardSize.compact) ...[
           const SizedBox(height: ShowmeDesign.spacingSm),
@@ -588,22 +595,22 @@ Widget _buildMainInfo() {
   }
 
   String _getFullName() {
-    final firstName = widget.profile.firstName ?? '';
-    final lastName = widget.profile.lastName ?? '';
+    final firstName = widget.user.firstName ?? '';
+    final lastName = widget.user.lastName ?? '';
     final fullName = '$firstName $lastName'.trim();
-    
+
     // If both are empty, fallback to email or a default
     if (fullName.isEmpty) {
-      return widget.profile.email ?? 'Utilisateur';
+      return widget.user.email;
     }
-    
+
     return fullName;
   }
 
   String _getInitials() {
     final firstName = widget.profile.firstName ?? '';
     final lastName = widget.profile.lastName ?? '';
-    
+
     if (firstName.isNotEmpty && lastName.isNotEmpty) {
       return '${firstName[0]}${lastName[0]}'.toUpperCase();
     } else if (firstName.isNotEmpty) {
@@ -658,7 +665,7 @@ class GeometricPatternPainter extends CustomPainter {
       8,
       paint,
     );
-    
+
     canvas.drawCircle(
       Offset(size.width * 0.2, size.height * 0.8),
       12,

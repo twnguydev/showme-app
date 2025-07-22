@@ -25,7 +25,7 @@ class EditProfilePage extends StatefulWidget {
 class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
   final ImagePicker _imagePicker = ImagePicker();
-  
+
   // Controllers pour les champs de texte
   late TextEditingController _firstNameController;
   late TextEditingController _lastNameController;
@@ -36,9 +36,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController _websiteController;
   late TextEditingController _linkedinController;
   late TextEditingController _bioController;
-  
+
   File? _selectedImage;
-  bool _isLoading = false;
 
   @override
   void initState() {
@@ -53,12 +52,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
       _firstNameController = TextEditingController(text: user.firstName ?? '');
       _lastNameController = TextEditingController(text: user.lastName ?? '');
       _emailController = TextEditingController(text: user.email);
-      _phoneController = TextEditingController(text: user.phoneNumber ?? '');
-      _companyController = TextEditingController(text: user.company ?? '');
-      _positionController = TextEditingController(text: user.position ?? '');
-      _websiteController = TextEditingController(text: user.website ?? '');
-      _linkedinController = TextEditingController(text: user.linkedinUrl ?? '');
-      _bioController = TextEditingController(text: ''); // Bio depuis le profil si disponible
+      _phoneController = TextEditingController(text: user.profile?.phone ?? '');
+      _companyController = TextEditingController(text: user.profile?.company ?? '');
+      _positionController = TextEditingController(text: user.profile?.position ?? '');
+      _websiteController = TextEditingController(text: user.profile?.website ?? '');
+      _linkedinController = TextEditingController(text: user.profile?.linkedinUrl ?? '');
+      _bioController =
+          TextEditingController(text: user.profile?.bio ?? ''); // Bio depuis le profil si disponible
     } else {
       _firstNameController = TextEditingController();
       _lastNameController = TextEditingController();
@@ -95,7 +95,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           if (state is ProfileUpdateSuccess) {
             // Mettre à jour l'AuthBloc avec les nouvelles données
             context.read<AuthBloc>().add(AuthUserUpdated(user: state.user));
-            
+
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Profil mis à jour avec succès !'),
@@ -103,7 +103,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 behavior: SnackBarBehavior.floating,
               ),
             );
-            
+
             _navigateBack();
           } else if (state is ProfileUpdateError) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -126,36 +126,36 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   margin: const EdgeInsets.only(right: 16),
                   child: BlocBuilder<ProfileBloc, ProfileState>(
                     builder: (context, state) {
-                      final isLoading = state is ProfileUpdateLoading || 
-                                      state is ProfileAvatarUploadLoading;
-                      
+                      final isLoading = state is ProfileUpdateLoading ||
+                          state is ProfileAvatarUploadLoading;
+
                       return IconButton(
                         onPressed: isLoading ? null : _saveProfile,
                         icon: Container(
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: isLoading 
-                              ? ShowmeDesign.neutral300 
-                              : ShowmeDesign.primaryBlue,
+                            color: isLoading
+                                ? ShowmeDesign.neutral300
+                                : ShowmeDesign.primaryBlue,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: isLoading
-                            ? SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    ShowmeDesign.neutral600,
+                              ? SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      ShowmeDesign.neutral600,
+                                    ),
                                   ),
+                                )
+                              : const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 18,
                                 ),
-                              )
-                            : const Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 18,
-                              ),
                         ),
                       );
                     },
@@ -163,7 +163,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
               ],
             ),
-            
+
             // Contenu
             SliverToBoxAdapter(
               child: Padding(
@@ -175,32 +175,32 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     children: [
                       // Section photo de profil
                       _buildAvatarSection(),
-                      
+
                       const SizedBox(height: 32),
-                      
+
                       // Section informations personnelles
                       _buildPersonalInfoSection(),
-                      
+
                       const SizedBox(height: 24),
-                      
+
                       // Section professionnelle
                       _buildProfessionalInfoSection(),
-                      
+
                       const SizedBox(height: 24),
-                      
+
                       // Section contact
                       _buildContactInfoSection(),
-                      
+
                       const SizedBox(height: 24),
-                      
+
                       // Section biographie
                       _buildBioSection(),
-                      
+
                       const SizedBox(height: 32),
-                      
+
                       // Bouton de sauvegarde (version mobile)
                       _buildSaveButton(),
-                      
+
                       const SizedBox(height: 32),
                     ],
                   ),
@@ -218,9 +218,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       builder: (context, authState) {
         String? currentAvatarUrl;
         if (authState is AuthAuthenticated) {
-          currentAvatarUrl = authState.user.profilePicture!.url;
+          currentAvatarUrl = authState.user.profile?.avatar?.url;
         }
-        
+
         return Center(
           child: Column(
             children: [
@@ -241,7 +241,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       ),
                       child: CircleAvatar(
                         radius: 56,
-                        backgroundColor: ShowmeDesign.primaryBlue.withOpacity(0.1),
+                        backgroundColor:
+                            ShowmeDesign.primaryBlue.withOpacity(0.1),
                         backgroundImage: _getAvatarImage(currentAvatarUrl),
                         child: _getAvatarImage(currentAvatarUrl) == null
                             ? Text(
@@ -464,9 +465,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget _buildSaveButton() {
     return BlocBuilder<ProfileBloc, ProfileState>(
       builder: (context, state) {
-        final isLoading = state is ProfileUpdateLoading || 
-                          state is ProfileAvatarUploadLoading;
-        
+        final isLoading = state is ProfileUpdateLoading ||
+            state is ProfileAvatarUploadLoading;
+
         return SizedBox(
           width: double.infinity,
           height: 56,
@@ -489,7 +490,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -532,7 +534,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   String _getInitials() {
     final firstName = _firstNameController.text.trim();
     final lastName = _lastNameController.text.trim();
-    
+
     if (firstName.isNotEmpty && lastName.isNotEmpty) {
       return '${firstName[0]}${lastName[0]}'.toUpperCase();
     } else if (firstName.isNotEmpty) {
@@ -550,42 +552,49 @@ class _EditProfilePageState extends State<EditProfilePage> {
       maxHeight: 1024,
       imageQuality: 85,
     );
-    
+
     if (image != null) {
       setState(() {
         _selectedImage = File(image.path);
       });
 
       // ignore: use_build_context_synchronously
-      context.read<ProfileBloc>().add(
-        ProfileAvatarUploadRequested(_selectedImage!)
-      );
+      context
+          .read<ProfileBloc>()
+          .add(ProfileAvatarUploadRequested(_selectedImage!));
     }
   }
 
   void _saveProfile() {
     if (_formKey.currentState!.validate()) {
       final updateData = {
-        'firstName': _firstNameController.text.trim(),
-        'lastName': _lastNameController.text.trim(),
-        'email': _emailController.text.trim(),
-        'phoneNumber': _phoneController.text.trim().isEmpty 
-            ? null 
-            : _phoneController.text.trim(),
-        'company': _companyController.text.trim().isEmpty 
-            ? null 
-            : _companyController.text.trim(),
-        'position': _positionController.text.trim().isEmpty 
-            ? null 
-            : _positionController.text.trim(),
-        'website': _websiteController.text.trim().isEmpty 
-            ? null 
-            : _websiteController.text.trim(),
-        'linkedinUrl': _linkedinController.text.trim().isEmpty 
-            ? null 
-            : _linkedinController.text.trim(),
+        'user': {
+          'email': _emailController.text.trim(),
+          'firstName': _firstNameController.text.trim(),
+          'lastName': _lastNameController.text.trim(),
+        },
+        'profile': {
+          'phone': _phoneController.text.trim().isEmpty
+              ? null
+              : _phoneController.text.trim(),
+          'bio': _bioController.text.trim().isEmpty
+              ? null
+              : _bioController.text.trim(),
+          'company': _companyController.text.trim().isEmpty
+              ? null
+              : _companyController.text.trim(),
+          'position': _positionController.text.trim().isEmpty
+              ? null
+              : _positionController.text.trim(),
+          'website': _websiteController.text.trim().isEmpty
+              ? null
+              : _websiteController.text.trim(),
+          'linkedinUrl': _linkedinController.text.trim().isEmpty
+              ? null
+              : _linkedinController.text.trim(),
+        },
       };
-      
+
       context.read<ProfileBloc>().add(ProfileUpdateRequested(updateData));
     }
   }
