@@ -188,7 +188,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   // Logo animé
                   _buildAnimatedLogo(),
                   
-                  SizedBox(height: ShowmeDesign.spacingXl),
+                  SizedBox(height: ShowmeDesign.spacing5xl),
                   
                   // Formulaire animé
                   _buildAnimatedForm(),
@@ -216,26 +216,26 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               child: Column(
                 children: [
                   // Icône avec gradient
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      gradient: ShowmeDesign.primaryGradient,
-                      borderRadius: BorderRadius.circular(ShowmeDesign.radius2xl),
-                      boxShadow: ShowmeDesign.premiumShadow,
-                    ),
-                    child: const Icon(
-                      Icons.business_center_rounded,
-                      size: 60,
-                      color: Colors.white,
-                    ),
-                  ),
+                  // Container(
+                  //   width: 120,
+                  //   height: 120,
+                  //   decoration: BoxDecoration(
+                  //     gradient: ShowmeDesign.primaryGradient,
+                  //     borderRadius: BorderRadius.circular(ShowmeDesign.radius2xl),
+                  //     boxShadow: ShowmeDesign.premiumShadow,
+                  //   ),
+                  //   child: const Icon(
+                  //     Icons.business_center_rounded,
+                  //     size: 60,
+                  //     color: Colors.white,
+                  //   ),
+                  // ),
                   
                   SizedBox(height: ShowmeDesign.spacingXl),
                   
                   // Nom de l'app avec effet
                   Text(
-                      'Showme',
+                      'Qard',
                       style: ShowmeDesign.h1.copyWith(
                         color: Colors.black,
                         fontWeight: FontWeight.w900,

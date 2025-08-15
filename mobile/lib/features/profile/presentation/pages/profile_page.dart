@@ -38,6 +38,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ShowmeSliverAppBar(
                   title: 'Mon profil',
                   showBackButton: true,
+                  onBackPressed: () => context.pop(),
                   showProfileIcon: false,
                   actions: [
                     Container(
@@ -60,7 +61,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             color: ShowmeDesign.neutral600,
                           ),
                         ),
-                        onPressed: () => _showEditProfile(),
+                        onPressed: () => context.push('/profile/edit'),
                       ),
                     ),
                   ],
@@ -484,7 +485,7 @@ class _ProfilePageState extends State<ProfilePage> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _showEditProfile,
+              onPressed: () => context.push('/profile/edit'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: ShowmeDesign.primaryBlue,
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -621,10 +622,6 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       );
     }
-  }
-
-  void _showEditProfile() {
-    context.go('/profile/edit');
   }
 
   void _showSettings() {

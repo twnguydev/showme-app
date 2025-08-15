@@ -197,11 +197,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       _buildBioSection(),
 
                       const SizedBox(height: 32),
-
-                      // Bouton de sauvegarde (version mobile)
-                      _buildSaveButton(),
-
-                      const SizedBox(height: 32),
                     ],
                   ),
                 ),
@@ -459,61 +454,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ...children,
         ],
       ),
-    );
-  }
-
-  Widget _buildSaveButton() {
-    return BlocBuilder<ProfileBloc, ProfileState>(
-      builder: (context, state) {
-        final isLoading = state is ProfileUpdateLoading ||
-            state is ProfileAvatarUploadLoading;
-
-        return SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: ElevatedButton(
-            onPressed: isLoading ? null : _saveProfile,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: ShowmeDesign.primaryBlue,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(ShowmeDesign.radiusLg),
-              ),
-            ),
-            child: isLoading
-                ? Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Sauvegarde...',
-                        style: ShowmeDesign.bodyLarge.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  )
-                : Text(
-                    'Sauvegarder les modifications',
-                    style: ShowmeDesign.bodyLarge.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-          ),
-        );
-      },
     );
   }
 

@@ -8,8 +8,6 @@ import '../../../../shared/models/card_theme.dart' as CardTheme;
 class DynamicCardPreview extends StatefulWidget {
   final CardTheme.CardTheme theme;
   final String title;
-  final String firstName;
-  final String lastName;
   final String position;
   final String company;
   final String email;
@@ -21,8 +19,6 @@ class DynamicCardPreview extends StatefulWidget {
     super.key,
     required this.theme,
     required this.title,
-    required this.firstName,
-    required this.lastName,
     required this.position,
     required this.company,
     required this.email,
@@ -307,7 +303,7 @@ class _DynamicCardPreviewState extends State<DynamicCardPreview>
       children: [
         // Nom complet
         Text(
-          _getFullName(),
+          widget.title,
           style: ShowmeDesign.h3.copyWith(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -427,32 +423,11 @@ class _DynamicCardPreviewState extends State<DynamicCardPreview>
     );
   }
 
-  String _getFullName() {
-    final firstName = widget.firstName.trim();
-    final lastName = widget.lastName.trim();
-    
-    if (firstName.isEmpty && lastName.isEmpty) {
-      return widget.email.isNotEmpty ? widget.email : 'Utilisateur';
-    }
-    
-    return '$firstName $lastName'.trim();
-  }
-
   String _getInitials() {
-    final firstName = widget.firstName.trim();
-    final lastName = widget.lastName.trim();
+    final parts = widget.title.split(' ');
+    if (parts.length < 3) return widget.title.isNotEmpty ? widget.title[0].toUpperCase() : 'C';
 
-    if (firstName.isNotEmpty && lastName.isNotEmpty) {
-      return '${firstName[0]}${lastName[0]}'.toUpperCase();
-    } else if (firstName.isNotEmpty) {
-      return firstName.substring(0, firstName.length > 1 ? 2 : 1).toUpperCase();
-    } else if (lastName.isNotEmpty) {
-      return lastName.substring(0, lastName.length > 1 ? 2 : 1).toUpperCase();
-    } else if (widget.email.isNotEmpty) {
-      return widget.email.substring(0, widget.email.length > 1 ? 2 : 1).toUpperCase();
-    }
-    
-    return 'US';
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
   }
 
   List<Map<String, dynamic>> _getVisibleContacts() {

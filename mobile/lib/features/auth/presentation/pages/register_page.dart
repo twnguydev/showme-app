@@ -137,7 +137,7 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
                 padding: EdgeInsets.all(ShowmeDesign.spacingXl),
                 child: Column(
                   children: [
-                    SizedBox(height: ShowmeDesign.spacingXl),
+                    // SizedBox(height: ShowmeDesign.spacingXl),
                     
                     // Header compact
                     _buildHeader(),
@@ -159,25 +159,25 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
   Widget _buildHeader() {
     return Column(
       children: [
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            gradient: ShowmeDesign.successGradient,
-            borderRadius: BorderRadius.circular(ShowmeDesign.radiusXl),
-            boxShadow: ShowmeDesign.cardShadow,
-          ),
-          child: const Icon(
-            Icons.person_add_rounded,
-            size: 40,
-            color: Colors.white,
-          ),
-        ),
+        // Container(
+        //   width: 80,
+        //   height: 80,
+        //   decoration: BoxDecoration(
+        //     gradient: ShowmeDesign.successGradient,
+        //     borderRadius: BorderRadius.circular(ShowmeDesign.radiusXl),
+        //     boxShadow: ShowmeDesign.cardShadow,
+        //   ),
+        //   child: const Icon(
+        //     Icons.person_add_rounded,
+        //     size: 40,
+        //     color: Colors.white,
+        //   ),
+        // ),
         
         SizedBox(height: ShowmeDesign.spacingLg),
         
         Text(
-          'Rejoignez Showme',
+          'Rejoignez Qard',
           style: ShowmeDesign.h2.copyWith(
             color: ShowmeDesign.neutral900,
             fontWeight: FontWeight.w800,
@@ -213,32 +213,39 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Champs nom et prénom
-                    AuthTextField(
-                        controller: _firstNameController,
-                        label: 'Prénom',
-                        prefixIcon: Icons.person_outlined,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Requis';
-                          }
-                          return null;
-                        },
-                    ),
-
-                    SizedBox(height: ShowmeDesign.spacingMd),
-
-                    AuthTextField(
-                            controller: _lastNameController,
-                            label: 'Nom',
-                            prefixIcon: Icons.person_outlined,
+                    // Champs nom et prénom en ligne
+                    Row(
+                      children: [
+                        Expanded(
+                          child: AuthTextField(
+                            controller: _firstNameController,
+                            label: 'Prénom',
+                            prefixIcon: Icons.person_outline,
                             validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Requis';
+                              if (value == null || value.isEmpty) {
+                                return 'Veuillez saisir votre prénom';
                               }
                               return null;
                             },
                           ),
+                        ),
+                        SizedBox(width: ShowmeDesign.spacingMd),
+                        Expanded(
+                          child: AuthTextField(
+                            controller: _lastNameController,
+                            label: 'Nom',
+                            prefixIcon: Icons.person_outline,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Veuillez saisir votre nom';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    
                     
                     SizedBox(height: ShowmeDesign.spacingMd),
                     

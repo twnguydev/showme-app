@@ -93,7 +93,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     : 'Accueil',
                   showWelcomeSection: true,
                   showProfileIcon: true,
-                  onProfilePressed: () => context.go('/profile'),
+                  onProfilePressed: () => context.push('/profile'),
                   // Passer l'utilisateur pour afficher son avatar dans l'AppBar
                   user: authState is AuthAuthenticated ? authState.user : null,
                 );

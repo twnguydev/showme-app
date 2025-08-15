@@ -1,5 +1,6 @@
 // mobile/lib/features/auth/presentation/widgets/social_login_button.dart
 import 'package:flutter/material.dart';
+import 'dart:math';
 import '../../../../core/design/showme_design_system.dart';
 
 enum SocialProvider { apple, google }
@@ -200,52 +201,172 @@ class _SocialLoginButtonState extends State<SocialLoginButton>
   }
 }
 
-// Custom painter pour le logo Google
+// Custom painter pour le vrai logo Google
 class GoogleLogoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = size.width * 0.08;
+
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width * 0.35;
+
+    // Arc bleu (partie supérieure droite)
+    paint.color = const Color(0xFF4285F4);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -pi / 2, // -90 degrés
+      pi / 2,  // 90 degrés
+      false,
+      paint,
+    );
+
+    // Arc rouge (partie supérieure gauche)
+    paint.color = const Color(0xFFEA4335);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -pi, // -180 degrés
+      pi / 2, // 90 degrés
+      false,
+      paint,
+    );
+
+    // Arc jaune (partie inférieure gauche)
+    paint.color = const Color(0xFFFBBC04);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -pi / 2, // -90 degrés (depuis le bas)
+      -pi / 2, // -90 degrés
+      false,
+      paint,
+    );
+
+    // Arc vert (partie inférieure droite)
+    paint.color = const Color(0xFF34A853);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      0, // 0 degrés
+      pi / 2, // 90 degrés
+      false,
+      paint,
+    );
+
+    // Ligne horizontale bleue (caractéristique du G de Google)
+    paint.color = const Color(0xFF4285F4);
+    paint.style = PaintingStyle.fill;
+    
+    final lineRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        center.dx,
+        center.dy - paint.strokeWidth / 2,
+        radius * 0.6,
+        paint.strokeWidth,
+      ),
+      Radius.circular(paint.strokeWidth / 2),
+    );
+    canvas.drawRRect(lineRect, paint);
+
+    // Petite ligne verticale à la fin de la ligne horizontale
+    final verticalLineRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        center.dx + radius * 0.6 - paint.strokeWidth / 2,
+        center.dy - paint.strokeWidth / 2,
+        paint.strokeWidth,
+        radius * 0.3,
+      ),
+      Radius.circular(paint.strokeWidth / 2),
+    );
+    canvas.drawRRect(verticalLineRect, paint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
+// Alternative plus simple avec le "G" de Google
+class SimpleGoogleLogoPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
 
-    // G de Google (simplifié)
-    // Bleu
+    // Fond blanc/transparent pour le centre
+    final center = Offset(size.width / 2, size.height / 2);
+    final outerRadius = size.width * 0.4;
+    final innerRadius = size.width * 0.25;
+
+    // Arc bleu (droite)
     paint.color = const Color(0xFF4285F4);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(0, 0, size.width * 0.5, size.height * 0.5),
-        const Radius.circular(2),
-      ),
-      paint,
-    );
+    final bluePath = Path()
+      ..addArc(
+        Rect.fromCircle(center: center, radius: outerRadius),
+        -pi / 3, // Start angle
+        2 * pi / 3, // Sweep angle
+      )
+      ..addArc(
+        Rect.fromCircle(center: center, radius: innerRadius),
+        pi / 3, // Start angle (reverse)
+        -2 * pi / 3, // Sweep angle (reverse)
+      );
+    canvas.drawPath(bluePath, paint);
 
-    // Rouge
+    // Arc rouge (haut gauche)
     paint.color = const Color(0xFFEA4335);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(size.width * 0.5, 0, size.width * 0.5, size.height * 0.5),
-        const Radius.circular(2),
-      ),
-      paint,
-    );
+    final redPath = Path()
+      ..addArc(
+        Rect.fromCircle(center: center, radius: outerRadius),
+        2 * pi / 3, // Start angle
+        2 * pi / 3, // Sweep angle
+      )
+      ..addArc(
+        Rect.fromCircle(center: center, radius: innerRadius),
+        4 * pi / 3, // Start angle (reverse)
+        -2 * pi / 3, // Sweep angle (reverse)
+      );
+    canvas.drawPath(redPath, paint);
 
-    // Vert
-    paint.color = const Color(0xFF34A853);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(0, size.height * 0.5, size.width * 0.5, size.height * 0.5),
-        const Radius.circular(2),
-      ),
-      paint,
-    );
-
-    // Jaune
+    // Arc jaune (bas gauche)
     paint.color = const Color(0xFFFBBC04);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(size.width * 0.5, size.height * 0.5, size.width * 0.5, size.height * 0.5),
-        const Radius.circular(2),
+    final yellowPath = Path()
+      ..addArc(
+        Rect.fromCircle(center: center, radius: outerRadius),
+        4 * pi / 3, // Start angle
+        pi / 2, // Sweep angle
+      )
+      ..addArc(
+        Rect.fromCircle(center: center, radius: innerRadius),
+        11 * pi / 6, // Start angle (reverse)
+        -pi / 2, // Sweep angle (reverse)
+      );
+    canvas.drawPath(yellowPath, paint);
+
+    // Arc vert (bas droite)
+    paint.color = const Color(0xFF34A853);
+    final greenPath = Path()
+      ..addArc(
+        Rect.fromCircle(center: center, radius: outerRadius),
+        11 * pi / 6, // Start angle
+        pi / 2, // Sweep angle
+      )
+      ..addArc(
+        Rect.fromCircle(center: center, radius: innerRadius),
+        -pi / 3, // Start angle (reverse)
+        -pi / 2, // Sweep angle (reverse)
+      );
+    canvas.drawPath(greenPath, paint);
+
+    // Barre horizontale du G (caractéristique de Google)
+    paint.color = const Color(0xFF4285F4);
+    final barRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        center.dx,
+        center.dy - size.height * 0.03,
+        size.width * 0.15,
+        size.height * 0.06,
       ),
-      paint,
+      Radius.circular(size.height * 0.03),
     );
+    canvas.drawRRect(barRect, paint);
   }
 
   @override

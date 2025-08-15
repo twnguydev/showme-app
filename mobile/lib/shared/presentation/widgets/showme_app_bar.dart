@@ -33,7 +33,7 @@ class ShowmeSliverAppBar extends StatefulWidget {
     this.showBrandedTitle = false,
     this.pinned = true,
     this.floating = false,
-    this.user, // Ajout du paramètre user
+    this.user,
   });
 
   @override
@@ -74,16 +74,7 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
       elevation: 0,
       surfaceTintColor: ShowmeDesign.neutral50,
       shadowColor: Colors.transparent,
-      leading: widget.leading ?? (widget.showBackButton && Navigator.canPop(context)
-          ? IconButton(
-              icon: const Icon(
-                Icons.arrow_back_ios_rounded,
-                size: 20,
-                color: ShowmeDesign.neutral700,
-              ),
-              onPressed: widget.onBackPressed ?? () => Navigator.pop(context),
-            )
-          : null),
+      leading: _buildLeading(context),
       title: _buildTitle(),
       centerTitle: false,
       titleSpacing: 20,
@@ -95,6 +86,29 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
           color: ShowmeDesign.neutral200.withOpacity(0.5),
         ),
       ),
+    );
+  }
+
+  Widget? _buildLeading(BuildContext context) {
+    if (widget.leading != null) {
+      return widget.leading;
+    }
+
+    if (widget.showWelcomeSection) {
+      return null;
+    }
+
+    if (!widget.showBackButton) {
+      return null;
+    }
+
+    return IconButton(
+      icon: const Icon(
+        Icons.arrow_back,
+        size: 24,
+        color: ShowmeDesign.neutral900,
+      ),
+      onPressed: widget.onBackPressed
     );
   }
 
@@ -128,7 +142,7 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
         ],
       );
     }
-    
+
     // Pour les pages avec section de bienvenue, afficher le message personnalisé
     if (widget.showWelcomeSection) {
       // Utiliser le user passé en paramètre, sinon fallback sur AuthBloc
@@ -143,7 +157,7 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
         );
       }
     }
-    
+
     return Text(
       widget.title,
       style: ShowmeDesign.h4.copyWith(
@@ -156,7 +170,7 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
   Widget _buildWelcomeTitle(dynamic user) {
     final userName = _getUserName(user);
     final timeGreeting = _getTimeBasedGreeting();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -190,7 +204,7 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
 
   List<Widget>? _buildActions() {
     List<Widget> actionsList = [];
-    
+
     if (widget.showProfileIcon) {
       actionsList.add(
         Container(
@@ -202,11 +216,11 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
         ),
       );
     }
-    
+
     if (widget.actions != null) {
       actionsList.addAll(widget.actions!);
     }
-    
+
     return actionsList.isEmpty ? null : actionsList;
   }
 
@@ -308,7 +322,7 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
   String _getUserInitials(dynamic user) {
     final firstName = user?.firstName ?? '';
     final lastName = user?.lastName ?? '';
-    
+
     if (firstName.isNotEmpty && lastName.isNotEmpty) {
       return '${firstName[0]}${lastName[0]}'.toUpperCase();
     } else if (firstName.isNotEmpty) {
@@ -326,7 +340,7 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
 
   String _getTimeBasedGreeting() {
     final hour = DateTime.now().hour;
-    
+
     if (hour < 6) {
       return 'Bonne nuit';
     } else if (hour < 12) {
@@ -342,7 +356,7 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
 
   String _getTimeBasedEmoji() {
     final hour = DateTime.now().hour;
-    
+
     if (hour < 6) {
       return '🌙';
     } else if (hour < 12) {
@@ -365,11 +379,12 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
       'Développez votre réseau !',
       'Montrez votre talent !',
     ];
-    
+
     final hour = DateTime.now().hour;
-    final dayOfYear = DateTime.now().difference(DateTime(DateTime.now().year)).inDays;
+    final dayOfYear =
+        DateTime.now().difference(DateTime(DateTime.now().year)).inDays;
     final index = (hour + dayOfYear) % messages.length;
-    
+
     return messages[index];
   }
 }

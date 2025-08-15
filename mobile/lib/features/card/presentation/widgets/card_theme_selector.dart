@@ -53,27 +53,23 @@ class _CardThemeSelectorState extends State<CardThemeSelector>
   Widget build(BuildContext context) {
     return FadeTransition(
       opacity: _scaleAnimation,
-      child: Column(
-        children: [
-          // Grille de thèmes
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: ShowmeDesign.spacingMd,
-              mainAxisSpacing: ShowmeDesign.spacingMd,
-              childAspectRatio: 2.2,
-            ),
-            itemCount: CardTheme.CardTheme.values.length,
-            itemBuilder: (context, index) {
-              final theme = CardTheme.CardTheme.values[index];
-              final isSelected = theme == widget.selectedTheme;
-              
-              return _buildThemeOption(theme, isSelected);
-            },
-          ),
-        ],
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.zero, // Supprime le padding par défaut de la GridView
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: ShowmeDesign.spacingMd,
+          mainAxisSpacing: ShowmeDesign.spacingMd,
+          childAspectRatio: 2.5,
+        ),
+        itemCount: CardTheme.CardTheme.values.length,
+        itemBuilder: (context, index) {
+          final theme = CardTheme.CardTheme.values[index];
+          final isSelected = theme == widget.selectedTheme;
+          
+          return _buildThemeOption(theme, isSelected);
+        },
       ),
     );
   }
@@ -118,63 +114,69 @@ class _CardThemeSelectorState extends State<CardThemeSelector>
             // Background effects
             _buildThemeBackground(theme),
             
-            // Content
+            // Content avec padding réduit pour éviter l'overflow
             Padding(
-              padding: const EdgeInsets.all(ShowmeDesign.spacingMd),
+              padding: const EdgeInsets.all(ShowmeDesign.spacingSm), // Réduit de spacingMd à spacingSm
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min, // Ajouté pour éviter l'overflow
                 children: [
                   // Theme name
-                  Row(
-                    children: [
-                      Text(
-                        _getThemeName(theme),
-                        style: ShowmeDesign.bodyLarge.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black.withOpacity(0.3),
-                              offset: const Offset(0, 1),
-                              blurRadius: 2,
+                  Flexible( // Ajouté Flexible pour éviter l'overflow
+                    child: Row(
+                      children: [
+                        Expanded( // Ajouté Expanded pour le texte
+                          child: Text(
+                            _getThemeName(theme),
+                            style: ShowmeDesign.bodyLarge.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14, // Réduit la taille de police
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.3),
+                                  offset: const Offset(0, 1),
+                                  blurRadius: 2,
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                      const Spacer(),
-                      if (isSelected)
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 4,
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            Icons.check,
-                            color: CardTheme.CardThemeHelper.getPrimaryColor(theme),
-                            size: 16,
+                            overflow: TextOverflow.ellipsis, // Ajouté pour éviter l'overflow du texte
                           ),
                         ),
-                    ],
+                        if (isSelected)
+                          Container(
+                            width: 20, // Réduit de 24 à 20
+                            height: 20, // Réduit de 24 à 20
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.check,
+                              color: CardTheme.CardThemeHelper.getPrimaryColor(theme),
+                              size: 14, // Réduit de 16 à 14
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                   
-                  const Spacer(),
+                  const SizedBox(height: ShowmeDesign.spacingXs), // Réduit l'espacement
                   
                   // Sample elements
                   Row(
                     children: [
                       // Mini avatar
                       Container(
-                        width: 16,
-                        height: 16,
+                        width: 14, // Réduit de 16 à 14
+                        height: 14, // Réduit de 16 à 14
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.3),
                           shape: BoxShape.circle,
@@ -185,38 +187,38 @@ class _CardThemeSelectorState extends State<CardThemeSelector>
                         ),
                       ),
                       
-                      const SizedBox(width: ShowmeDesign.spacingSm),
+                      const SizedBox(width: ShowmeDesign.spacingXs), // Réduit l'espacement
                       
                       // Sample text lines
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 60,
-                            height: 3,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.9),
-                              borderRadius: BorderRadius.circular(2),
+                      Expanded( // Ajouté Expanded
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 50, // Réduit de 60 à 50
+                              height: 2.5, // Réduit de 3 à 2.5
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.9),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Container(
-                            width: 40,
-                            height: 2,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.7),
-                              borderRadius: BorderRadius.circular(2),
+                            const SizedBox(height: 2),
+                            Container(
+                              width: 35, // Réduit de 40 à 35
+                              height: 2,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.7),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                      
-                      const Spacer(),
                       
                       // Theme accent
                       Container(
-                        width: 8,
-                        height: 8,
+                        width: 6, // Réduit de 8 à 6
+                        height: 6, // Réduit de 8 à 6
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.4),
                           shape: BoxShape.circle,
@@ -290,32 +292,6 @@ class _CardThemeSelectorState extends State<CardThemeSelector>
         return 'Rose';
       case CardTheme.CardTheme.indigo:
         return 'Indigo';
-      // case CardTheme.CardTheme.cyan:
-      //   return 'Sky';
-      // case CardTheme.CardTheme.lime:
-      //   return 'Lime';
-      // case CardTheme.CardTheme.deepPurple:
-      //   return 'Royal';
-      // case CardTheme.CardTheme.lightBlue:
-      //   return 'Aqua';
-      // case CardTheme.CardTheme.lightGreen:
-      //   return 'Spring';
-      // case CardTheme.CardTheme.deepOrange:
-      //   return 'Copper';
-      // case CardTheme.blueGrey:
-      //   return 'Steel';
-      // case CardTheme.brown:
-      //   return 'Earth';
-      // case CardTheme.grey:
-      //   return 'Minimal';
-      // case CardTheme.black:
-      //   return 'Dark';
-      // case CardTheme.gradient1:
-      //   return 'Galaxy';
-      // case CardTheme.gradient2:
-      //   return 'Aurora';
-      // case CardTheme.gradient3:
-      //   return 'Cosmic';
       default:
         return theme.name.toUpperCase();
     }
@@ -376,32 +352,6 @@ extension CardThemeDisplayName on CardTheme.CardTheme {
         return 'Rose';
       case CardTheme.CardTheme.indigo:
         return 'Indigo';
-      // case CardTheme.CardTheme.cyan:
-      //   return 'Sky';
-      // case CardTheme.lime:
-      //   return 'Lime';
-      // case CardTheme.deepPurple:
-      //   return 'Royal';
-      // case CardTheme.lightBlue:
-      //   return 'Aqua';
-      // case CardTheme.lightGreen:
-      //   return 'Spring';
-      // case CardTheme.deepOrange:
-      //   return 'Copper';
-      // case CardTheme.blueGrey:
-      //   return 'Steel';
-      // case CardTheme.brown:
-      //   return 'Earth';
-      // case CardTheme.grey:
-      //   return 'Minimal';
-      // case CardTheme.black:
-      //   return 'Dark';
-      // case CardTheme.gradient1:
-      //   return 'Galaxy';
-      // case CardTheme.gradient2:
-      //   return 'Aurora';
-      // case CardTheme.gradient3:
-      //   return 'Cosmic';
       default:
         return name.toUpperCase();
     }

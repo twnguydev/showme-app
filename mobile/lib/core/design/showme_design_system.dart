@@ -100,6 +100,8 @@ class ShowmeDesign {
   static const double spacingXl = 32;
   static const double spacing2xl = 48;
   static const double spacing3xl = 64;
+  static const double spacing4xl = 80;
+  static const double spacing5xl = 96;
 
   // 📐 RAYONS DE BORDURE
   static const double radiusXs = 4;

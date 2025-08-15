@@ -33,11 +33,9 @@ class _CardCreationPageState extends State<CardCreationPage>
   // Form controllers
   final _titleController = TextEditingController();
   final _bioController = TextEditingController();
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
   final _positionController = TextEditingController();
   final _companyController = TextEditingController();
-  final _phoneController = TextEditingController();
+ final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _websiteController = TextEditingController();
   final _linkedinController = TextEditingController();
@@ -76,8 +74,7 @@ class _CardCreationPageState extends State<CardCreationPage>
       final user = authState.user;
       
       setState(() {
-        _firstNameController.text = user.firstName ?? '';
-        _lastNameController.text = user.lastName ?? '';
+        _titleController.text = user.firstName ?? '';
         _emailController.text = user.email;
         _phoneController.text = user.profile?.phone ?? '';
         _companyController.text = user.profile?.company ?? '';
@@ -86,10 +83,7 @@ class _CardCreationPageState extends State<CardCreationPage>
         _linkedinController.text = user.profile?.linkedinUrl ?? '';
         
         // Générer un titre par défaut
-        final fullName = '${user.firstName ?? ''} ${user.lastName ?? ''}'.trim();
-        if (fullName.isNotEmpty) {
-          _titleController.text = 'Carte de $fullName';
-        }
+        _titleController.text = '${user.firstName ?? ''} ${user.lastName ?? ''}'.trim();
       });
     }
   }
@@ -103,8 +97,6 @@ class _CardCreationPageState extends State<CardCreationPage>
     // Dispose controllers
     _titleController.dispose();
     _bioController.dispose();
-    _firstNameController.dispose();
-    _lastNameController.dispose();
     _positionController.dispose();
     _companyController.dispose();
     _phoneController.dispose();
@@ -140,68 +132,71 @@ class _CardCreationPageState extends State<CardCreationPage>
       },
       child: Scaffold(
         backgroundColor: ShowmeDesign.neutral50,
-        body: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            // AppBar avec actions
-            ShowmeSliverAppBar(
-              title: 'Créer une carte',
-              showBackButton: true,
-              actions: [
-                Container(
-                  margin: const EdgeInsets.only(right: 16),
-                  child: BlocBuilder<CardBloc, CardState>(
-                    builder: (context, state) {
-                      final isLoading = state is CardLoading;
-
-                      return IconButton(
-                        onPressed: isLoading ? null : _createCard,
-                        icon: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: isLoading
-                                ? ShowmeDesign.neutral300
-                                : ShowmeDesign.primaryTeal,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: isLoading
-                              ? SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      ShowmeDesign.neutral600,
-                                    ),
-                                  ),
-                                )
-                              : const Icon(
-                                  Icons.check,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
+        appBar: AppBar(
+          title: Text(
+            'Créer une carte',
+            style: ShowmeDesign.h4.copyWith(
+              color: ShowmeDesign.neutral900,
+              fontWeight: FontWeight.bold,
             ),
+          ),
+          backgroundColor: ShowmeDesign.neutral50,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          actions: [
+            Container(
+              margin: const EdgeInsets.only(right: 16),
+              child: BlocBuilder<CardBloc, CardState>(
+                builder: (context, state) {
+                  final isLoading = state is CardLoading;
 
-            // Contenu principal
-            SliverToBoxAdapter(
-              child: Column(
-                children: [
-                  // Aperçu de la carte
-                  _buildCardPreview(),
-                  
-                  const SizedBox(height: ShowmeDesign.spacingLg),
-                  
-                  // Tabs pour l'édition
-                  _buildTabSection(),
-                ],
+                  return IconButton(
+                    onPressed: isLoading ? null : _createCard,
+                    icon: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: isLoading
+                            ? ShowmeDesign.neutral300
+                            : ShowmeDesign.primaryTeal,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: isLoading
+                          ? SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  ShowmeDesign.neutral600,
+                                ),
+                              ),
+                            )
+                          : const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                    ),
+                  );
+                },
               ),
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            // Aperçu de la carte
+            _buildCardPreview(),
+            
+            const SizedBox(height: ShowmeDesign.spacingXs),
+            
+            // Tabs - prend le reste de l'espace
+            Expanded(
+              child: _buildTabSection(),
             ),
           ],
         ),
@@ -215,50 +210,12 @@ class _CardCreationPageState extends State<CardCreationPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Text(
-                'Aperçu de votre carte',
-                style: ShowmeDesign.h4.copyWith(
-                  color: ShowmeDesign.neutral900,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Spacer(),
-              // Badge du thème sélectionné
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: ShowmeDesign.spacingSm,
-                  vertical: ShowmeDesign.spacingXs,
-                ),
-                decoration: BoxDecoration(
-                  color: ShowmeDesign.primaryPurple.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(ShowmeDesign.radiusSm),
-                  border: Border.all(
-                    color: ShowmeDesign.primaryPurple.withOpacity(0.2),
-                  ),
-                ),
-                child: Text(
-                  _selectedTheme.displayName,
-                  style: ShowmeDesign.caption.copyWith(
-                    color: ShowmeDesign.primaryPurple,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: ShowmeDesign.spacingMd),
-          
           // Aperçu dynamique
           FadeTransition(
             opacity: _previewAnimation,
             child: DynamicCardPreview(
               theme: _selectedTheme,
               title: _titleController.text.isEmpty ? 'Ma carte' : _titleController.text,
-              firstName: _firstNameController.text,
-              lastName: _lastNameController.text,
               position: _positionController.text,
               company: _companyController.text,
               email: _emailController.text,
@@ -292,7 +249,7 @@ class _CardCreationPageState extends State<CardCreationPage>
         children: [
           // Tab Bar
           Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               border: Border(
                 bottom: BorderSide(
                   color: ShowmeDesign.neutral200,
@@ -309,7 +266,7 @@ class _CardCreationPageState extends State<CardCreationPage>
                 ),
                 Tab(
                   icon: Icon(Icons.person),
-                  text: 'Infos',
+                  text: 'Informations',
                 ),
                 Tab(
                   icon: Icon(Icons.settings),
@@ -323,9 +280,8 @@ class _CardCreationPageState extends State<CardCreationPage>
             ),
           ),
 
-          // Tab Views
-          SizedBox(
-            height: 600,
+          // Tab Views - CORRECTION: Utilise Expanded au lieu d'une hauteur fixe
+          Expanded(
             child: TabBarView(
               controller: _tabController,
               children: [
@@ -346,24 +302,6 @@ class _CardCreationPageState extends State<CardCreationPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Choisissez un thème',
-            style: ShowmeDesign.h5.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          
-          const SizedBox(height: ShowmeDesign.spacingMd),
-          
-          Text(
-            'Le thème détermine les couleurs et le style de votre carte',
-            style: ShowmeDesign.bodyMedium.copyWith(
-              color: ShowmeDesign.neutral600,
-            ),
-          ),
-          
-          const SizedBox(height: ShowmeDesign.spacingLg),
-          
           // Sélecteur de thème
           CardThemeSelector(
             selectedTheme: _selectedTheme,
@@ -372,35 +310,6 @@ class _CardCreationPageState extends State<CardCreationPage>
                 _selectedTheme = theme;
               });
             },
-          ),
-          
-          const SizedBox(height: ShowmeDesign.spacingXl),
-          
-          // Titre de la carte
-          _buildTextField(
-            controller: _titleController,
-            label: 'Titre de la carte',
-            hint: 'Ex: Ma carte professionnelle',
-            icon: Icons.title,
-            validator: (value) {
-              if (value?.isEmpty ?? true) {
-                return 'Le titre est requis';
-              }
-              return null;
-            },
-            onChanged: (value) => setState(() {}),
-          ),
-          
-          const SizedBox(height: ShowmeDesign.spacingLg),
-          
-          // Bio/Description
-          _buildTextField(
-            controller: _bioController,
-            label: 'Description (optionnelle)',
-            hint: 'Décrivez-vous en quelques mots...',
-            icon: Icons.description,
-            maxLines: 3,
-            onChanged: (value) => setState(() {}),
           ),
         ],
       ),
@@ -424,42 +333,24 @@ class _CardCreationPageState extends State<CardCreationPage>
             
             const SizedBox(height: ShowmeDesign.spacingLg),
             
-            // Prénom et Nom
-            Row(
-              children: [
-                Expanded(
-                  child: _buildTextField(
-                    controller: _firstNameController,
-                    label: 'Prénom',
-                    hint: 'John',
-                    icon: Icons.person,
-                    validator: (value) {
-                      if (value?.isEmpty ?? true) {
-                        return 'Requis';
-                      }
-                      return null;
-                    },
-                    onChanged: (value) => setState(() {}),
-                  ),
-                ),
-                const SizedBox(width: ShowmeDesign.spacingMd),
-                Expanded(
-                  child: _buildTextField(
-                    controller: _lastNameController,
-                    label: 'Nom',
-                    hint: 'Doe',
-                    icon: Icons.person_outline,
-                    validator: (value) {
-                      if (value?.isEmpty ?? true) {
-                        return 'Requis';
-                      }
-                      return null;
-                    },
-                    onChanged: (value) => setState(() {}),
-                  ),
-                ),
-              ],
+            // Titre de la carte
+            _buildTextField(
+              controller: _titleController,
+              label: 'Titre de la carte',
+              hint: 'Ma carte professionnelle',
+              icon: Icons.title,
+              validator: (value) {
+                if (value?.isEmpty ?? true) {
+                  return 'Le titre est requis';
+                }
+                if (value!.length < 3) {
+                  return 'Le titre doit contenir au moins 3 caractères';
+                }
+                return null;
+              },
+              onChanged: (value) => setState(() {}),
             ),
+
             
             const SizedBox(height: ShowmeDesign.spacingLg),
             
@@ -620,86 +511,6 @@ class _CardCreationPageState extends State<CardCreationPage>
               });
             },
           ),
-          
-          const SizedBox(height: ShowmeDesign.spacingXl),
-          
-          // Preview des paramètres activés
-          Container(
-            padding: const EdgeInsets.all(ShowmeDesign.spacingMd),
-            decoration: BoxDecoration(
-              color: ShowmeDesign.neutral100,
-              borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
-              border: Border.all(
-                color: ShowmeDesign.neutral200,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.preview,
-                      color: ShowmeDesign.neutral600,
-                      size: 16,
-                    ),
-                    const SizedBox(width: ShowmeDesign.spacingSm),
-                    Text(
-                      'Fonctionnalités activées',
-                      style: ShowmeDesign.bodySmall.copyWith(
-                        color: ShowmeDesign.neutral700,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: ShowmeDesign.spacingSm),
-                Wrap(
-                  spacing: ShowmeDesign.spacingSm,
-                  runSpacing: ShowmeDesign.spacingSm,
-                  children: [
-                    if (_isPublic) _buildFeatureChip('Public', Icons.public, ShowmeDesign.primaryTeal),
-                    if (_allowPayment) _buildFeatureChip('Paiements', Icons.payment, ShowmeDesign.primaryAmber),
-                    if (_nfcEnabled) _buildFeatureChip('NFC', Icons.nfc, ShowmeDesign.primaryBlue),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFeatureChip(String label, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: ShowmeDesign.spacingSm,
-        vertical: ShowmeDesign.spacingXs,
-      ),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(ShowmeDesign.radiusSm),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: color,
-            size: 12,
-          ),
-          const SizedBox(width: ShowmeDesign.spacingXs),
-          Text(
-            label,
-            style: ShowmeDesign.caption.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
         ],
       ),
     );
@@ -729,21 +540,21 @@ class _CardCreationPageState extends State<CardCreationPage>
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
-          borderSide: BorderSide(
+          borderSide: const BorderSide(
             color: ShowmeDesign.neutral300,
             width: 1,
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
-          borderSide: BorderSide(
+          borderSide: const BorderSide(
             color: ShowmeDesign.primaryPurple,
             width: 2,
           ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
-          borderSide: BorderSide(
+          borderSide: const BorderSide(
             color: ShowmeDesign.primaryRose,
             width: 2,
           ),
@@ -813,8 +624,6 @@ class _CardCreationPageState extends State<CardCreationPage>
         'nfcEnabled': _nfcEnabled,
         'theme': _selectedTheme.name,
         'profile': {
-          'firstName': _firstNameController.text,
-          'lastName': _lastNameController.text,
           'email': _emailController.text,
           'position': _positionController.text.isEmpty ? null : _positionController.text,
           'company': _companyController.text.isEmpty ? null : _companyController.text,
