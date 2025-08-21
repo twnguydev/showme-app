@@ -77,7 +77,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     } on DioException catch (e) {
       emit(AuthError(_handleDioError(e)));
     } catch (e) {
-      emit(AuthError('Une erreur inattendue s\'est produite : $e'));
+      emit(AuthError('Une erreur inattendue s\'est produite'));
     }
   }
 
@@ -145,11 +145,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         user: result.user,
         token: result.token,
       ));
+    } on DioException catch (e) {
+      // Vérifier d'abord si c'est une AuthException encapsulée
+      emit(AuthError(_handleDioError(e)));
     } on AuthException catch (e) {
       emit(AuthError(e.message));
-    } on DioException catch (e) {
-      emit(AuthError(_handleDioError(e)));
     } catch (e) {
+      print('Exception non gérée: ${e.runtimeType} - $e'); // Pour debug
       emit(AuthError('Une erreur inattendue s\'est produite'));
     }
   }
@@ -191,25 +193,57 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   /// Gère les erreurs DioException de manière centralisée
   String _handleDioError(DioException e) {
+    print('🚨 Response: ${e.response?.data}'); // Pour debug
+    
+    if (e.response?.data != null) {
+      final data = e.response!.data;
+      
+      // Gérer les messages d'erreur du backend NestJS
+      if (data is Map<String, dynamic>) {
+        // Si le message est un tableau (erreurs de validation)
+        if (data.containsKey('message') && data['message'] is List) {
+          final messages = data['message'] as List;
+          return messages.isNotEmpty 
+            ? messages.first.toString() 
+            : 'Erreur de validation';
+        }
+        
+        // Si le message est une chaîne simple
+        if (data.containsKey('message') && data['message'] is String) {
+          return data['message'] as String;
+        }
+        
+        // Si on a un champ error
+        if (data.containsKey('error') && data['error'] is String) {
+          return data['error'] as String;
+        }
+      }
+    }
+
+    // Messages d'erreur par défaut selon le code de statut
     switch (e.response?.statusCode) {
       case 400:
-        return 'Données d\'authentification invalides';
+        return 'Données invalides';
       case 401:
         return 'Email ou mot de passe incorrect';
       case 403:
-        return 'Accès interdit';
+        return 'Accès refusé';
       case 404:
-        return 'Utilisateur non trouvé';
+        return 'Service non trouvé';
       case 409:
         return 'Un compte avec cet email existe déjà';
       case 422:
-        return 'Données de validation invalides';
-      case 429:
-        return 'Trop de tentatives, veuillez réessayer plus tard';
+        return 'Données de validation incorrectes';
       case 500:
         return 'Erreur serveur, veuillez réessayer';
       default:
-        return 'Erreur de connexion: ${e.message}';
+        if (e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.receiveTimeout) {
+          return 'Connexion lente, veuillez réessayer';
+        } else if (e.type == DioExceptionType.connectionError) {
+          return 'Problème de connexion internet';
+        }
+        return 'Une erreur s\'est produite';
     }
   }
 }

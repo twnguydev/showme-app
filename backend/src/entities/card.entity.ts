@@ -20,11 +20,13 @@ import { WalletPass } from './wallet-pass.entity';
 export enum CardTheme {
   PURPLE = 'purple',
   BLUE = 'blue',
+  TEAL = 'teal',
   GREEN = 'green',
-  RED = 'red',
+  AMBER = 'amber',
   ORANGE = 'orange',
-  DARK = 'dark',
-  LIGHT = 'light',
+  RED = 'red',
+  PINK = 'pink',
+  INDIGO = 'indigo',
 }
 
 @Entity('cards')
@@ -101,14 +103,29 @@ export class Card {
 
   // Getters
   get publicUrl(): string {
-    return `https://showmeapp.com/card/${this.slug}`;
+    return `https://qard.app/card/${this.slug}`;
   }
 
   get shortUrl(): string {
-    return `https://showme.app/u/${this.slug}`;
+    return `https://qard.app/u/${this.slug}`;
   }
 
   get isPro(): boolean {
     return this.subscription?.status === 'active';
+  }
+
+  get themeDisplayName(): string {
+    const themeNames = {
+      [CardTheme.PURPLE]: 'Purple',
+      [CardTheme.BLUE]: 'Ocean',
+      [CardTheme.TEAL]: 'Teal',
+      [CardTheme.GREEN]: 'Forest',
+      [CardTheme.AMBER]: 'Sunset',
+      [CardTheme.ORANGE]: 'Fire',
+      [CardTheme.RED]: 'Ruby',
+      [CardTheme.PINK]: 'Rose',
+      [CardTheme.INDIGO]: 'Indigo',
+    };
+    return themeNames[this.theme] || this.theme;
   }
 }

@@ -254,9 +254,7 @@ export class UsersService {
     await this.userRepository.update(userId, {
       isActive: false,
       email: `deleted_${Date.now()}@deleted.local`,
-      username: `deleted_${Date.now()}`,
-      firstName: null,
-      lastName: null
+      username: `deleted_${Date.now()}`
     });
 
     return { message: 'Compte supprimé avec succès' };

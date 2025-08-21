@@ -148,6 +148,7 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
     return ShowmeSliverAppBar(
       title: 'Mes cartes',
       showBackButton: true,
+      onBackPressed:() => context.go('/profile'),
       actions: [
         // Bouton refresh
         Container(
@@ -494,7 +495,7 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
                     profile: card.profile,
                     onTap: () => _navigateToCardDetail(card.id.toString()),
                     showActions: true,
-                    size: CardSize.normal,
+                    size: CardSize.large,
                   ),
                 );
               }

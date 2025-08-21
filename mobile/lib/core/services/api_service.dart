@@ -408,10 +408,27 @@ class ApiService {
     if (e.response?.data != null) {
       final data = e.response!.data;
       if (data is Map<String, dynamic>) {
-        errorMessage = data['message'] ?? 
-                     data['error'] ?? 
-                     data['details'] ?? 
-                     'Erreur serveur';
+        // Gérer le cas où message est une List
+        if (data.containsKey('message')) {
+          final message = data['message'];
+          if (message is List && message.isNotEmpty) {
+            errorMessage = message.first.toString();
+          } else if (message is String && message.isNotEmpty) {
+            errorMessage = message;
+          }
+        } 
+        // Si pas de message ou message vide, essayer error
+        else if (data.containsKey('error') && data['error'] is String) {
+          errorMessage = data['error'];
+        }
+        // Si pas d'error, essayer details
+        else if (data.containsKey('details') && data['details'] is String) {
+          errorMessage = data['details'];
+        }
+        // Sinon, message par défaut
+        else {
+          errorMessage = 'Erreur serveur';
+        }
       } else if (data is String) {
         errorMessage = data;
       }

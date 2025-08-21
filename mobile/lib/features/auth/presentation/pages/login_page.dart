@@ -149,55 +149,29 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: BlocListener<AuthBloc, AuthState>(
-        listener: (context, state) {
-          if (state is AuthAuthenticated) {
-            context.go('/home');
-          } else if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: ShowmeDesign.primaryRose,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
+      body: ScaffoldMessenger(
+        child: BlocConsumer<AuthBloc, AuthState>(
+          listener: (context, state) {
+            if (state is AuthAuthenticated) {
+              context.go('/home');
+            }
+          },
+          builder: (context, state) {
+            return SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(ShowmeDesign.spacingXl),
+                child: Column(
+                  children: [
+                    const SizedBox(height: ShowmeDesign.spacingLg),
+                    _buildAnimatedLogo(),
+                    const SizedBox(height: ShowmeDesign.spacing5xl),
+                    _buildAnimatedForm(),
+                    const SizedBox(height: ShowmeDesign.spacingLg),
+                  ],
                 ),
               ),
             );
-          }
-        },
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                ShowmeDesign.primaryPurple.withOpacity(0.05),
-                ShowmeDesign.primaryBlue.withOpacity(0.05),
-                ShowmeDesign.white,
-              ],
-            ),
-          ),
-          child: SafeArea(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(ShowmeDesign.spacingXl),
-              child: Column(
-                children: [
-                  SizedBox(height: ShowmeDesign.spacingLg),
-                  
-                  // Logo animé
-                  _buildAnimatedLogo(),
-                  
-                  SizedBox(height: ShowmeDesign.spacing5xl),
-                  
-                  // Formulaire animé
-                  _buildAnimatedForm(),
-                  
-                  SizedBox(height: ShowmeDesign.spacingLg),
-                ],
-              ),
-            ),
-          ),
+          },
         ),
       ),
     );

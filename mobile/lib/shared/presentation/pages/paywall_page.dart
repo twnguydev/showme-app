@@ -90,7 +90,7 @@ class _PaywallPageState extends State<PaywallPage>
       case 'kiosk_mode':
         return 'le mode Kiosque';
       default:
-        return 'Showme Pro';
+        return 'Qard Pro';
     }
   }
 
@@ -268,7 +268,7 @@ class _PaywallPageState extends State<PaywallPage>
           
           // Sous-titre
           Text(
-            'Accédez à toutes les fonctionnalités premium de Showme',
+            'Accédez à toutes les fonctionnalités premium de Qard',
             style: ShowmeDesign.bodyLarge.copyWith(
               color: ShowmeDesign.neutral600,
             ),

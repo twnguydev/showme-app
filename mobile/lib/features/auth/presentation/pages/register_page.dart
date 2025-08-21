@@ -106,17 +106,6 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
         listener: (context, state) {
           if (state is AuthAuthenticated) {
             context.go('/home');
-          } else if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: ShowmeDesign.primaryRose,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
-                ),
-              ),
-            );
           }
         },
         child: Container(

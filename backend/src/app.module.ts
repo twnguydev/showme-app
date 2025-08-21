@@ -12,7 +12,7 @@ import { SeedsModule } from './database/seeds/seeds.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { HealthModule } from './modules/health/health.module';
-// import { CardsModule } from './modules/cards/cards.module';
+import { CardsModule } from './modules/cards/cards.module';
 // import { AnalyticsModule } from './modules/analytics/analytics.module';
 // import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 // import { UploadsModule } from './modules/uploads/uploads.module';
@@ -62,7 +62,7 @@ import { HealthModule } from './modules/health/health.module';
     UsersModule,
     SeedsModule,
     HealthModule,
-    // CardsModule,
+    CardsModule,
     // AnalyticsModule,
     // SubscriptionsModule,
     // UploadsModule,

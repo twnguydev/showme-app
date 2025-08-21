@@ -595,8 +595,8 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
   }
 
   String _getFullName() {
-    final firstName = widget.user.firstName ?? '';
-    final lastName = widget.user.lastName ?? '';
+    final firstName = widget.user.profile?.firstName ?? '';
+    final lastName = widget.user.profile?.lastName ?? '';
     final fullName = '$firstName $lastName'.trim();
 
     // If both are empty, fallback to email or a default

@@ -18,6 +18,9 @@ import 'features/card/bloc/card_bloc.dart';
 import 'features/crm/bloc/crm_bloc.dart';
 import 'features/profile/bloc/profile_bloc.dart';
 
+final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -101,17 +104,17 @@ class _ShowmeAppRouterState extends State<ShowmeAppRouter> {
   @override
   void initState() {
     super.initState();
-    
+
     // Configurer le callback pour les erreurs 401
     ApiService.setUnauthorizedCallback(() {
       if (mounted) {
         context.read<AuthBloc>().add(AuthTokenExpired());
       }
     });
-    
+
     // Créer le router avec gestion d'authentification
     _router = _createRouter();
-    
+
     // Écouter les changements d'état d'authentification pour forcer le refresh du router
     _authSubscription = context.read<AuthBloc>().stream.listen((state) {
       if (mounted) {
@@ -130,31 +133,27 @@ class _ShowmeAppRouterState extends State<ShowmeAppRouter> {
     return GoRouter(
       initialLocation: '/home',
       redirect: (context, state) {
-        // Obtenir l'état d'authentification actuel
         final authState = context.read<AuthBloc>().state;
         final isLoggedIn = authState is AuthAuthenticated;
-        
-        // Pages publiques qui ne nécessitent pas d'authentification
+
         final publicPaths = ['/splash', '/login', '/register'];
-        final isPublicPath = publicPaths.contains(state.fullPath) || 
-                           state.fullPath?.startsWith('/card/') == true;
-        
-        // Logs pour le debugging
-        debugPrint('🔄 Router redirect - Location: ${state.fullPath}, Authenticated: $isLoggedIn');
-        
-        // Si pas connecté et pas sur une page publique
+        final isPublicPath = publicPaths.contains(state.fullPath) ||
+            state.fullPath?.startsWith('/card/') == true;
+
+        debugPrint(
+            '🔄 Router redirect - Location: ${state.fullPath}, Authenticated: $isLoggedIn');
+
         if (!isLoggedIn && !isPublicPath) {
           debugPrint('🔐 Redirection vers login - utilisateur non authentifié');
           return '/login';
         }
-        
-        // Si connecté et sur login/register
-        if (isLoggedIn && (state.fullPath == '/login' || state.fullPath == '/register')) {
+
+        if (isLoggedIn &&
+            (state.fullPath == '/login' || state.fullPath == '/register')) {
           debugPrint('🏠 Redirection vers home - utilisateur déjà connecté');
           return '/home';
         }
-        
-        // Pas de redirection nécessaire
+
         return null;
       },
       routes: AppRouter.routes,
@@ -182,15 +181,16 @@ class _ShowmeAppRouterState extends State<ShowmeAppRouter> {
   Widget build(BuildContext context) {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
-        // Gérer les changements d'état d'authentification
         if (state is AuthUnauthenticated) {
-          debugPrint('🔄 Utilisateur déconnecté - Le router va rediriger vers login');
+          debugPrint(
+              '🔄 Utilisateur déconnecté - Le router va rediriger vers login');
         } else if (state is AuthAuthenticated) {
-          debugPrint('🔄 Utilisateur connecté - Le router va rediriger vers home');
+          debugPrint(
+              '🔄 Utilisateur connecté - Le router va rediriger vers home');
         } else if (state is AuthError) {
           debugPrint('❌ Erreur d\'authentification: ${state.message}');
-          // Optionnel: Afficher un snackbar ou une notification
-          ScaffoldMessenger.of(context).showSnackBar(
+
+          rootScaffoldMessengerKey.currentState?.showSnackBar(
             SnackBar(
               content: Text(state.message),
               backgroundColor: Colors.red,
@@ -199,14 +199,14 @@ class _ShowmeAppRouterState extends State<ShowmeAppRouter> {
         }
       },
       child: MaterialApp.router(
-        title: 'Showme',
+        title: 'Qard',
+        scaffoldMessengerKey: rootScaffoldMessengerKey,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.system,
         routerConfig: _router,
         debugShowCheckedModeBanner: false,
         builder: (context, child) {
-          // Pour intercepter les erreurs globalement et fixer le text scale
           return MediaQuery(
             data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
             child: child!,

@@ -15,9 +15,20 @@ export class Profile {
   @PrimaryGeneratedColumn()
   id: number;
 
+  // Informations personnelles
+  @Column({ nullable: true })
+  firstName?: string;
+
+  @Column({ nullable: true })
+  lastName?: string;
+
+  @Column({ nullable: true })
+  email?: string;
+
   @Column({ nullable: true })
   phone?: string;
 
+  // Informations professionnelles
   @Column({ nullable: true })
   company?: string;
 
@@ -27,6 +38,7 @@ export class Profile {
   @Column({ type: 'text', nullable: true })
   bio?: string;
 
+  // Liens web
   @Column({ nullable: true })
   website?: string;
 
@@ -39,6 +51,7 @@ export class Profile {
   @Column({ nullable: true })
   instagramUrl?: string;
 
+  // Adresse
   @Column({ nullable: true })
   address?: string;
 
@@ -48,6 +61,7 @@ export class Profile {
   @Column({ nullable: true })
   country?: string;
 
+  // Médias
   @Column({ type: 'json', nullable: true })
   avatar?: {
     url: string;
@@ -66,6 +80,7 @@ export class Profile {
     uploadedAt?: Date;
   };
 
+  // Paramètres
   @Column({ default: true })
   isPublic: boolean;
 
@@ -75,7 +90,44 @@ export class Profile {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToOne(() => User, (user) => user.profile)
+  // Relations
+  @OneToOne(() => User, (user) => user.profile, { nullable: true })
   @JoinColumn()
-  user: User;
+  user?: User;
+
+  // Getters
+  get fullName(): string {
+    const first = this.firstName || '';
+    const last = this.lastName || '';
+    return `${first} ${last}`.trim();
+  }
+
+  get initials(): string {
+    const first = this.firstName?.[0] || '';
+    const last = this.lastName?.[0] || '';
+    const result = `${first}${last}`.toUpperCase();
+    return result.length > 0 ? result : this.email?.[0]?.toUpperCase() || '?';
+  }
+
+  get displayName(): string {
+    const name = this.fullName;
+    return name.length > 0 ? name : this.email || 'Utilisateur';
+  }
+
+  get fullAddress(): string | null {
+    const parts = [this.address, this.city, this.country].filter(part => part?.trim());
+    return parts.length > 0 ? parts.join(', ') : null;
+  }
+
+  get hasContactInfo(): boolean {
+    return !!(this.phone || this.email);
+  }
+
+  get hasSocialLinks(): boolean {
+    return !!(this.linkedinUrl || this.twitterUrl || this.instagramUrl);
+  }
+
+  get hasCompanyInfo(): boolean {
+    return !!(this.company || this.position);
+  }
 }

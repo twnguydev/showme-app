@@ -26,10 +26,20 @@ class AuthAuthenticated extends AuthState {
 
 class AuthUnauthenticated extends AuthState {}
 
+
 class AuthError extends AuthState {
   final String message;
 
-  AuthError(this.message);
+  AuthError(dynamic rawMessage) : message = _convertToString(rawMessage);
+
+  static String _convertToString(dynamic value) {
+    if (value is String) return value;
+    if (value is List && value.isNotEmpty) return value.first.toString();
+    if (value is Map && value.containsKey('message')) {
+      return _convertToString(value['message']);
+    }
+    return 'Une erreur inattendue s\'est produite';
+  }
 
   @override
   List<Object> get props => [message];

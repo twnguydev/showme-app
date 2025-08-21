@@ -311,8 +311,8 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
 
   // Méthodes utilitaires
   String _getUserName(dynamic user) {
-    if (user?.firstName != null && user.firstName!.isNotEmpty) {
-      return user.firstName!;
+    if (user?.profile.firstName != null && user.profile.firstName!.isNotEmpty) {
+      return user.profile.firstName!;
     } else if (user?.email != null) {
       return user.email!.split('@').first;
     }
@@ -320,8 +320,8 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
   }
 
   String _getUserInitials(dynamic user) {
-    final firstName = user?.firstName ?? '';
-    final lastName = user?.lastName ?? '';
+    final firstName = user?.profile.firstName ?? '';
+    final lastName = user?.profile.lastName ?? '';
 
     if (firstName.isNotEmpty && lastName.isNotEmpty) {
       return '${firstName[0]}${lastName[0]}'.toUpperCase();

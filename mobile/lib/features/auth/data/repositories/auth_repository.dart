@@ -109,23 +109,19 @@ class AuthRepository {
     required String password,
     bool rememberMe = false,
   }) async {
-    try {
-      final loginRequest = LoginRequest(
-        identifier: email,
-        password: password,
-        rememberMe: rememberMe,
-      );
+    final loginRequest = LoginRequest(
+      identifier: email,
+      password: password,
+      rememberMe: rememberMe,
+    );
 
-      final response = await _apiService.login(loginRequest);
-      final authData = response.data!;
-      
-      // Sauvegarder les données d'authentification
-      await _saveAuthData(authData);
+    final response = await _apiService.login(loginRequest);
+    final authData = response.data!;
+    
+    // Sauvegarder les données d'authentification
+    await _saveAuthData(authData);
 
-      return AuthResponse.fromAuthResponseData(authData);
-    } on DioException catch (e) {
-      throw _handleAuthError(e);
-    }
+    return AuthResponse.fromAuthResponseData(authData);
   }
 
   /// Inscription d'un nouvel utilisateur
@@ -140,29 +136,25 @@ class AuthRepository {
     bool acceptTerms = true,
     bool acceptMarketing = false,
   }) async {
-    try {
-      final registerRequest = RegisterRequest(
-        email: email,
-        password: password,
-        firstName: firstName,
-        lastName: lastName,
-        company: company,
-        position: position,
-        phone: phone,
-        acceptTerms: acceptTerms,
-        acceptMarketing: acceptMarketing,
-      );
+    final registerRequest = RegisterRequest(
+      email: email,
+      password: password,
+      firstName: firstName,
+      lastName: lastName,
+      company: company,
+      position: position,
+      phone: phone,
+      acceptTerms: acceptTerms,
+      acceptMarketing: acceptMarketing,
+    );
 
-      final response = await _apiService.register(registerRequest);
-      final authData = response.data!;
-      
-      // Sauvegarder les données d'authentification
-      await _saveAuthData(authData);
+    final response = await _apiService.register(registerRequest);
+    final authData = response.data!;
+    
+    // Sauvegarder les données d'authentification
+    await _saveAuthData(authData);
 
-      return AuthResponse.fromAuthResponseData(authData);
-    } on DioException catch (e) {
-      throw _handleAuthError(e);
-    }
+    return AuthResponse.fromAuthResponseData(authData);
   }
 
   /// Connexion avec Apple
@@ -220,9 +212,8 @@ class AuthRepository {
         default:
           throw AuthException('Erreur Apple inconnue: ${e.code}');
       }
-    } on DioException catch (e) {
-      throw _handleAuthError(e);
     } catch (e) {
+      if (e is AuthException) rethrow;
       print('🚨 Apple Login Error: $e');
       throw AuthException('Erreur lors de la connexion Apple: $e');
     }
@@ -265,8 +256,6 @@ class AuthRepository {
       await _saveAuthData(authData);
 
       return AuthResponse.fromAuthResponseData(authData);
-    } on DioException catch (e) {
-      throw _handleAuthError(e);
     } on PlatformException catch (e) {
       // Gestion des erreurs spécifiques à Google Sign In
       switch (e.code) {
@@ -280,6 +269,7 @@ class AuthRepository {
           throw AuthException('Erreur Google: ${e.message}');
       }
     } catch (e) {
+      if (e is AuthException) rethrow;
       print('🚨 Google Login Error: $e');
       throw AuthException('Erreur lors de la connexion Google: $e');
     }
@@ -287,12 +277,8 @@ class AuthRepository {
 
   /// Demande de réinitialisation de mot de passe
   Future<void> forgotPassword({required String email}) async {
-    try {
-      final request = ForgotPasswordRequest(email: email);
-      await _apiService.forgotPassword(request);
-    } on DioException catch (e) {
-      throw _handleAuthError(e);
-    }
+    final request = ForgotPasswordRequest(email: email);
+    await _apiService.forgotPassword(request);
   }
 
   /// Réinitialisation du mot de passe avec token
@@ -305,16 +291,12 @@ class AuthRepository {
       throw const AuthException('Les mots de passe ne correspondent pas');
     }
 
-    try {
-      final request = ResetPasswordRequest(
-        token: token,
-        newPassword: newPassword,
-        confirmPassword: confirmPassword,
-      );
-      await _apiService.resetPassword(request);
-    } on DioException catch (e) {
-      throw _handleAuthError(e);
-    }
+    final request = ResetPasswordRequest(
+      token: token,
+      newPassword: newPassword,
+      confirmPassword: confirmPassword,
+    );
+    await _apiService.resetPassword(request);
   }
 
   /// Rafraîchissement du token d'authentification
@@ -339,28 +321,20 @@ class AuthRepository {
 
   /// Vérification de l'email
   Future<void> verifyEmail({required String token}) async {
-    try {
-      await _apiService.verifyEmail(token);
-      
-      // Mettre à jour le statut de vérification de l'utilisateur local
-      final userData = await StorageService.getUser();
-      if (userData != null) {
-        final user = User.fromJson(userData);
-        final updatedUser = user.copyWith(emailVerified: true);
-        await StorageService.setUser(updatedUser.toJson());
-      }
-    } on DioException catch (e) {
-      throw _handleAuthError(e);
+    await _apiService.verifyEmail(token);
+    
+    // Mettre à jour le statut de vérification de l'utilisateur local
+    final userData = await StorageService.getUser();
+    if (userData != null) {
+      final user = User.fromJson(userData);
+      final updatedUser = user.copyWith(emailVerified: true);
+      await StorageService.setUser(updatedUser.toJson());
     }
   }
 
   /// Renvoyer l'email de vérification
   Future<void> resendVerificationEmail() async {
-    try {
-      await _apiService.resendVerificationEmail();
-    } on DioException catch (e) {
-      throw _handleAuthError(e);
-    }
+    await _apiService.resendVerificationEmail();
   }
 
   /// Changement de mot de passe
@@ -373,14 +347,10 @@ class AuthRepository {
       throw const AuthException('Les nouveaux mots de passe ne correspondent pas');
     }
 
-    try {
-      await _apiService.changePassword(
-        currentPassword: currentPassword,
-        newPassword: newPassword,
-      );
-    } on DioException catch (e) {
-      throw _handleAuthError(e);
-    }
+    await _apiService.changePassword(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    );
   }
 
   /// Déconnexion
@@ -405,12 +375,8 @@ class AuthRepository {
 
   /// Suppression du compte
   Future<void> deleteAccount({required String password}) async {
-    try {
-      await _apiService.deleteAccount(password: password);
-      await _clearAuthData();
-    } on DioException catch (e) {
-      throw _handleAuthError(e);
-    }
+    await _apiService.deleteAccount(password: password);
+    await _clearAuthData();
   }
 
   // Méthodes privées
@@ -435,30 +401,6 @@ class AuthRepository {
     await StorageService.clearUser();
     await StorageService.clearTokenExpiration();
     await StorageService.clearRefreshToken();
-  }
-
-  /// Gère les erreurs d'authentification
-  AuthException _handleAuthError(DioException e) {
-    switch (e.response?.statusCode) {
-      case 400:
-        return const AuthException('Données d\'authentification invalides');
-      case 401:
-        return const AuthException('Email ou mot de passe incorrect');
-      case 403:
-        return const AuthException('Accès interdit');
-      case 404:
-        return const AuthException('Utilisateur non trouvé');
-      case 409:
-        return const AuthException('Un compte avec cet email existe déjà');
-      case 422:
-        return const AuthException('Données de validation invalides');
-      case 429:
-        return const AuthException('Trop de tentatives, veuillez réessayer plus tard');
-      case 500:
-        return const AuthException('Erreur serveur, veuillez réessayer');
-      default:
-        return AuthException('Erreur de connexion: ${e.message}');
-    }
   }
 
   // Méthodes utilitaires

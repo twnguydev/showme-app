@@ -506,8 +506,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // Méthodes utilitaires
   String _getFullName(User user) {
-    final firstName = user.firstName ?? '';
-    final lastName = user.lastName ?? '';
+    final firstName = user.profile?.firstName ?? '';
+    final lastName = user.profile?.lastName ?? '';
     final fullName = '$firstName $lastName'.trim();
     
     if (fullName.isEmpty) {
@@ -518,9 +518,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   String _getInitials(User user) {
-    final firstName = user.firstName ?? '';
-    final lastName = user.lastName ?? '';
-    
+    final firstName = user.profile?.firstName ?? '';
+    final lastName = user.profile?.lastName ?? '';
+
     if (firstName.isNotEmpty && lastName.isNotEmpty) {
       return '${firstName[0]}${lastName[0]}'.toUpperCase();
     } else if (firstName.isNotEmpty) {
@@ -543,9 +543,9 @@ class _ProfilePageState extends State<ProfilePage> {
   double _calculateProfileCompletion(User user) {
     int totalFields = 7; // firstName, lastName, email, company, position, phone, website
     int completedFields = 0;
-    
-    if (user.firstName != null && user.firstName!.isNotEmpty) completedFields++;
-    if (user.lastName != null && user.lastName!.isNotEmpty) completedFields++;
+
+    if (user.profile?.firstName != null && user.profile!.firstName!.isNotEmpty) completedFields++;
+    if (user.profile?.lastName != null && user.profile!.lastName!.isNotEmpty) completedFields++;
     if (user.email.isNotEmpty) completedFields++;
     if (user.profile?.company != null && user.profile!.company!.isNotEmpty) completedFields++;
     if (user.profile?.position != null && user.profile!.position!.isNotEmpty) completedFields++;
@@ -557,9 +557,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
   List<String> _getMissingFields(User user) {
     List<String> missing = [];
-    
-    if (user.firstName == null || user.firstName!.isEmpty) missing.add('Prénom');
-    if (user.lastName == null || user.lastName!.isEmpty) missing.add('Nom');
+
+    if (user.profile?.firstName == null || user.profile!.firstName!.isEmpty) missing.add('Prénom');
+    if (user.profile?.lastName == null || user.profile!.lastName!.isEmpty) missing.add('Nom');
     if (user.profile?.company == null || user.profile!.company!.isEmpty) missing.add('Entreprise');
     if (user.profile?.position == null || user.profile!.position!.isEmpty) missing.add('Poste');
     if (user.profile?.phone == null || user.profile!.phone!.isEmpty) missing.add('Téléphone');

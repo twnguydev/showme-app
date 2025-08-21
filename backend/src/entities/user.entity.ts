@@ -33,12 +33,6 @@ export class User {
   @Index('IDX_USER_EMAIL', { unique: true })
   email: string;
 
-  @Column({ nullable: true })
-  firstName?: string;
-
-  @Column({ nullable: true })
-  lastName?: string;
-
   @Column({ select: false })
   @Exclude()
   passwordHash: string;
@@ -53,12 +47,15 @@ export class User {
   emailVerified: boolean;
 
   @Column({ nullable: true })
+  @Exclude()
   emailVerificationToken?: string;
 
   @Column({ nullable: true })
+  @Exclude()
   passwordResetToken?: string;
 
   @Column({ nullable: true })
+  @Exclude()
   passwordResetExpires?: Date;
 
   @Column({ nullable: true })
@@ -86,22 +83,22 @@ export class User {
   @OneToOne(() => Profile, (profile) => profile.user)
   profile?: Profile;
 
-  // Getters
-  get fullName(): string {
-    const first = this.firstName || '';
-    const last = this.lastName || '';
-    return `${first} ${last}`.trim();
-  }
-
+  // Getters basés sur le profil ou l'email
   get displayName(): string {
-    const name = this.fullName;
-    return name.length > 0 ? name : this.email;
+    if (this.profile?.fullName) {
+      return this.profile.fullName;
+    }
+    return this.email.split('@')[0];
   }
 
   get initials(): string {
-    const first = this.firstName?.[0] || '';
-    const last = this.lastName?.[0] || '';
-    const result = `${first}${last}`.toUpperCase();
-    return result.length > 0 ? result : this.email[0].toUpperCase();
+    if (this.profile?.initials) {
+      return this.profile.initials;
+    }
+    return this.email[0].toUpperCase();
+  }
+
+  get fullName(): string {
+    return this.profile?.fullName || this.displayName;
   }
 }
