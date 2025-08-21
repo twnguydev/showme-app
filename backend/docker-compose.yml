@@ -2,7 +2,7 @@ services:
   # Base de données MySQL
   mysql:
     image: mysql:8.0
-    container_name: showme_mysql
+    container_name: qard_mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
@@ -28,12 +28,12 @@ services:
       interval: 10s
       start_period: 40s
     networks:
-      - showme_network
+      - qard_network
 
   # PHPMyAdmin
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
-    container_name: showme_phpmyadmin
+    container_name: qard_phpmyadmin
     restart: unless-stopped
     environment:
       PMA_HOST: mysql
@@ -49,12 +49,12 @@ services:
       mysql:
         condition: service_healthy
     networks:
-      - showme_network
+      - qard_network
 
   # Redis
   redis:
     image: redis:7-alpine
-    container_name: showme_redis
+    container_name: qard_redis
     restart: unless-stopped
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
@@ -67,7 +67,7 @@ services:
       retries: 5
       interval: 5s
     networks:
-      - showme_network
+      - qard_network
 
   # Application NestJS
   app:
@@ -75,7 +75,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
-    container_name: showme_app
+    container_name: qard_app
     restart: unless-stopped
     environment:
       NODE_ENV: ${NODE_ENV}
@@ -119,12 +119,12 @@ services:
       interval: 30s
       start_period: 60s
     networks:
-      - showme_network
+      - qard_network
 
   # Backup automatique MySQL
   mysql-backup:
     image: mysql:8.0
-    container_name: showme_backup
+    container_name: qard_backup
     restart: unless-stopped
     environment:
       MYSQL_HOST: mysql
@@ -146,12 +146,12 @@ services:
       mysql:
         condition: service_healthy
     networks:
-      - showme_network
+      - qard_network
 
 volumes:
   mysql_data:
   redis_data:
 
 networks:
-  showme_network:
+  qard_network:
     driver: bridge
