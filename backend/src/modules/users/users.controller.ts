@@ -39,45 +39,6 @@ export class UsersController {
     return this.usersService.findById(user.id);
   }
 
-  @Put('me')
-  @ApiOperation({ summary: 'Mettre à jour son profil utilisateur' })
-  @ApiResponse({ status: 200, description: 'Profil mis à jour' })
-  async updateMyProfile(
-    @CurrentUser() user: User,
-    @Body() updateUserProfileDto: UpdateUserAndProfileDto,
-  ) {
-    return this.usersService.updateUserAndProfile(user.id, updateUserProfileDto);
-  }
-
-  @Get('me/profile')
-  @ApiOperation({ summary: 'Obtenir son profil détaillé' })
-  @ApiResponse({ status: 200, description: 'Profil détaillé' })
-  async getMyDetailedProfile(@CurrentUser() user: User) {
-    return this.usersService.getProfile(user.id);
-  }
-
-  @Put('me/profile')
-  @UseInterceptors(FileInterceptor('avatar', {
-    limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB max
-    },
-    fileFilter: (req, file, callback) => {
-      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
-        return callback(new Error('Only image files are allowed!'), false);
-      }
-      callback(null, true);
-    },
-  }))
-  @ApiOperation({ summary: 'Mettre à jour son profil détaillé' })
-  @ApiResponse({ status: 200, description: 'Profil détaillé mis à jour' })
-  async updateMyDetailedProfile(
-    @CurrentUser() user: User,
-    @Body() updateProfileDto: UpdateProfileDto,
-    @UploadedFile() avatar?: Express.Multer.File,
-  ) {
-    return this.usersService.updateProfile(user.id, updateProfileDto, avatar);
-  }
-
   @Put('me/password')
   @ApiOperation({ summary: 'Changer son mot de passe' })
   @ApiResponse({ status: 200, description: 'Mot de passe modifié' })
@@ -86,69 +47,6 @@ export class UsersController {
     @Body() changePasswordDto: ChangePasswordDto,
   ) {
     return this.usersService.changePassword(user.id, changePasswordDto);
-  }
-
-  @Put('me/avatar')
-  @UseInterceptors(FileInterceptor('file', {
-    limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB max
-    },
-    fileFilter: (req, file, callback) => {
-      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
-        return callback(new Error('Only image files are allowed!'), false);
-      }
-      callback(null, true);
-    },
-  }))
-  @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Uploader une photo de profil' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Photo de profil uploadée',
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        message: { type: 'string' },
-        data: {
-          type: 'object',
-          properties: {
-            avatar: {
-              type: 'object',
-              properties: {
-                url: { type: 'string' },
-                name: { type: 'string' },
-                size: { type: 'number' },
-                mimeType: { type: 'string' },
-                uploadedAt: { type: 'string', format: 'date-time' }
-              }
-            }
-          }
-        }
-      }
-    }
-  })
-  async uploadMyAvatar(
-    @CurrentUser() user: User,
-    @UploadedFile() file: Express.Multer.File,
-  ) {
-    if (!file) {
-      throw new BadRequestException('No file provided');
-    }
-
-    try {
-      const updatedProfile = await this.usersService.updateProfile(user.id, undefined, file);
-      
-      return {
-        success: true,
-        message: 'Avatar uploaded successfully',
-        data: {
-          avatar: updatedProfile.avatar
-        }
-      };
-    } catch (error) {
-      throw new BadRequestException('Failed to upload avatar: ' + error.message);
-    }
   }
 
   @Delete('me')

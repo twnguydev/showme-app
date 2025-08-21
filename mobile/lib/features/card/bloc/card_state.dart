@@ -12,19 +12,19 @@ class CardInitial extends CardState {}
 class CardLoading extends CardState {}
 
 // Load states
-class CardLoadSuccess extends CardState {
+class CardLoaded extends CardState {
   final List<Card> cards;
   
-  CardLoadSuccess(this.cards);
+  CardLoaded(this.cards);
   
   @override
   List<Object> get props => [cards];
 }
 
-class CardLoadError extends CardState {
+class CardError extends CardState {
   final String message;
   
-  CardLoadError(this.message);
+  CardError(this.message);
   
   @override
   List<Object> get props => [message];
@@ -35,20 +35,12 @@ class CardCreateLoading extends CardState {}
 
 class CardCreateSuccess extends CardState {
   final Card card;
+  final List<Card> allCards;
   
-  CardCreateSuccess(this.card);
-  
-  @override
-  List<Object> get props => [card];
-}
-
-class CardCreateError extends CardState {
-  final String message;
-  
-  CardCreateError(this.message);
+  CardCreateSuccess(this.card, this.allCards);
   
   @override
-  List<Object> get props => [message];
+  List<Object> get props => [card, allCards];
 }
 
 // Update states
@@ -56,34 +48,24 @@ class CardUpdateLoading extends CardState {}
 
 class CardUpdateSuccess extends CardState {
   final Card card;
+  final List<Card> allCards;
   
-  CardUpdateSuccess(this.card);
-  
-  @override
-  List<Object> get props => [card];
-}
-
-class CardUpdateError extends CardState {
-  final String message;
-  
-  CardUpdateError(this.message);
+  CardUpdateSuccess(this.card, this.allCards);
   
   @override
-  List<Object> get props => [message];
+  List<Object> get props => [card, allCards];
 }
 
 // Delete states
 class CardDeleteLoading extends CardState {}
 
-class CardDeleteSuccess extends CardState {}
-
-class CardDeleteError extends CardState {
-  final String message;
+class CardDeleteSuccess extends CardState {
+  final List<Card> remainingCards;
   
-  CardDeleteError(this.message);
+  CardDeleteSuccess(this.remainingCards);
   
   @override
-  List<Object> get props => [message];
+  List<Object> get props => [remainingCards];
 }
 
 // Share states
@@ -91,20 +73,12 @@ class CardShareLoading extends CardState {}
 
 class CardShareSuccess extends CardState {
   final String shareUrl;
-  
-  CardShareSuccess(this.shareUrl);
-  
-  @override
-  List<Object> get props => [shareUrl];
-}
-
-class CardShareError extends CardState {
   final String message;
   
-  CardShareError(this.message);
+  CardShareSuccess(this.shareUrl, this.message);
   
   @override
-  List<Object> get props => [message];
+  List<Object> get props => [shareUrl, message];
 }
 
 // Image upload states
@@ -112,18 +86,21 @@ class CardImageUploadLoading extends CardState {}
 
 class CardImageUploadSuccess extends CardState {
   final String imageUrl;
-  
-  CardImageUploadSuccess(this.imageUrl);
-  
-  @override
-  List<Object> get props => [imageUrl];
-}
-
-class CardImageUploadError extends CardState {
   final String message;
   
-  CardImageUploadError(this.message);
+  CardImageUploadSuccess(this.imageUrl, this.message);
   
   @override
-  List<Object> get props => [message];
+  List<Object> get props => [imageUrl, message];
+}
+
+// Operation success states (for toggle, etc.)
+class CardOperationSuccess extends CardState {
+  final String message;
+  final List<Card> cards;
+  
+  CardOperationSuccess(this.message, this.cards);
+  
+  @override
+  List<Object> get props => [message, cards];
 }

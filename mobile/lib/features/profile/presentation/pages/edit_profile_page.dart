@@ -49,8 +49,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
       final user = authState.user;
-      _firstNameController = TextEditingController(text: user.firstName ?? '');
-      _lastNameController = TextEditingController(text: user.lastName ?? '');
+      _firstNameController = TextEditingController(text: user.profile?.firstName ?? '');
+      _lastNameController = TextEditingController(text: user.profile?.lastName ?? '');
       _emailController = TextEditingController(text: user.email);
       _phoneController = TextEditingController(text: user.profile?.phone ?? '');
       _companyController = TextEditingController(text: user.profile?.company ?? '');
@@ -121,6 +121,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ShowmeSliverAppBar(
               title: 'Modifier mon profil',
               showBackButton: true,
+              onBackPressed: _navigateBack,
               actions: [
                 Container(
                   margin: const EdgeInsets.only(right: 16),
@@ -141,7 +142,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: isLoading
-                              ? SizedBox(
+                              ? const SizedBox(
                                   width: 16,
                                   height: 16,
                                   child: CircularProgressIndicator(
@@ -499,9 +500,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       });
 
       // ignore: use_build_context_synchronously
-      context
-          .read<ProfileBloc>()
-          .add(ProfileAvatarUploadRequested(_selectedImage!));
+      context.read<AuthBloc>().add(
+        AuthAvatarUploadRequested(imageFile: File(image.path))
+      );
     }
   }
 

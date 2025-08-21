@@ -2,9 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:showme/features/card/bloc/card_bloc.dart';
+import 'package:showme/features/card/bloc/card_event.dart';
+import 'package:showme/features/card/bloc/card_state.dart';
 import 'package:showme/shared/presentation/widgets/showme_app_bar.dart';
-import 'package:showme/shared/presentation/widgets/showme_card_widget.dart';
 
 import '../../../../core/design/showme_design_system.dart';
 import '../../../auth/bloc/auth_bloc.dart';
@@ -51,26 +53,65 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<CardBloc, CardState>(
-      listener: (context, state) {
-        if (state is CardOperationSuccess) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: ShowmeDesign.primaryTeal,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        } else if (state is CardError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: ShowmeDesign.primaryRose,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<CardBloc, CardState>(
+          listener: (context, state) {
+            if (state is CardCreateSuccess) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Carte créée avec succès'),
+                  backgroundColor: ShowmeDesign.primaryTeal,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            } else if (state is CardUpdateSuccess) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Carte mise à jour avec succès'),
+                  backgroundColor: ShowmeDesign.primaryTeal,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            } else if (state is CardDeleteSuccess) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Carte supprimée avec succès'),
+                  backgroundColor: ShowmeDesign.primaryTeal,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            } else if (state is CardOperationSuccess) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: ShowmeDesign.primaryTeal,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            } else if (state is CardShareSuccess) {
+              // Partager l'URL ou afficher le QR code
+              _handleShareSuccess(state.shareUrl, state.message);
+            } else if (state is CardImageUploadSuccess) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: ShowmeDesign.primaryTeal,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            } else if (state is CardError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: ShowmeDesign.primaryRose,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          },
+        ),
+      ],
       child: Scaffold(
         backgroundColor: ShowmeDesign.neutral50,
         body: RefreshIndicator(
@@ -84,8 +125,8 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
               // Statistiques rapides
               BlocBuilder<CardBloc, CardState>(
                 builder: (context, state) {
-                  if (state is CardLoaded || state is CardOperationSuccess) {
-                    final cards = state is CardLoaded ? state.cards : (state as CardOperationSuccess).cards;
+                  final cards = _getCardsFromState(state);
+                  if (cards != null && cards.isNotEmpty) {
                     return _buildStatsSection(cards);
                   }
                   return const SliverToBoxAdapter(child: SizedBox.shrink());
@@ -95,7 +136,8 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
               // Liste des cartes
               BlocBuilder<CardBloc, CardState>(
                 builder: (context, state) {
-                  if (state is CardLoading) {
+                  if (state is CardLoading || state is CardCreateLoading || 
+                      state is CardUpdateLoading || state is CardDeleteLoading) {
                     return _buildLoadingState();
                   }
 
@@ -103,13 +145,11 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
                     return _buildErrorState(state.message);
                   }
 
-                  if (state is CardLoaded || state is CardOperationSuccess) {
-                    final cards = state is CardLoaded ? state.cards : (state as CardOperationSuccess).cards;
-
+                  final cards = _getCardsFromState(state);
+                  if (cards != null) {
                     if (cards.isEmpty) {
                       return _buildEmptyState();
                     }
-
                     return _buildCardsList(cards);
                   }
 
@@ -144,18 +184,31 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
     );
   }
 
+  // Helper pour extraire les cartes de l'état
+  List? _getCardsFromState(CardState state) {
+    if (state is CardLoaded) return state.cards;
+    if (state is CardCreateSuccess) return state.allCards;
+    if (state is CardUpdateSuccess) return state.allCards;
+    if (state is CardDeleteSuccess) return state.remainingCards;
+    if (state is CardOperationSuccess) return state.cards;
+    return null;
+  }
+
   Widget _buildAppBar() {
     return ShowmeSliverAppBar(
       title: 'Mes cartes',
       showBackButton: true,
-      onBackPressed:() => context.go('/profile'),
+      onBackPressed: () => context.go('/profile'),
       actions: [
         // Bouton refresh
         Container(
           margin: const EdgeInsets.only(right: 8),
           child: BlocBuilder<CardBloc, CardState>(
             builder: (context, state) {
-              final isLoading = state is CardLoading;
+              final isLoading = state is CardLoading || 
+                              state is CardCreateLoading || 
+                              state is CardUpdateLoading || 
+                              state is CardDeleteLoading;
               
               return IconButton(
                 onPressed: isLoading ? null : () {
@@ -488,14 +541,197 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
             builder: (context, authState) {
               if (authState is AuthAuthenticated) {
                 return Container(
-                  margin: const EdgeInsets.only(bottom: ShowmeDesign.spacingSm),
-                  child: ShowmeCardWidget(
-                    card: card,
-                    user: authState.user,
-                    profile: card.profile,
-                    onTap: () => _navigateToCardDetail(card.id.toString()),
-                    showActions: true,
-                    size: CardSize.large,
+                  margin: const EdgeInsets.only(
+                    left: ShowmeDesign.spacingMd,
+                    right: ShowmeDesign.spacingMd,
+                    bottom: ShowmeDesign.spacingSm,
+                  ),
+                  child: Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(ShowmeDesign.radiusLg),
+                    ),
+                    child: InkWell(
+                      onTap: () => _navigateToCardDetail(card.id.toString()),
+                      borderRadius: BorderRadius.circular(ShowmeDesign.radiusLg),
+                      child: Padding(
+                        padding: const EdgeInsets.all(ShowmeDesign.spacingLg),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Header avec titre et actions
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        card.title,
+                                        style: ShowmeDesign.h5.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      if (card.bio != null) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          card.bio!,
+                                          style: ShowmeDesign.bodySmall.copyWith(
+                                            color: ShowmeDesign.neutral600,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                                
+                                // Menu d'actions
+                                PopupMenuButton<String>(
+                                  icon: const Icon(Icons.more_vert),
+                                  onSelected: (String value) {
+                                    switch (value) {
+                                      case 'edit':
+                                        _showEditCardDialog(context, card);
+                                        break;
+                                      case 'toggle_public':
+                                        context.read<CardBloc>().add(
+                                          CardTogglePublicRequested(card.id.toString(), !card.isPublic)
+                                        );
+                                        break;
+                                      case 'share':
+                                        context.read<CardBloc>().add(
+                                          CardShareRequested(card.id.toString(), 'link')
+                                        );
+                                        break;
+                                      case 'qr_code':
+                                        context.read<CardBloc>().add(
+                                          CardQRGenerateRequested(card.id.toString())
+                                        );
+                                        break;
+                                      case 'delete':
+                                        _confirmDeleteCard(context, card);
+                                        break;
+                                    }
+                                  },
+                                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                                    const PopupMenuItem<String>(
+                                      value: 'edit',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.edit, size: 20),
+                                          SizedBox(width: 8),
+                                          Text('Modifier'),
+                                        ],
+                                      ),
+                                    ),
+                                    PopupMenuItem<String>(
+                                      value: 'toggle_public',
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            card.isPublic ? Icons.visibility_off : Icons.visibility,
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(card.isPublic ? 'Rendre privée' : 'Rendre publique'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem<String>(
+                                      value: 'share',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.share, size: 20),
+                                          SizedBox(width: 8),
+                                          Text('Partager'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem<String>(
+                                      value: 'qr_code',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.qr_code, size: 20),
+                                          SizedBox(width: 8),
+                                          Text('QR Code'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuDivider(),
+                                    const PopupMenuItem<String>(
+                                      value: 'delete',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.delete, size: 20, color: ShowmeDesign.primaryRose),
+                                          SizedBox(width: 8),
+                                          Text('Supprimer', style: TextStyle(color: ShowmeDesign.primaryRose)),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            
+                            const SizedBox(height: ShowmeDesign.spacingMd),
+                            
+                            // Statistiques
+                            Row(
+                              children: [
+                                _buildStatChip(
+                                  icon: Icons.visibility,
+                                  value: card.viewsCount.toString(),
+                                  color: ShowmeDesign.primaryBlue,
+                                ),
+                                const SizedBox(width: ShowmeDesign.spacingSm),
+                                _buildStatChip(
+                                  icon: Icons.share,
+                                  value: card.totalShared.toString(),
+                                  color: ShowmeDesign.primaryTeal,
+                                ),
+                                const SizedBox(width: ShowmeDesign.spacingSm),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: card.isPublic 
+                                        ? ShowmeDesign.primaryPurple.withOpacity(0.1)
+                                        : ShowmeDesign.neutral200,
+                                    borderRadius: BorderRadius.circular(ShowmeDesign.radiusSm),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        card.isPublic ? Icons.public : Icons.lock,
+                                        size: 12,
+                                        color: card.isPublic 
+                                            ? ShowmeDesign.primaryPurple
+                                            : ShowmeDesign.neutral600,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        card.isPublic ? 'Public' : 'Privé',
+                                        style: ShowmeDesign.caption.copyWith(
+                                          color: card.isPublic 
+                                              ? ShowmeDesign.primaryPurple
+                                              : ShowmeDesign.neutral600,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 );
               }
@@ -508,9 +744,42 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
     );
   }
 
+  Widget _buildStatChip({
+    required IconData icon,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(ShowmeDesign.radiusSm),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 12,
+            color: color,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            value,
+            style: ShowmeDesign.caption.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Méthodes d'action
+
   Future<void> _handleRefresh() async {
     context.read<CardBloc>().add(CardRefreshRequested());
-    // Attendre que l'état change
     await Future.delayed(const Duration(milliseconds: 300));
   }
 
@@ -529,10 +798,151 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
     context.go('/cards/$cardId');
   }
 
+  void _handleShareSuccess(String shareUrl, String message) {
+    if (message.contains('QR')) {
+      // Afficher le QR code dans une boîte de dialogue
+      _showQRCodeDialog(shareUrl);
+    } else {
+      // Partager l'URL directement avec share_plus v11.1.0
+      Share.shareUri(
+        Uri.parse(shareUrl),
+      );
+    }
+  }
+
+  void _showQRCodeDialog(String qrCodeUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('QR Code'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Ici vous pourriez afficher l'image du QR code
+            Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                border: Border.all(color: ShowmeDesign.neutral300),
+                borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.qr_code,
+                      size: 80,
+                      color: ShowmeDesign.neutral600,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'QR Code généré',
+                      style: ShowmeDesign.bodySmall.copyWith(
+                        color: ShowmeDesign.neutral600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Partagez ce QR code pour que les autres puissent scanner votre carte',
+              style: ShowmeDesign.bodySmall.copyWith(
+                color: ShowmeDesign.neutral600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fermer'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Share.share(qrCodeUrl, subject: 'QR Code de ma carte');
+            },
+            child: const Text('Partager'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditCardDialog(BuildContext context, dynamic card) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Modifier la carte'),
+        content: const Text('Cette fonctionnalité sera bientôt disponible. Vous pourrez modifier votre carte directement depuis cette interface.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fermer'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Navigator vers la page d'édition
+              // _navigateToCardEdit(card.id.toString());
+            },
+            child: const Text('Modifier'),
+          ),
+        ],
+      ),
+    );
+  }
+
+void _confirmDeleteCard(BuildContext context, dynamic card) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Supprimer la carte'),
+        content: RichText(
+          text: TextSpan(
+            style: ShowmeDesign.bodyMedium.copyWith(color: ShowmeDesign.neutral800),
+            children: [
+              const TextSpan(text: 'Êtes-vous sûr de vouloir supprimer '),
+              TextSpan(
+                text: '"${card.title}"',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const TextSpan(text: ' ?\n\nCette action est irréversible.'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.read<CardBloc>().add(
+                CardDeleteRequested(card.id.toString())
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ShowmeDesign.primaryRose,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showCardExamples() {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => Container(
         decoration: const BoxDecoration(
           color: ShowmeDesign.white,
@@ -576,43 +986,120 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
             const SizedBox(height: ShowmeDesign.spacingLg),
             
             // Liste d'exemples
-            ...['Professionnelle', 'Créative', 'Minimaliste'].map((style) => 
-              ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: ShowmeDesign.primaryPurple.withOpacity(0.1),
-                  child: Icon(
-                    Icons.credit_card,
-                    color: ShowmeDesign.primaryPurple,
-                    size: 20,
-                  ),
-                ),
-                title: Text('Carte $style'),
-                subtitle: Text('Style adapté aux $style.toLowerCase()s'),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                onTap: () {
-                  Navigator.pop(context);
-                  _navigateToCardCreation();
-                },
-              ),
-            ),
+            ..._buildExamplesList(),
             
             const SizedBox(height: ShowmeDesign.spacingLg),
             
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _navigateToCardCreation();
-              },
-              child: const Text('Créer ma carte'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: ShowmeDesign.primaryPurple,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 48),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: ShowmeDesign.neutral300),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
+                      ),
+                    ),
+                    child: const Text('Fermer'),
+                  ),
+                ),
+                const SizedBox(width: ShowmeDesign.spacingMd),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _navigateToCardCreation();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ShowmeDesign.primaryPurple,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
+                      ),
+                    ),
+                    child: const Text('Créer ma carte'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  List<Widget> _buildExamplesList() {
+    final examples = [
+      {
+        'title': 'Professionnelle',
+        'subtitle': 'Idéale pour les environnements corporate',
+        'icon': Icons.business_center,
+        'color': ShowmeDesign.primaryBlue,
+      },
+      {
+        'title': 'Créative',
+        'subtitle': 'Pour les métiers artistiques et créatifs',
+        'icon': Icons.palette,
+        'color': ShowmeDesign.primaryPurple,
+      },
+      {
+        'title': 'Minimaliste',
+        'subtitle': 'Simple et élégante, pour tous les secteurs',
+        'icon': Icons.minimize,
+        'color': ShowmeDesign.primaryTeal,
+      },
+      {
+        'title': 'Tech',
+        'subtitle': 'Moderne et innovante pour les tech workers',
+        'icon': Icons.code,
+        'color': ShowmeDesign.primaryRose,
+      },
+    ];
+
+    return examples.map((example) => Container(
+      margin: const EdgeInsets.only(bottom: ShowmeDesign.spacingSm),
+      child: ListTile(
+        leading: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: (example['color'] as Color).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
+          ),
+          child: Icon(
+            example['icon'] as IconData,
+            color: example['color'] as Color,
+            size: 24,
+          ),
+        ),
+        title: Text(
+          'Carte ${example['title']}',
+          style: ShowmeDesign.bodyLarge.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: Text(
+          example['subtitle'] as String,
+          style: ShowmeDesign.bodySmall.copyWith(
+            color: ShowmeDesign.neutral600,
+          ),
+        ),
+        trailing: Icon(
+          Icons.arrow_forward_ios,
+          size: 16,
+          color: ShowmeDesign.neutral400,
+        ),
+        onTap: () {
+          Navigator.pop(context);
+          _navigateToCardCreation();
+        },
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
+        ),
+        tileColor: ShowmeDesign.neutral50,
+      ),
+    )).toList();
   }
 }

@@ -24,8 +24,20 @@ class AuthAuthenticated extends AuthState {
   List<Object> get props => [user, token];
 }
 
-class AuthUnauthenticated extends AuthState {}
+class AuthAvatarUploading extends AuthState {
+  final User user;
+  final String token;
 
+  AuthAvatarUploading({
+    required this.user,
+    required this.token,
+  });
+
+  @override
+  List<Object> get props => [user, token];
+}
+
+class AuthUnauthenticated extends AuthState {}
 
 class AuthError extends AuthState {
   final String message;

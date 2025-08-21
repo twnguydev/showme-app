@@ -47,6 +47,7 @@ docker-compose.override.yml
 
 # Uploads
 uploads/
+!src/modules/uploads
 
 # SSL certificates
 docker/ssl/

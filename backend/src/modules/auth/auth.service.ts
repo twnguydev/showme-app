@@ -13,7 +13,6 @@ import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 
 import { User } from '../../entities/user.entity';
-import { Profile } from '../../entities/profile.entity';
 import { LoginDto, RegisterDto, ForgotPasswordDto, ResetPasswordDto } from './dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { CardsService } from '../cards/cards.service';
@@ -23,8 +22,6 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(Profile)
-    private readonly profileRepository: Repository<Profile>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly cardsService: CardsService,
@@ -33,105 +30,144 @@ export class AuthService {
   /**
    * Inscription d'un nouvel utilisateur
    */
-  async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
-    const { email, password, firstName, lastName, acceptTerms } = registerDto;
-
-    if (!acceptTerms) {
-      throw new BadRequestException('Vous devez accepter les conditions d\'utilisation');
-    }
-
+  async register(registerDto: RegisterDto) {
     // Vérifier si l'utilisateur existe déjà
     const existingUser = await this.userRepository.findOne({
-      where: [{ email }, { username: email.split('@')[0] }],
+      where: { email: registerDto.email },
     });
 
     if (existingUser) {
       throw new ConflictException('Un utilisateur avec cet email existe déjà');
     }
 
-    // Créer le nom d'utilisateur unique
-    const username = await this.generateUniqueUsername(email);
-
     // Hasher le mot de passe
-    const passwordHash = await this.hashPassword(password);
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(registerDto.password, saltRounds);
 
-    // Créer l'utilisateur (SANS données personnelles)
+    // Créer l'utilisateur
     const user = this.userRepository.create({
-      email,
-      username,
-      passwordHash,
-      emailVerified: !this.configService.get('EMAIL_VERIFICATION_REQUIRED', false),
-      emailVerificationToken: this.configService.get('EMAIL_VERIFICATION_REQUIRED', false) 
-        ? uuidv4() 
-        : null,
+      email: registerDto.email,
+      password: hashedPassword,
+      firstName: registerDto.firstName,
+      lastName: registerDto.lastName,
+      // Définir les valeurs par défaut pour les futures cartes
+      defaultPhone: registerDto.phone,
+      defaultCompany: registerDto.company,
+      defaultPosition: registerDto.position,
     });
 
     const savedUser = await this.userRepository.save(user);
 
-    // Créer le profil avec les données personnelles
-    const profile = this.profileRepository.create({
-      firstName,
-      lastName,
-      email,
-      company: registerDto.company,
-      position: registerDto.position,
-      phone: registerDto.phone,
-      isPublic: true,
-      user: savedUser,
-    });
-
-    await this.profileRepository.save(profile);
-
-    // Créer une carte par défaut
+    // ✅ CRÉER LA CARTE PAR DÉFAUT
     try {
       await this.cardsService.createDefaultCard(savedUser);
+      console.log(`✅ Carte par défaut créée pour ${savedUser.email}`);
     } catch (error) {
-      console.error('Erreur lors de la création de la carte par défaut:', error);
+      console.error(`❌ Erreur création carte par défaut pour ${savedUser.email}:`, error);
+      // Ne pas faire échouer l'inscription si la carte échoue
     }
 
-    // Récupérer l'utilisateur avec ses relations
-    const userWithRelations = await this.getUserWithRelations(savedUser.id);
-
     // Générer les tokens
-    const tokens = await this.generateTokens(savedUser);
+    const { accessToken, refreshToken } = await this.generateTokens(savedUser);
+
+    // Sauvegarder le refresh token
+    savedUser.refreshToken = refreshToken;
+    await this.userRepository.save(savedUser);
+
+    // Retourner la réponse complète avec la carte
+    const userWithCards = await this.userRepository.findOne({
+      where: { id: savedUser.id },
+      relations: ['cards'],
+    });
 
     return {
-      user: this.sanitizeUser(userWithRelations),
-      ...tokens,
+      user: userWithCards,
+      jwt: accessToken,
+      refreshToken,
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h
     };
   }
 
-  /**
-   * Connexion d'un utilisateur
-   */
-  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
-    const { identifier, password } = loginDto;
-
-    const user = await this.validateUser(identifier, password);
-    
-    if (!user) {
-      throw new UnauthorizedException('Email ou mot de passe incorrect');
-    }
-
-    if (!user.isActive) {
-      throw new UnauthorizedException('Votre compte a été désactivé');
-    }
-
-    // Mettre à jour la date de dernière connexion
-    await this.userRepository.update(user.id, { 
-      lastLoginAt: new Date() 
+  async login(loginDto: LoginDto) {
+    // Trouver l'utilisateur
+    const user = await this.userRepository.findOne({
+      where: { email: loginDto.identifier },
+      relations: ['cards'], // ✅ Charger les cartes
     });
 
-    // Récupérer l'utilisateur avec ses relations
-    const userWithRelations = await this.getUserWithRelations(user.id);
+    if (!user) {
+      throw new UnauthorizedException('Identifiants incorrects');
+    }
 
+    // Vérifier le mot de passe
+    const passwordValid = await bcrypt.compare(loginDto.password, user.password);
+    if (!passwordValid) {
+      throw new UnauthorizedException('Identifiants incorrects');
+    }
+
+    // ✅ VÉRIFIER SI L'UTILISATEUR A UNE CARTE PAR DÉFAUT
+    if (!user.cards || user.cards.length === 0) {
+      try {
+        await this.cardsService.createDefaultCard(user);
+        console.log(`✅ Carte par défaut créée lors de la connexion pour ${user.email}`);
+        
+        // Recharger l'utilisateur avec ses cartes
+        const userWithCards = await this.userRepository.findOne({
+          where: { id: user.id },
+          relations: ['cards'],
+        });
+        Object.assign(user, userWithCards);
+      } catch (error) {
+        console.error(`❌ Erreur création carte par défaut lors connexion:`, error);
+      }
+    }
+
+    // Mettre à jour la dernière connexion
+    user.updateLastLogin();
+    
     // Générer les tokens
-    const tokens = await this.generateTokens(user);
+    const { accessToken, refreshToken } = await this.generateTokens(user);
+
+    // Sauvegarder le refresh token et la dernière connexion
+    user.refreshToken = refreshToken;
+    await this.userRepository.save(user);
 
     return {
-      user: this.sanitizeUser(userWithRelations),
-      ...tokens,
+      user,
+      jwt: accessToken,
+      refreshToken,
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h
     };
+  }
+
+  async getCurrentUser(userId: number) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['cards', 'subscription'], // ✅ Inclure les cartes
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Utilisateur non trouvé');
+    }
+
+    // ✅ VÉRIFIER SI L'UTILISATEUR A UNE CARTE PAR DÉFAUT
+    if (!user.cards || user.cards.length === 0) {
+      try {
+        await this.cardsService.createDefaultCard(user);
+        console.log(`✅ Carte par défaut créée pour getCurrentUser ${user.email}`);
+        
+        // Recharger l'utilisateur avec ses cartes
+        const userWithCards = await this.userRepository.findOne({
+          where: { id: user.id },
+          relations: ['cards', 'subscription'],
+        });
+        return userWithCards;
+      } catch (error) {
+        console.error(`❌ Erreur création carte par défaut getCurrentUser:`, error);
+      }
+    }
+
+    return user;
   }
 
   async validateUser(identifier: string, password: string): Promise<User | null> {
@@ -145,7 +181,7 @@ export class AuthService {
       return null;
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return null;
     }
@@ -169,7 +205,8 @@ export class AuthService {
 
       return {
         user: this.sanitizeUser(user),
-        ...tokens,
+        jwt: tokens.accessToken,
+        refreshToken: tokens.refreshToken
       };
     } catch (error) {
       throw new UnauthorizedException('Token de rafraîchissement invalide ou expiré');
@@ -217,10 +254,10 @@ export class AuthService {
       throw new BadRequestException('Token de réinitialisation invalide ou expiré');
     }
 
-    const passwordHash = await this.hashPassword(newPassword);
+    const password = await this.hashPassword(newPassword);
 
     await this.userRepository.update(user.id, {
-      passwordHash,
+      password,
       passwordResetToken: null,
       passwordResetExpires: null,
     });
@@ -234,56 +271,22 @@ export class AuthService {
     return this.getUserWithRelations(id);
   }
 
-  // Méthodes privées
-  private async generateUniqueUsername(email: string): Promise<string> {
-    const baseUsername = email.split('@')[0].toLowerCase();
-    let username = baseUsername.replace(/[^a-z0-9]/g, '');
-    let counter = 1;
-
-    if (username.length < 3) {
-      username = 'user' + username;
-    }
-
-    while (await this.userRepository.findOne({ where: { username } })) {
-      username = `${baseUsername}${counter}`;
-      counter++;
-    }
-
-    return username;
-  }
-
   private async hashPassword(password: string): Promise<string> {
     const saltRounds = 12;
     return bcrypt.hash(password, saltRounds);
   }
 
   private async generateTokens(user: User) {
-    const payload = { 
-      sub: user.id, 
-      email: user.email, 
-      username: user.username,
+    const payload = {
+      sub: user.id,
+      email: user.email,
       role: user.role,
     };
 
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, {
-        secret: this.configService.get('JWT_SECRET'),
-        expiresIn: this.configService.get('JWT_EXPIRES_IN', '15m'),
-      }),
-      this.jwtService.signAsync(payload, {
-        secret: this.configService.get('JWT_REFRESH_SECRET'),
-        expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN', '7d'),
-      }),
-    ]);
+    const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
-    const expiresIn = this.configService.get('JWT_EXPIRES_IN', '15m');
-    const expiresAt = this.calculateExpirationDate(expiresIn);
-
-    return {
-      jwt: accessToken,
-      refreshToken,
-      expiresAt,
-    };
+    return { accessToken, refreshToken };
   }
 
   private calculateExpirationDate(duration: string): Date {
@@ -312,7 +315,7 @@ export class AuthService {
     if (!user) return null;
 
     const { 
-      passwordHash, 
+      password, 
       passwordResetToken, 
       passwordResetExpires, 
       emailVerificationToken,

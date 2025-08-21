@@ -1,19 +1,16 @@
-// src/entities/card.entity.ts
+// backend/src/entities/card.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
   ManyToOne,
   OneToMany,
-  OneToOne,
-  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
   Index,
+  JoinColumn,
 } from 'typeorm';
 import { User } from './user.entity';
-import { Profile } from './profile.entity';
-import { Subscription } from './subscription.entity';
 import { ContactExchange } from './contact-exchange.entity';
 import { WalletPass } from './wallet-pass.entity';
 
@@ -22,27 +19,26 @@ export enum CardTheme {
   BLUE = 'blue',
   TEAL = 'teal',
   GREEN = 'green',
+  ROSE = 'rose',
   AMBER = 'amber',
-  ORANGE = 'orange',
-  RED = 'red',
-  PINK = 'pink',
-  INDIGO = 'indigo',
 }
 
 @Entity('cards')
+@Index(['userId', 'slug'], { unique: true }) // Slug unique par utilisateur
+@Index(['slug']) // Index pour les recherches publiques
 export class Card {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true })
-  @Index('IDX_CARD_SLUG', { unique: true })
+  @Column({ length: 100 })
+  @Index()
   slug: string;
 
-  @Column()
+  @Column({ length: 200 })
   title: string;
 
   @Column({ type: 'text', nullable: true })
-  bio?: string;
+  bio: string;
 
   @Column({ default: true })
   isPublic: boolean;
@@ -51,22 +47,16 @@ export class Card {
   viewsCount: number;
 
   @Column({ nullable: true })
-  walletPassUrl?: string;
+  walletPassUrl: string;
 
   @Column({ default: false })
   allowPayment: boolean;
 
-  @Column({ default: false })
+  @Column({ default: true })
   nfcEnabled: boolean;
 
-  @Column({ type: 'json', nullable: true })
-  qrCodeUrl?: {
-    url: string;
-    name?: string;
-    size?: number;
-    mimeType?: string;
-    uploadedAt?: Date;
-  };
+  @Column({ nullable: true })
+  qrCodeUrl: string;
 
   @Column({ default: 0 })
   totalShared: number;
@@ -74,8 +64,89 @@ export class Card {
   @Column({ default: 0 })
   totalLeads: number;
 
-  @Column({ type: 'enum', enum: CardTheme, default: CardTheme.PURPLE })
+  @Column({
+    type: 'enum',
+    enum: CardTheme,
+    default: CardTheme.PURPLE,
+  })
   theme: CardTheme;
+
+  // === DONNÉES DE CONTACT (ex-Profile) ===
+  
+  @Column({ length: 255 })
+  @Index()
+  email: string; // Requis, peut être différent pour chaque carte
+
+  @Column({ length: 100, nullable: true })
+  firstName: string;
+
+  @Column({ length: 100, nullable: true })
+  lastName: string;
+
+  @Column({ length: 20, nullable: true })
+  phone: string;
+
+  @Column({ length: 200, nullable: true })
+  company: string; // Différent par carte/entreprise
+
+  @Column({ length: 200, nullable: true })
+  position: string; // Différent par carte/entreprise
+
+  @Column({ length: 255, nullable: true })
+  website: string;
+
+  @Column({ length: 255, nullable: true })
+  linkedinUrl: string;
+
+  @Column({ length: 255, nullable: true })
+  twitterUrl: string;
+
+  @Column({ length: 255, nullable: true })
+  instagramUrl: string;
+
+  @Column({ length: 500, nullable: true })
+  address: string;
+
+  @Column({ length: 100, nullable: true })
+  city: string;
+
+  @Column({ length: 100, nullable: true })
+  country: string;
+
+  @Column({ type: 'json', nullable: true })
+  avatar: {
+    url: string;
+    name: string;
+    size: number;
+    mimeType: string;
+    uploadedAt: Date;
+  };
+
+  @Column({ type: 'json', nullable: true })
+  companyLogo: {
+    url: string;
+    name: string;
+    size: number;
+    mimeType: string;
+    uploadedAt: Date;
+  };
+
+  // === RELATIONS ===
+
+  @Column()
+  userId: number;
+
+  @ManyToOne(() => User, user => user.cards, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
+  @OneToMany(() => ContactExchange, exchange => exchange.card)
+  contactExchanges: ContactExchange[];
+
+  @OneToMany(() => WalletPass, walletPass => walletPass.card)
+  walletPasses: WalletPass[];
+
+  // === TIMESTAMPS ===
 
   @CreateDateColumn()
   createdAt: Date;
@@ -83,49 +154,38 @@ export class Card {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  // Relations
-  @ManyToOne(() => User, (user) => user.cards, { onDelete: 'CASCADE' })
-  @Index('IDX_CARD_USER')
-  user: User;
+  // === GETTERS VIRTUELS ===
 
-  @OneToOne(() => Profile, { nullable: true })
-  @JoinColumn()
-  profile?: Profile;
-
-  @ManyToOne(() => Subscription, { nullable: true })
-  subscription?: Subscription;
-
-  @OneToMany(() => ContactExchange, (exchange) => exchange.card)
-  exchanges: ContactExchange[];
-
-  @OneToMany(() => WalletPass, (pass) => pass.card)
-  walletPasses: WalletPass[];
-
-  // Getters
-  get publicUrl(): string {
-    return `https://qard.app/card/${this.slug}`;
-  }
-
-  get shortUrl(): string {
-    return `https://qard.app/u/${this.slug}`;
+  get fullName(): string {
+    if (this.firstName && this.lastName) {
+      return `${this.firstName} ${this.lastName}`;
+    } else if (this.firstName) {
+      return this.firstName;
+    } else if (this.lastName) {
+      return this.lastName;
+    }
+    return this.email.split('@')[0]; // Fallback sur l'email
   }
 
   get isPro(): boolean {
-    return this.subscription?.status === 'active';
+    return this.user?.subscription?.isActive || false;
   }
 
-  get themeDisplayName(): string {
-    const themeNames = {
-      [CardTheme.PURPLE]: 'Purple',
-      [CardTheme.BLUE]: 'Ocean',
-      [CardTheme.TEAL]: 'Teal',
-      [CardTheme.GREEN]: 'Forest',
-      [CardTheme.AMBER]: 'Sunset',
-      [CardTheme.ORANGE]: 'Fire',
-      [CardTheme.RED]: 'Ruby',
-      [CardTheme.PINK]: 'Rose',
-      [CardTheme.INDIGO]: 'Indigo',
-    };
-    return themeNames[this.theme] || this.theme;
+  get publicUrl(): string {
+    return `/card/${this.slug}`;
+  }
+
+  // === MÉTHODES ===
+
+  incrementViews(): void {
+    this.viewsCount++;
+  }
+
+  incrementShares(): void {
+    this.totalShared++;
+  }
+
+  incrementLeads(): void {
+    this.totalLeads++;
   }
 }

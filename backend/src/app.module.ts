@@ -13,6 +13,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { HealthModule } from './modules/health/health.module';
 import { CardsModule } from './modules/cards/cards.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 // import { AnalyticsModule } from './modules/analytics/analytics.module';
 // import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 // import { UploadsModule } from './modules/uploads/uploads.module';
@@ -63,6 +64,7 @@ import { CardsModule } from './modules/cards/cards.module';
     SeedsModule,
     HealthModule,
     CardsModule,
+    UploadsModule,
     // AnalyticsModule,
     // SubscriptionsModule,
     // UploadsModule,

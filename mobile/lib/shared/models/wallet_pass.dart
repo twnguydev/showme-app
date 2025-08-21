@@ -77,23 +77,6 @@ class WalletPass {
       updatedAt: updatedAt,
     );
   }
-
-  static WalletPass demo() {
-    final now = DateTime.now();
-    return WalletPass(
-      id: 1,
-      passTypeIdentifier: 'pass.com.showme.business-card',
-      serialNumber: 'DEMO-${now.millisecondsSinceEpoch}',
-      passUrl: 'https://example.com/passes/demo.pkpass',
-      qrCodeMedia: UploadedFile.demo(),
-      status: PassStatus.active,
-      generatedAt: now,
-      expiresAt: now.add(const Duration(days: 365)), // Expire dans 1 an
-      card: Card.demo(),
-      createdAt: now,
-      updatedAt: now,
-    );
-  }
 }
 
 @JsonEnum()

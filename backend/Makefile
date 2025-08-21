@@ -14,7 +14,7 @@ BLUE = \033[0;34m
 NC = \033[0m # No Color
 
 help: ## Afficher l'aide
-	@echo "$(BLUE)🚀 ShowMe Backend - Commandes disponibles:$(NC)"
+	@echo "$(BLUE)🚀 qard Backend - Commandes disponibles:$(NC)"
 	@echo ""
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "$(YELLOW)%-20s$(NC) %s\n", $$1, $$2}'
 	@echo ""
@@ -151,7 +151,7 @@ reset-db-full: ## Reset complet avec nouvelles migrations
 	@echo "$(RED)⚠️ ATTENTION: Reset complet de la base!$(NC)"
 	@read -p "Êtes-vous sûr? [y/N]: " confirm && [ "$$confirm" = "y" ]
 	@$(COMPOSE) stop mysql app
-	@docker volume rm showme_mysql_data 2>/dev/null || true
+	@docker volume rm qard_mysql_data 2>/dev/null || true
 	@$(COMPOSE) up -d mysql
 	@sleep 15
 	@make migration-run
@@ -198,7 +198,7 @@ db-reset: ## Réinitialiser complètement la base de données
 	@echo "$(RED)⚠️ ATTENTION: Cette action va supprimer toutes les données de la base!$(NC)"
 	@read -p "Êtes-vous sûr? [y/N]: " confirm && [ "$$confirm" = "y" ]
 	@$(COMPOSE) stop mysql app
-	@docker volume rm showme_mysql_data 2>/dev/null || true
+	@docker volume rm qard_mysql_data 2>/dev/null || true
 	@$(COMPOSE) up -d mysql
 	@sleep 15
 	@$(COMPOSE) up -d app

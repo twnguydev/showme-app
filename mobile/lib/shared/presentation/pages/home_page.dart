@@ -6,6 +6,8 @@ import 'package:showme/shared/models/user.dart';
 
 import '../../../core/design/showme_design_system.dart';
 import '../../../features/card/bloc/card_bloc.dart';
+import '../../../features/card/bloc/card_event.dart';
+import '../../../features/card/bloc/card_state.dart';
 import '../../../features/crm/bloc/crm_bloc.dart';
 import '../widgets/showme_card_widget.dart';
 import '../widgets/stats_overview.dart';
@@ -16,7 +18,6 @@ import '../../../features/auth/bloc/auth_bloc.dart';
 import '../../../features/auth/bloc/auth_state.dart';
 import '../../../shared/models/profile.dart';
 import '../../../shared/models/card.dart' as CardModel;
-import '../../../shared/models/card_theme.dart' as CardTheme;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -29,11 +30,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   late AnimationController _headerController;
   late AnimationController _contentController;
   late Animation<double> _contentStaggerAnimation;
+  
+  // Contrôleur pour le PageView des cartes
+  late PageController _cardPageController;
+  int _currentCardIndex = 0;
+  List<CardModel.Card> _userCards = [];
 
   @override
   void initState() {
     super.initState();
     _setupAnimations();
+    _setupPageController();
     _loadInitialData();
   }
 
@@ -63,6 +70,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     });
   }
 
+  void _setupPageController() {
+    _cardPageController = PageController();
+  }
+
   void _loadInitialData() {
     // Charger les données initiales
     context.read<CardBloc>().add(CardLoadRequested());
@@ -74,6 +85,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   void dispose() {
     _headerController.dispose();
     _contentController.dispose();
+    _cardPageController.dispose();
     super.dispose();
   }
 
@@ -94,7 +106,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   showWelcomeSection: true,
                   showProfileIcon: true,
                   onProfilePressed: () => context.push('/profile'),
-                  // Passer l'utilisateur pour afficher son avatar dans l'AppBar
                   user: authState is AuthAuthenticated ? authState.user : null,
                 );
               },
@@ -130,34 +141,42 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           offset: Offset(0, (1 - _contentStaggerAnimation.value) * 30),
           child: Opacity(
             opacity: _contentStaggerAnimation.value,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                BlocBuilder<CardBloc, CardState>(
-                  builder: (context, cardState) {
-                    return BlocBuilder<AuthBloc, AuthState>(
-                      builder: (context, authState) {
-                        if (cardState is CardLoaded && cardState.cards.isNotEmpty) {
-                          final activeCard = cardState.cards.first;
-                          return ShowmeCardWidget(
-                            card: activeCard,
-                            user: authState is AuthAuthenticated ? authState.user : User.demo(),
-                            profile: authState is AuthAuthenticated
-                              ? (authState.user.profile ?? Profile.demo())
-                              : Profile.demo(),
-                            size: CardSize.large,
-                            onTap: () => context.go('/cards/${activeCard.id}'),
-                          );
-                        } else if (cardState is CardLoading) {
-                          return _buildCardLoadingSkeleton();
-                        } else {
-                          return _buildEmptyCardState();
-                        }
-                      },
-                    );
-                  },
-                ),
-              ],
+            child: BlocListener<CardBloc, CardState>(
+              listener: (context, state) {
+                if (state is CardLoaded || 
+                    state is CardCreateSuccess || 
+                    state is CardUpdateSuccess ||
+                    state is CardOperationSuccess) {
+                  final cards = _getCardsFromState(state);
+                  if (cards != null) {
+                    setState(() {
+                      _userCards = cards;
+                      // Réinitialiser l'index si nécessaire
+                      if (_currentCardIndex >= cards.length && cards.isNotEmpty) {
+                        _currentCardIndex = 0;
+                      }
+                    });
+                  }
+                }
+              },
+              child: BlocBuilder<CardBloc, CardState>(
+                builder: (context, cardState) {
+                  return BlocBuilder<AuthBloc, AuthState>(
+                    builder: (context, authState) {
+                      if (cardState is CardLoading) {
+                        return _buildCardLoadingSkeleton();
+                      }
+                      
+                      final cards = _getCardsFromState(cardState);
+                      if (cards != null && cards.isNotEmpty) {
+                        return _buildCardsSwiper(cards, authState);
+                      } else {
+                        return _buildEmptyCardState();
+                      }
+                    },
+                  );
+                },
+              ),
             ),
           ),
         );
@@ -165,140 +184,200 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildDynamicCardFromUser(dynamic user) {
-    // Créer un slug basé sur le nom utilisateur
-    String generateSlug() {
-      final firstName = user.firstName ?? '';
-      final lastName = user.lastName ?? '';
-      if (firstName.isNotEmpty && lastName.isNotEmpty) {
-        return '${firstName.toLowerCase()}-${lastName.toLowerCase()}';
-      } else if (firstName.isNotEmpty) {
-        return firstName.toLowerCase();
-      } else if (user.email != null) {
-        return user.email!.split('@').first.toLowerCase();
-      }
-      return 'utilisateur-${user.id}';
-    }
+  List<CardModel.Card>? _getCardsFromState(CardState state) {
+    if (state is CardLoaded) return state.cards;
+    if (state is CardCreateSuccess) return state.allCards;
+    if (state is CardUpdateSuccess) return state.allCards;
+    if (state is CardOperationSuccess) return state.cards;
+    return null;
+  }
 
-    // Utiliser profileOrDefault qui gère automatiquement le cas null
-    final profile = user.profile;
-
-    // Créer une carte temporaire basée sur le profile
-    final dynamicCard = CardModel.Card(
-      id: 0, // ID temporaire
-      slug: generateSlug(),
-      title: profile.company != null && profile.company!.isNotEmpty
-          ? 'Carte ${profile.company}'
-          : 'Ma carte de visite',
-      bio: profile.position != null && profile.position!.isNotEmpty
-          ? 'Découvrez mon parcours professionnel et connectons-nous !'
-          : 'Créez votre première carte pour personnaliser cette description.',
-      isPublic: true,
-      viewsCount: 0,
-      walletPassUrl: null,
-      allowPayment: false,
-      nfcEnabled: true,
-      qrCodeUrl: null,
-      totalShared: 0,
-      totalLeads: 0,
-      profile: profile,
-      subscription: null,
-      theme: CardTheme.CardTheme.purple,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-
-    return Container(
-      margin: const EdgeInsets.only(
-        top: ShowmeDesign.spacingMd,
-        left: 10,
-        right: 10,
-      ),
-      child: Stack(
-        children: [
-          ShowmeCardWidget(
-            card: dynamicCard,
-            user: user,
-            profile: profile,
-            size: CardSize.large,
-            onTap: () => context.go('/cards/new'),
+  Widget _buildCardsSwiper(List<CardModel.Card> cards, AuthState authState) {
+    return Column(
+      children: [
+        // Swiper des cartes
+        SizedBox(
+          height: 280,
+          child: PageView.builder(
+            controller: _cardPageController,
+            onPageChanged: (index) {
+              setState(() {
+                _currentCardIndex = index;
+              });
+            },
+            itemCount: cards.length,
+            itemBuilder: (context, index) {
+              final card = cards[index];
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 8),
+                child: ShowmeCardWidget(
+                  card: card,
+                  user: authState is AuthAuthenticated ? authState.user : User.demo(),
+                  profile: authState is AuthAuthenticated
+                    ? (authState.user.profile ?? Profile.demo())
+                    : Profile.demo(),
+                  size: CardSize.large,
+                  onTap: () => context.go('/cards/${card.id}'),
+                ),
+              );
+            },
           ),
-          // Overlay pour indiquer que c'est un aperçu
-          Positioned(
-            top: ShowmeDesign.spacingLg,
-            left: ShowmeDesign.spacingLg,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: ShowmeDesign.spacingSm,
-                vertical: ShowmeDesign.spacingXs,
-              ),
+        ),
+        
+        const SizedBox(height: ShowmeDesign.spacingMd),
+        
+        // Indicateurs de pages + informations de la carte
+        if (cards.length > 1) _buildCardIndicators(cards),
+        
+        // Informations de la carte actuelle
+        _buildCurrentCardInfo(cards[_currentCardIndex]),
+      ],
+    );
+  }
+
+  Widget _buildCardIndicators(List<CardModel.Card> cards) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Indicateurs de points
+        Row(
+          children: cards.asMap().entries.map((entry) {
+            final index = entry.key;
+            final isActive = index == _currentCardIndex;
+            
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: isActive ? 20 : 8,
+              height: 8,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(ShowmeDesign.radiusSm),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
-                  width: 1,
+                color: isActive 
+                    ? ShowmeDesign.primaryPurple 
+                    : ShowmeDesign.neutral300,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            );
+          }).toList(),
+        ),
+        
+        const SizedBox(width: ShowmeDesign.spacingMd),
+        
+        // Compteur
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: ShowmeDesign.spacingSm,
+            vertical: ShowmeDesign.spacingXs,
+          ),
+          decoration: BoxDecoration(
+            color: ShowmeDesign.neutral100,
+            borderRadius: BorderRadius.circular(ShowmeDesign.radiusSm),
+          ),
+          child: Text(
+            '${_currentCardIndex + 1}/${cards.length}',
+            style: ShowmeDesign.caption.copyWith(
+              color: ShowmeDesign.neutral600,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCurrentCardInfo(CardModel.Card card) {
+    return Container(
+      margin: const EdgeInsets.all(ShowmeDesign.spacingMd),
+      padding: const EdgeInsets.all(ShowmeDesign.spacingMd),
+      decoration: BoxDecoration(
+        color: ShowmeDesign.white,
+        borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
+        boxShadow: ShowmeDesign.cardShadow,
+      ),
+      child: Row(
+        children: [
+          // Icône de statut
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: card.isPublic 
+                  ? ShowmeDesign.primaryTeal.withOpacity(0.1)
+                  : ShowmeDesign.neutral200,
+              borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
+            ),
+            child: Icon(
+              card.isPublic ? Icons.public : Icons.lock,
+              color: card.isPublic 
+                  ? ShowmeDesign.primaryTeal 
+                  : ShowmeDesign.neutral500,
+              size: 20,
+            ),
+          ),
+          
+          const SizedBox(width: ShowmeDesign.spacingMd),
+          
+          // Informations
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  card.title,
+                  style: ShowmeDesign.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Text(
+                      card.isPublic ? 'Publique' : 'Privée',
+                      style: ShowmeDesign.caption.copyWith(
+                        color: card.isPublic 
+                            ? ShowmeDesign.primaryTeal 
+                            : ShowmeDesign.neutral500,
+                      ),
+                    ),
+                    const SizedBox(width: ShowmeDesign.spacingSm),
+                    Text(
+                      '•',
+                      style: ShowmeDesign.caption.copyWith(
+                        color: ShowmeDesign.neutral400,
+                      ),
+                    ),
+                    const SizedBox(width: ShowmeDesign.spacingSm),
+                    Text(
+                      '${card.viewsCount} vues',
+                      style: ShowmeDesign.caption.copyWith(
+                        color: ShowmeDesign.neutral500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          
+          // Actions rapides
+          Row(
+            children: [
+              IconButton(
+                onPressed: () => _shareCurrentCard(),
+                icon: const Icon(Icons.share, size: 20),
+                style: IconButton.styleFrom(
+                  backgroundColor: ShowmeDesign.primaryBlue.withOpacity(0.1),
+                  foregroundColor: ShowmeDesign.primaryBlue,
                 ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.preview,
-                    color: Colors.white,
-                    size: 12,
-                  ),
-                  SizedBox(width: ShowmeDesign.spacingXs),
-                  Text(
-                    'Aperçu - Cliquez pour créer',
-                    style: ShowmeDesign.caption.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+              const SizedBox(width: ShowmeDesign.spacingXs),
+              IconButton(
+                onPressed: () => _showCurrentCardQR(),
+                icon: const Icon(Icons.qr_code, size: 20),
+                style: IconButton.styleFrom(
+                  backgroundColor: ShowmeDesign.primaryTeal.withOpacity(0.1),
+                  foregroundColor: ShowmeDesign.primaryTeal,
+                ),
               ),
-            ),
-          ),
-          // Badge encourageant à créer une vraie carte
-          Positioned(
-            bottom: ShowmeDesign.spacingLg,
-            right: ShowmeDesign.spacingLg,
-            child: Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: ShowmeDesign.spacingSm,
-                vertical: ShowmeDesign.spacingXs,
-              ),
-              decoration: BoxDecoration(
-                gradient: ShowmeDesign.primaryGradient,
-                borderRadius: BorderRadius.circular(ShowmeDesign.radiusSm),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.add_circle_outline,
-                    color: Colors.white,
-                    size: 12,
-                  ),
-                  SizedBox(width: ShowmeDesign.spacingXs),
-                  Text(
-                    'Créer ma carte',
-                    style: ShowmeDesign.caption.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ],
           ),
         ],
       ),
@@ -325,6 +404,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 children: [
                   QuickActionsGrid(
                     onActionTap: _handleQuickAction,
+                    currentCard: _userCards.isNotEmpty 
+                        ? _userCards[_currentCardIndex] 
+                        : null,
                   ),
                 ],
               ),
@@ -340,13 +422,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       animation: _contentStaggerAnimation,
       builder: (context, child) {
         return Transform.translate(
-          offset: Offset(0, (1 - _contentStaggerAnimation.value) * 20), // Réduit de 50 à 20
+          offset: Offset(0, (1 - _contentStaggerAnimation.value) * 20),
           child: Opacity(
             opacity: _contentStaggerAnimation.value,
             child: Padding(
               padding: const EdgeInsets.only(
-                left: 20, // Même marge que la carte
-                right: 20, // Même marge que la carte
+                left: 20,
+                right: 20,
                 bottom: ShowmeDesign.spacingLg,
               ),
               child: Column(
@@ -404,13 +486,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       animation: _contentStaggerAnimation,
       builder: (context, child) {
         return Transform.translate(
-          offset: Offset(0, (1 - _contentStaggerAnimation.value) * 25), // Réduit de 60 à 25
+          offset: Offset(0, (1 - _contentStaggerAnimation.value) * 25),
           child: Opacity(
             opacity: _contentStaggerAnimation.value,
             child: Padding(
               padding: const EdgeInsets.only(
-                left: 20, // Même marge que la carte
-                right: 20, // Même marge que la carte
+                left: 20,
+                right: 20,
                 bottom: ShowmeDesign.spacingLg,
               ),
               child: Column(
@@ -729,35 +811,37 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   // Gestionnaires d'événements
   Future<void> _handleRefresh() async {
-    // Updated to use CardBloc
     context.read<CardBloc>().add(CardRefreshRequested());
     context.read<CrmBloc>().add(CrmStatsRequested());
     context.read<CrmBloc>().add(CrmContactsRequested());
     
-    // Attendre un peu pour l'effet visuel
     await Future.delayed(const Duration(milliseconds: 500));
   }
 
   void _handleQuickAction(String action) {
-    // Vérifier si l'action est PRO et si l'utilisateur n'a pas l'abonnement
+    final currentCard = _userCards.isNotEmpty ? _userCards[_currentCardIndex] : null;
+
     if (_isProAction(action) && !_hasProSubscription()) {
       _redirectToPaywall(action);
       return;
     }
 
-    // Actions normales
     switch (action) {
       case 'share_nfc':
         _showNFCSharing();
         break;
       case 'share_qr':
-        _showQRCode();
+        _showCurrentCardQR(); 
         break;
       case 'view_contacts':
-        context.go('/crm');
+        context.push('/crm');
         break;
       case 'edit_card':
-        context.go('/cards');
+        if (currentCard != null) {
+          context.push('/cards/${currentCard.id}/edit');
+        } else {
+          context.push('/cards');
+        }
         break;
       case 'kiosk_mode':
         _activateKioskMode();
@@ -778,15 +862,32 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   bool _hasProSubscription() {
-    // return context.read<SubscriptionBloc>().state.isPro;
-    return false;
+    return false; // TODO: Implémenter la logique d'abonnement
   }
 
   void _redirectToPaywall(String feature) {
     context.go('/paywall?feature=$feature&source=quick_actions');
   }
 
-  void _showShareOptions() {
+  void _shareCurrentCard() {
+    if (_userCards.isNotEmpty) {
+      final currentCard = _userCards[_currentCardIndex];
+      context.read<CardBloc>().add(
+        CardShareRequested(currentCard.id.toString(), 'link')
+      );
+    }
+  }
+
+  void _showCurrentCardQR() {
+    if (_userCards.isNotEmpty) {
+      final currentCard = _userCards[_currentCardIndex];
+      context.read<CardBloc>().add(
+        CardQRGenerateRequested(currentCard.id.toString())
+      );
+    }
+  }
+
+void _showShareOptions() {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -817,7 +918,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: ShowmeDesign.spacingLg),
+            const SizedBox(height: ShowmeDesign.spacingMd),
+            if (_userCards.isNotEmpty) ...[
+              Text(
+                _userCards[_currentCardIndex].title,
+                style: ShowmeDesign.bodyMedium.copyWith(
+                  color: ShowmeDesign.neutral600,
+                ),
+              ),
+              const SizedBox(height: ShowmeDesign.spacingLg),
+            ],
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -831,13 +941,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   icon: Icons.qr_code_rounded,
                   label: 'QR Code',
                   color: ShowmeDesign.primaryTeal,
-                  onTap: _showQRCode,
+                  onTap: _showCurrentCardQR,
                 ),
                 _buildShareOption(
                   icon: Icons.link_rounded,
                   label: 'Lien',
                   color: ShowmeDesign.primaryPurple,
-                  onTap: _shareLink,
+                  onTap: _shareCurrentCard,
                 ),
               ],
             ),
@@ -887,23 +997,196 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   void _showNFCSharing() {
-    context.go('/splash');
-  }
+    if (_userCards.isEmpty) {
+      _showComingSoon('NFC');
+      return;
+    }
 
-  void _showQRCode() {
-    context.go('/qr-share');
-  }
-
-  void _shareLink() {
-    _showComingSoon('Partage de lien');
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Partage NFC'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: ShowmeDesign.primaryBlue.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.nfc,
+                size: 40,
+                color: ShowmeDesign.primaryBlue,
+              ),
+            ),
+            const SizedBox(height: ShowmeDesign.spacingMd),
+            Text(
+              'Approchez votre téléphone d\'un autre appareil compatible NFC pour partager votre carte "${_userCards[_currentCardIndex].title}".',
+              textAlign: TextAlign.center,
+              style: ShowmeDesign.bodyMedium.copyWith(
+                color: ShowmeDesign.neutral600,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fermer'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Activer le partage NFC
+              _showComingSoon('Partage NFC');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ShowmeDesign.primaryBlue,
+            ),
+            child: const Text('Activer NFC'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _activateKioskMode() {
-    context.go('/kiosk');
+    if (_userCards.isEmpty) {
+      _showComingSoon('Mode Kiosque');
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Mode Kiosque'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: ShowmeDesign.primaryAmber.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.fullscreen,
+                size: 40,
+                color: ShowmeDesign.primaryAmber,
+              ),
+            ),
+            const SizedBox(height: ShowmeDesign.spacingMd),
+            Text(
+              'Le mode kiosque affichera votre carte "${_userCards[_currentCardIndex].title}" en plein écran pour faciliter le partage lors d\'événements.',
+              textAlign: TextAlign.center,
+              style: ShowmeDesign.bodyMedium.copyWith(
+                color: ShowmeDesign.neutral600,
+              ),
+            ),
+            const SizedBox(height: ShowmeDesign.spacingMd),
+            Container(
+              padding: const EdgeInsets.all(ShowmeDesign.spacingSm),
+              decoration: BoxDecoration(
+                color: ShowmeDesign.primaryAmber.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(ShowmeDesign.radiusSm),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.star,
+                    size: 16,
+                    color: ShowmeDesign.primaryAmber,
+                  ),
+                  const SizedBox(width: ShowmeDesign.spacingXs),
+                  Text(
+                    'Fonctionnalité PRO',
+                    style: ShowmeDesign.caption.copyWith(
+                      color: ShowmeDesign.primaryAmber,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              if (_hasProSubscription()) {
+                context.go('/kiosk?cardId=${_userCards[_currentCardIndex].id}');
+              } else {
+                _redirectToPaywall('kiosk_mode');
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ShowmeDesign.primaryAmber,
+            ),
+            child: const Text('Activer'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showPaymentOptions() {
-    context.go('/payment');
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Options de paiement'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: ShowmeDesign.primaryEmerald.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.payment,
+                size: 40,
+                color: ShowmeDesign.primaryEmerald,
+              ),
+            ),
+            const SizedBox(height: ShowmeDesign.spacingMd),
+            Text(
+              'Configurez les options de paiement pour permettre à vos contacts de vous payer directement via votre carte.',
+              textAlign: TextAlign.center,
+              style: ShowmeDesign.bodyMedium.copyWith(
+                color: ShowmeDesign.neutral600,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Plus tard'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.go('/payment-setup');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ShowmeDesign.primaryEmerald,
+            ),
+            child: const Text('Configurer'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showComingSoon(String feature) {

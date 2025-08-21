@@ -1,164 +1,113 @@
-// src/modules/cards/dto/create-card.dto.ts
-import { ApiProperty } from '@nestjs/swagger';
-import { 
-  IsString, 
-  IsOptional, 
-  IsBoolean, 
+// backend/src/modules/cards/dto/create-card.dto.ts
+import {
+  IsString,
+  IsEmail,
+  IsBoolean,
+  IsOptional,
   IsEnum,
-  IsObject,
-  ValidateNested,
+  IsUrl,
   MaxLength,
+  MinLength,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import { CardTheme } from '../../../entities/card.entity';
 
-class CreateProfileDto {
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  firstName?: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  lastName?: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  email?: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  phone?: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  company?: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  position?: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  bio?: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  website?: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  linkedinUrl?: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  twitterUrl?: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  instagramUrl?: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  address?: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  city?: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  country?: string;
-}
-
 export class CreateCardDto {
-  @ApiProperty({
-    description: 'Titre de la carte',
-    example: 'Ma carte professionnelle',
-  })
   @IsString()
+  @MinLength(3)
   @MaxLength(100)
+  @Transform(({ value }) => value?.toLowerCase().replace(/[^a-z0-9-]/g, '-'))
+  slug: string;
+
+  @IsString()
+  @MinLength(3)
+  @MaxLength(200)
   title: string;
 
-  @ApiProperty({
-    description: 'Slug personnalisé (optionnel)',
-    example: 'ma-carte-pro',
-    required: false,
-  })
   @IsOptional()
   @IsString()
-  @MaxLength(50)
-  slug?: string;
+  @MaxLength(1000)
+  bio?: string;
 
-  @ApiProperty({
-    description: 'Description de la carte',
-    example: 'Expert en développement web',
-    required: false,
-  })
+  @IsOptional()
+  @IsBoolean()
+  isPublic?: boolean = true;
+
+  @IsOptional()
+  @IsBoolean()
+  allowPayment?: boolean = false;
+
+  @IsOptional()
+  @IsBoolean()
+  nfcEnabled?: boolean = true;
+
+  @IsOptional()
+  @IsEnum(CardTheme)
+  theme?: CardTheme = CardTheme.PURPLE;
+
+  // === DONNÉES DE CONTACT ===
+
+  @IsEmail()
+  @MaxLength(255)
+  email: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  firstName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  lastName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  company?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  position?: string;
+
+  @IsOptional()
+  @IsUrl()
+  @MaxLength(255)
+  website?: string;
+
+  @IsOptional()
+  @IsUrl()
+  @MaxLength(255)
+  linkedinUrl?: string;
+
+  @IsOptional()
+  @IsUrl()
+  @MaxLength(255)
+  twitterUrl?: string;
+
+  @IsOptional()
+  @IsUrl()
+  @MaxLength(255)
+  instagramUrl?: string;
+
   @IsOptional()
   @IsString()
   @MaxLength(500)
-  bio?: string;
+  address?: string;
 
-  @ApiProperty({
-    description: 'Thème de la carte',
-    enum: CardTheme,
-    example: CardTheme.PURPLE,
-    required: false,
-  })
   @IsOptional()
-  @IsEnum(CardTheme)
-  theme?: CardTheme;
+  @IsString()
+  @MaxLength(100)
+  city?: string;
 
-  @ApiProperty({
-    description: 'Carte publique',
-    example: true,
-    required: false,
-  })
   @IsOptional()
-  @IsBoolean()
-  isPublic?: boolean;
-
-  @ApiProperty({
-    description: 'Autoriser les paiements',
-    example: false,
-    required: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  allowPayment?: boolean;
-
-  @ApiProperty({
-    description: 'NFC activé',
-    example: false,
-    required: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  nfcEnabled?: boolean;
-
-  @ApiProperty({
-    description: 'Profil associé à la carte',
-    type: CreateProfileDto,
-    required: false,
-  })
-  @IsOptional()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => CreateProfileDto)
-  profile?: CreateProfileDto;
+  @IsString()
+  @MaxLength(100)
+  country?: string;
 }

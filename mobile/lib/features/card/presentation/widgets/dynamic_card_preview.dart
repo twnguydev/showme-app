@@ -10,10 +10,9 @@ class DynamicCardPreview extends StatefulWidget {
   final String title;
   final String position;
   final String company;
-  final String email;
+  // final String email;
   final String phone;
   final String website;
-  final String bio;
 
   const DynamicCardPreview({
     super.key,
@@ -21,10 +20,9 @@ class DynamicCardPreview extends StatefulWidget {
     required this.title,
     required this.position,
     required this.company,
-    required this.email,
+    // required this.email,
     required this.phone,
-    required this.website,
-    required this.bio,
+    required this.website
   });
 
   @override
@@ -357,19 +355,6 @@ class _DynamicCardPreviewState extends State<DynamicCardPreview>
             ],
           ),
         ],
-
-        // Bio (si présente)
-        if (widget.bio.isNotEmpty) ...[
-          const SizedBox(height: ShowmeDesign.spacingSm),
-          Text(
-            widget.bio,
-            style: ShowmeDesign.bodySmall.copyWith(
-              color: Colors.white.withOpacity(0.85),
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
       ],
     );
   }
@@ -440,12 +425,12 @@ class _DynamicCardPreviewState extends State<DynamicCardPreview>
       });
     }
 
-    if (widget.email.isNotEmpty) {
-      contacts.add({
-        'icon': Icons.email,
-        'label': 'Email',
-      });
-    }
+    // if (widget.email.isNotEmpty) {
+    //   contacts.add({
+    //     'icon': Icons.email,
+    //     'label': 'Email',
+    //   });
+    // }
 
     if (widget.website.isNotEmpty) {
       contacts.add({

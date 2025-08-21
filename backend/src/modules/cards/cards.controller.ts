@@ -33,28 +33,7 @@ export class CardsController {
     @CurrentUser() user: User,
     @Body() createCardDto: CreateCardDto,
   ) {
-    return this.cardsService.createCard(user.id, createCardDto);
-  }
-
-  @Post(':id/duplicate')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Dupliquer une carte existante' })
-  @ApiResponse({ status: 201, description: 'Carte dupliquée avec succès' })
-  async duplicateCard(
-    @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: User,
-  ) {
-    return this.cardsService.duplicateCard(id, user.id);
-  }
-
-  @Get()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Obtenir toutes mes cartes' })
-  @ApiResponse({ status: 200, description: 'Liste des cartes' })
-  async getMyCards(@CurrentUser() user: User) {
-    return this.cardsService.getUserCards(user.id);
+    return this.cardsService.create(createCardDto, user.id);
   }
 
   @Get('public/:slug')
@@ -63,7 +42,7 @@ export class CardsController {
   @ApiResponse({ status: 200, description: 'Carte publique' })
   @ApiResponse({ status: 404, description: 'Carte non trouvée' })
   async getPublicCard(@Param('slug') slug: string) {
-    return this.cardsService.getPublicCard(slug);
+    return this.cardsService.findBySlug(slug);
   }
 
   @Get(':id')
@@ -76,7 +55,7 @@ export class CardsController {
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: User,
   ) {
-    return this.cardsService.getCardById(id, user.id);
+    return this.cardsService.findOne(id, user.id);
   }
 
   @Put(':id')
@@ -89,7 +68,7 @@ export class CardsController {
     @CurrentUser() user: User,
     @Body() updateCardDto: UpdateCardDto,
   ) {
-    return this.cardsService.updateCard(id, user.id, updateCardDto);
+    return this.cardsService.update(id, updateCardDto, user.id);
   }
 
   @Delete(':id')
@@ -101,19 +80,7 @@ export class CardsController {
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: User,
   ) {
-    await this.cardsService.deleteCard(id, user.id);
+    await this.cardsService.remove(id, user.id);
     return { message: 'Carte supprimée avec succès' };
-  }
-
-  @Get(':id/stats')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Obtenir les statistiques d\'une carte' })
-  @ApiResponse({ status: 200, description: 'Statistiques de la carte' })
-  async getCardStats(
-    @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: User,
-  ) {
-    return this.cardsService.getCardStats(id, user.id);
   }
 }

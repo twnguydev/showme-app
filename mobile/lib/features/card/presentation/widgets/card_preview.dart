@@ -369,10 +369,10 @@ class _CardPreviewState extends State<CardPreview>
                 child: CircleAvatar(
                   radius: 28,
                   backgroundColor: Colors.transparent,
-                  backgroundImage: widget.card.profile.avatar?.url != null
-                      ? NetworkImage(widget.card.profile.avatar!.url)
+                  backgroundImage: widget.card.avatar != null
+                      ? NetworkImage(widget.card.avatar!)
                       : null,
-                  child: widget.card.profile.avatar?.url == null
+                  child: widget.card.avatar == null
                       ? Text(
                           _getInitials(),
                           style: const TextStyle(
@@ -397,7 +397,7 @@ class _CardPreviewState extends State<CardPreview>
               offset: Offset(30 * (1 - value), 0),
               child: Opacity(
                 opacity: value,
-                child: widget.card.profile.companyLogo?.url != null
+                child: widget.card.companyLogo != null
                     ? Container(
                         width: 48,
                         height: 48,
@@ -415,7 +415,7 @@ class _CardPreviewState extends State<CardPreview>
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(14),
                           child: Image.network(
-                            widget.card.profile.companyLogo!.url,
+                            widget.card.companyLogo!,
                             fit: BoxFit.contain,
                             errorBuilder: (context, error, stackTrace) => Icon(
                               Icons.business_outlined,
@@ -456,8 +456,8 @@ class _CardPreviewState extends State<CardPreview>
   }
 
   String _getInitials() {
-    final firstName = widget.card.profile.firstName ?? '';
-    final lastName = widget.card.profile.lastName ?? '';
+    final firstName = widget.card.firstName ?? '';
+    final lastName = widget.card.lastName ?? '';
     return '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}'.toUpperCase();
   }
 
@@ -509,7 +509,7 @@ class _CardPreviewState extends State<CardPreview>
                 ),
                 
                 // Entreprise
-                if (widget.card.profile.company != null) ...[
+                if (widget.card.company != null) ...[
                   const SizedBox(height: 4),
                   Row(
                     children: [
@@ -528,7 +528,7 @@ class _CardPreviewState extends State<CardPreview>
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          widget.card.profile.company!,
+                          widget.card.company!,
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
@@ -550,8 +550,8 @@ class _CardPreviewState extends State<CardPreview>
   }
 
   String _getFullName() {
-    final firstName = widget.card.profile.firstName ?? '';
-    final lastName = widget.card.profile.lastName ?? '';
+    final firstName = widget.card.firstName ?? '';
+    final lastName = widget.card.lastName ?? '';
     return '$firstName $lastName'.trim();
   }
 

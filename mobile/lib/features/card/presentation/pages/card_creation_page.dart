@@ -1,18 +1,17 @@
 // mobile/lib/features/card/presentation/pages/card_creation_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:showme/shared/models/card.dart' as CardModel;
+// ignore: library_prefixes
 import 'package:showme/shared/models/card_theme.dart' as CardTheme;
-import 'package:showme/shared/models/profile.dart';
-import 'package:showme/shared/models/user.dart';
 
 import '../../../../core/design/showme_design_system.dart';
-import 'package:showme/shared/presentation/widgets/showme_app_bar.dart';
 import '../../../auth/bloc/auth_bloc.dart';
 import '../../../auth/bloc/auth_state.dart';
 import '../widgets/dynamic_card_preview.dart';
 import '../widgets/card_theme_selector.dart';
 import '../../bloc/card_bloc.dart';
+import '../../bloc/card_event.dart';
+import '../../bloc/card_state.dart';
 
 class CardCreationPage extends StatefulWidget {
   const CardCreationPage({super.key});
@@ -32,11 +31,10 @@ class _CardCreationPageState extends State<CardCreationPage>
 
   // Form controllers
   final _titleController = TextEditingController();
-  final _bioController = TextEditingController();
   final _positionController = TextEditingController();
   final _companyController = TextEditingController();
- final _phoneController = TextEditingController();
-  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  // final _emailController = TextEditingController();
   final _websiteController = TextEditingController();
   final _linkedinController = TextEditingController();
 
@@ -45,6 +43,8 @@ class _CardCreationPageState extends State<CardCreationPage>
   bool _isPublic = true;
   bool _allowPayment = false;
   bool _nfcEnabled = true;
+
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -74,16 +74,13 @@ class _CardCreationPageState extends State<CardCreationPage>
       final user = authState.user;
       
       setState(() {
-        _titleController.text = user.firstName ?? '';
-        _emailController.text = user.email;
+        _titleController.text = '${user.firstName ?? ''} ${user.lastName ?? ''}'.trim();
+        // _emailController.text = user.email;
         _phoneController.text = user.profile?.phone ?? '';
         _companyController.text = user.profile?.company ?? '';
         _positionController.text = user.profile?.position ?? '';
         _websiteController.text = user.profile?.website ?? '';
         _linkedinController.text = user.profile?.linkedinUrl ?? '';
-        
-        // Générer un titre par défaut
-        _titleController.text = '${user.firstName ?? ''} ${user.lastName ?? ''}'.trim();
       });
     }
   }
@@ -96,11 +93,10 @@ class _CardCreationPageState extends State<CardCreationPage>
     
     // Dispose controllers
     _titleController.dispose();
-    _bioController.dispose();
     _positionController.dispose();
     _companyController.dispose();
     _phoneController.dispose();
-    _emailController.dispose();
+    // _emailController.dispose();
     _websiteController.dispose();
     _linkedinController.dispose();
     
@@ -111,16 +107,22 @@ class _CardCreationPageState extends State<CardCreationPage>
   Widget build(BuildContext context) {
     return BlocListener<CardBloc, CardState>(
       listener: (context, state) {
-        if (state is CardOperationSuccess) {
+        if (state is CardCreateSuccess) {
+          setState(() {
+            _isSubmitting = false;
+          });
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
+            const SnackBar(
+              content: Text('Carte créée avec succès'),
               backgroundColor: ShowmeDesign.primaryTeal,
               behavior: SnackBarBehavior.floating,
             ),
           );
           Navigator.of(context).pop();
         } else if (state is CardError) {
+          setState(() {
+            _isSubmitting = false;
+          });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
@@ -143,7 +145,7 @@ class _CardCreationPageState extends State<CardCreationPage>
           backgroundColor: ShowmeDesign.neutral50,
           elevation: 0,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.of(context).pop(),
           ),
           actions: [
@@ -151,7 +153,7 @@ class _CardCreationPageState extends State<CardCreationPage>
               margin: const EdgeInsets.only(right: 16),
               child: BlocBuilder<CardBloc, CardState>(
                 builder: (context, state) {
-                  final isLoading = state is CardLoading;
+                  final isLoading = state is CardCreateLoading || _isSubmitting;
 
                   return IconButton(
                     onPressed: isLoading ? null : _createCard,
@@ -165,7 +167,7 @@ class _CardCreationPageState extends State<CardCreationPage>
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: isLoading
-                          ? SizedBox(
+                          ? const SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(
@@ -218,10 +220,9 @@ class _CardCreationPageState extends State<CardCreationPage>
               title: _titleController.text.isEmpty ? 'Ma carte' : _titleController.text,
               position: _positionController.text,
               company: _companyController.text,
-              email: _emailController.text,
+              // email: _emailController.text,
               phone: _phoneController.text,
-              website: _websiteController.text,
-              bio: _bioController.text,
+              website: _websiteController.text
             ),
           ),
         ],
@@ -280,7 +281,7 @@ class _CardCreationPageState extends State<CardCreationPage>
             ),
           ),
 
-          // Tab Views - CORRECTION: Utilise Expanded au lieu d'une hauteur fixe
+          // Tab Views
           Expanded(
             child: TabBarView(
               controller: _tabController,
@@ -351,29 +352,28 @@ class _CardCreationPageState extends State<CardCreationPage>
               onChanged: (value) => setState(() {}),
             ),
 
-            
             const SizedBox(height: ShowmeDesign.spacingLg),
-            
+
             // Email
-            _buildTextField(
-              controller: _emailController,
-              label: 'Email',
-              hint: 'john.doe@example.com',
-              icon: Icons.email,
-              keyboardType: TextInputType.emailAddress,
-              validator: (value) {
-                if (value?.isEmpty ?? true) {
-                  return 'L\'email est requis';
-                }
-                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
-                  return 'Email invalide';
-                }
-                return null;
-              },
-              onChanged: (value) => setState(() {}),
-            ),
+            // _buildTextField(
+            //   controller: _emailController,
+            //   label: 'Email',
+            //   hint: 'john.doe@example.com',
+            //   icon: Icons.email,
+            //   keyboardType: TextInputType.emailAddress,
+            //   validator: (value) {
+            //     if (value?.isEmpty ?? true) {
+            //       return 'L\'email est requis';
+            //     }
+            //     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
+            //       return 'Email invalide';
+            //     }
+            //     return null;
+            //   },
+            //   onChanged: (value) => setState(() {}),
+            // ),
             
-            const SizedBox(height: ShowmeDesign.spacingLg),
+            // const SizedBox(height: ShowmeDesign.spacingLg),
             
             Text(
               'Informations professionnelles',
@@ -611,26 +611,32 @@ class _CardCreationPageState extends State<CardCreationPage>
   }
 
   void _createCard() {
+    if (_isSubmitting) {
+      return;
+    }
+
     if (_formKey.currentState?.validate() ?? false) {
+      setState(() {
+        _isSubmitting = true;
+      });
+
       // Générer un slug unique basé sur le titre
       final slug = _generateSlug(_titleController.text);
       
       final cardData = {
         'slug': slug,
         'title': _titleController.text,
-        'bio': _bioController.text.isEmpty ? null : _bioController.text,
         'isPublic': _isPublic,
         'allowPayment': _allowPayment,
         'nfcEnabled': _nfcEnabled,
         'theme': _selectedTheme.name,
-        'profile': {
-          'email': _emailController.text,
-          'position': _positionController.text.isEmpty ? null : _positionController.text,
-          'company': _companyController.text.isEmpty ? null : _companyController.text,
-          'phone': _phoneController.text.isEmpty ? null : _phoneController.text,
-          'website': _websiteController.text.isEmpty ? null : _websiteController.text,
-          'linkedinUrl': _linkedinController.text.isEmpty ? null : _linkedinController.text,
-        }
+        // Données de contact directement dans la carte
+        // 'email': _emailController.text,
+        'phone': _phoneController.text.isEmpty ? null : _phoneController.text,
+        'website': _websiteController.text.isEmpty ? null : _websiteController.text,
+        'linkedinUrl': _linkedinController.text.isEmpty ? null : _linkedinController.text,
+        'position': _positionController.text.isEmpty ? null : _positionController.text,
+        'company': _companyController.text.isEmpty ? null : _companyController.text,
       };
 
       context.read<CardBloc>().add(CardCreateRequested(cardData));

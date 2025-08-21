@@ -4,6 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:showme/core/services/auth_api_service.dart';
+import 'package:showme/core/services/users_api_service.dart';
+import 'package:showme/core/services/cards_api_service.dart';
 import 'dart:async';
 
 import 'core/services/api_service.dart';
@@ -37,25 +40,38 @@ class ShowmeApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        // Services de base
         Provider<ApiService>(
           create: (_) => ApiService(),
           dispose: (_, apiService) => apiService.dispose(),
         ),
         
-        // StorageService en provider si nécessaire
         Provider<StorageService>(
           create: (_) => StorageService(),
+        ),
+        
+        // Services API spécialisés
+        Provider<AuthApiService>(
+          create: (context) => AuthApiService(context.read<ApiService>()),
+        ),
+        
+        Provider<UsersApiService>(
+          create: (context) => UsersApiService(context.read<ApiService>()),
+        ),
+        
+        Provider<CardsApiService>(
+          create: (context) => CardsApiService(context.read<ApiService>()),
         ),
       ],
       child: Builder(
         builder: (context) {
-          // Maintenant on peut accéder aux services via context.read
           return MultiRepositoryProvider(
             providers: [
               RepositoryProvider<AuthRepository>(
                 create: (context) => AuthRepository(
-                  apiService: context.read<ApiService>(),
-                  storageService: context.read<StorageService>(),
+                  authApiService: context.read<AuthApiService>(),
+                  usersApiService: context.read<UsersApiService>(),
+                  // storageService: context.read<StorageService>(),
                 ),
               ),
             ],
@@ -68,17 +84,21 @@ class ShowmeApp extends StatelessWidget {
                   )..add(AuthCheckRequested()),
                 ),
 
-                BlocProvider<CardBloc>(create: (context) => CardBloc()),
+                BlocProvider<CardBloc>(
+                  create: (context) => CardBloc(
+                    cardsApiService: context.read<CardsApiService>(),
+                  ),
+                ),
                 
-                // CrmBloc avec ApiService  
+                // CrmBloc
                 BlocProvider<CrmBloc>(
                   create: (context) => CrmBloc(),
                 ),
                 
-                // ProfileBloc en provider global
+                // ProfileBloc
                 BlocProvider<ProfileBloc>(
                   create: (context) => ProfileBloc(
-                    apiService: context.read<ApiService>(),
+                    usersApiService: context.read<UsersApiService>(),
                   ),
                 ),
               ],

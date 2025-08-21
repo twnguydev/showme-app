@@ -1,10 +1,11 @@
 // mobile/lib/features/auth/data/repositories/auth_repository.dart
-import 'package:dio/dio.dart';
+import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-import '../../../../core/services/api_service.dart';
+import '../../../../core/services/auth_api_service.dart';
+import '../../../../core/services/users_api_service.dart';
 import '../../../../core/services/storage_service.dart';
 import '../../../../shared/models/user.dart';
 import '../../../../shared/models/auth_models.dart';
@@ -44,16 +45,19 @@ class AuthResponse {
 }
 
 class AuthRepository {
-  final ApiService _apiService;
-  final StorageService _storageService;
+  final AuthApiService _authApiService;
+  final UsersApiService _usersApiService;
+  // final StorageService _storageService;
 
   late final GoogleSignIn _googleSignIn;
 
   AuthRepository({
-    required ApiService apiService,
-    required StorageService storageService,
-  })  : _apiService = apiService,
-        _storageService = storageService,
+    required AuthApiService authApiService,
+    required UsersApiService usersApiService,
+    // required StorageService storageService,
+  })  : _authApiService = authApiService,
+        _usersApiService = usersApiService,
+        // _storageService = storageService,
         _googleSignIn = GoogleSignIn(
           scopes: ['email', 'profile'],
         );
@@ -91,10 +95,29 @@ class AuthRepository {
   /// Récupère l'utilisateur actuel
   Future<User?> getCurrentUser() async {
     try {
-      final response = await _apiService.getCurrentUser();
+      final response = await _authApiService.getCurrentUser();
       return response.data;
     } catch (e) {
       // Si l'API échoue, essayer de récupérer depuis le cache local
+      final userData = await StorageService.getUser();
+      if (userData != null) {
+        return User.fromJson(userData);
+      }
+      return null;
+    }
+  }
+
+  /// Rafraîchit l'utilisateur depuis l'API et met à jour le cache
+  Future<User?> refreshCurrentUser() async {
+    try {
+      final response = await _authApiService.getCurrentUser();
+      
+      // Mettre à jour le cache local
+      await StorageService.setUser(response.data!.toJson());
+      
+      return response.data;
+    } catch (e) {
+      // En cas d'erreur, retourner l'utilisateur du cache
       final userData = await StorageService.getUser();
       if (userData != null) {
         return User.fromJson(userData);
@@ -115,7 +138,7 @@ class AuthRepository {
       rememberMe: rememberMe,
     );
 
-    final response = await _apiService.login(loginRequest);
+    final response = await _authApiService.login(loginRequest);
     final authData = response.data!;
     
     // Sauvegarder les données d'authentification
@@ -148,13 +171,24 @@ class AuthRepository {
       acceptMarketing: acceptMarketing,
     );
 
-    final response = await _apiService.register(registerRequest);
+    final response = await _authApiService.register(registerRequest);
     final authData = response.data!;
     
     // Sauvegarder les données d'authentification
     await _saveAuthData(authData);
 
     return AuthResponse.fromAuthResponseData(authData);
+  }
+
+  /// Upload d'avatar avec rafraîchissement automatique
+  Future<User> uploadAvatar(File imageFile) async {
+    final response = await _usersApiService.uploadAvatar(imageFile);
+    
+    // L'utilisateur est déjà rafraîchi dans UsersApiService.uploadAvatar
+    // Mettre à jour le cache local
+    await StorageService.setUser(response.data!.toJson());
+    
+    return response.data!;
   }
 
   /// Connexion avec Apple
@@ -173,7 +207,7 @@ class AuthRepository {
           AppleIDAuthorizationScopes.fullName,
         ],
         webAuthenticationOptions: WebAuthenticationOptions(
-          clientId: 'com.votre.bundle.id', // Remplacez par votre bundle ID
+          clientId: 'com.votre.bundle.id',
           redirectUri: Uri.parse('http://localhost:3000/api/v1/auth/apple/callback'),
         ),
       );
@@ -190,7 +224,7 @@ class AuthRepository {
       );
 
       // Utiliser votre ApiService existant
-      final response = await _apiService.socialLogin(loginRequest);
+      final response = await _authApiService.socialLogin(loginRequest);
       final authData = response.data!;
       
       // Sauvegarder avec votre méthode existante
@@ -249,7 +283,7 @@ class AuthRepository {
       );
 
       // Utiliser votre ApiService existant
-      final response = await _apiService.socialLogin(loginRequest);
+      final response = await _authApiService.socialLogin(loginRequest);
       final authData = response.data!;
       
       // Sauvegarder avec votre méthode existante
@@ -278,7 +312,7 @@ class AuthRepository {
   /// Demande de réinitialisation de mot de passe
   Future<void> forgotPassword({required String email}) async {
     final request = ForgotPasswordRequest(email: email);
-    await _apiService.forgotPassword(request);
+    await _authApiService.forgotPassword(request);
   }
 
   /// Réinitialisation du mot de passe avec token
@@ -296,7 +330,7 @@ class AuthRepository {
       newPassword: newPassword,
       confirmPassword: confirmPassword,
     );
-    await _apiService.resetPassword(request);
+    await _authApiService.resetPassword(request);
   }
 
   /// Rafraîchissement du token d'authentification
@@ -306,7 +340,7 @@ class AuthRepository {
       if (refreshToken == null) return false;
 
       final request = RefreshTokenRequest(refreshToken: refreshToken);
-      final response = await _apiService.refreshToken(request);
+      final response = await _authApiService.refreshToken(request);
       final authData = response.data!;
       
       // Sauvegarder les nouvelles données d'authentification
@@ -321,7 +355,7 @@ class AuthRepository {
 
   /// Vérification de l'email
   Future<void> verifyEmail({required String token}) async {
-    await _apiService.verifyEmail(token);
+    await _authApiService.verifyEmail(token);
     
     // Mettre à jour le statut de vérification de l'utilisateur local
     final userData = await StorageService.getUser();
@@ -334,7 +368,7 @@ class AuthRepository {
 
   /// Renvoyer l'email de vérification
   Future<void> resendVerificationEmail() async {
-    await _apiService.resendVerificationEmail();
+    await _authApiService.resendVerificationEmail();
   }
 
   /// Changement de mot de passe
@@ -347,7 +381,7 @@ class AuthRepository {
       throw const AuthException('Les nouveaux mots de passe ne correspondent pas');
     }
 
-    await _apiService.changePassword(
+    await _usersApiService.changePassword(
       currentPassword: currentPassword,
       newPassword: newPassword,
     );
@@ -357,7 +391,7 @@ class AuthRepository {
   Future<void> logout() async {
     try {
       // Notifier le serveur de la déconnexion
-      await _apiService.logout();
+      await _authApiService.logout();
     } catch (e) {
       // Continuer même si l'appel serveur échoue
     } finally {
@@ -375,7 +409,7 @@ class AuthRepository {
 
   /// Suppression du compte
   Future<void> deleteAccount({required String password}) async {
-    await _apiService.deleteAccount(password: password);
+    await _authApiService.deleteAccount(password: password);
     await _clearAuthData();
   }
 

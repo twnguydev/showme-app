@@ -1,13 +1,16 @@
 // mobile/lib/shared/presentation/widgets/quick_actions_grid.dart
 import 'package:flutter/material.dart';
 import '../../../core/design/showme_design_system.dart';
+import '../../../shared/models/card.dart' as CardModel;
 
 class QuickActionsGrid extends StatelessWidget {
   final Function(String) onActionTap;
+  final CardModel.Card? currentCard;
 
   const QuickActionsGrid({
     super.key,
     required this.onActionTap,
+    this.currentCard,
   });
 
   @override
@@ -17,17 +20,19 @@ class QuickActionsGrid extends StatelessWidget {
         'id': 'share_nfc',
         'icon': Icons.nfc_rounded,
         'title': 'NFC',
-        'subtitle': 'Partage tactile',
+        'subtitle': currentCard != null ? 'Partager "${currentCard!.title}"' : 'Partage tactile',
         'color': ShowmeDesign.primaryBlue,
         'isPro': false,
+        'enabled': currentCard != null,
       },
       {
         'id': 'share_qr',
         'icon': Icons.qr_code_rounded,
         'title': 'QR Code',
-        'subtitle': 'Scan rapide',
+        'subtitle': currentCard != null ? 'QR de "${currentCard!.title}"' : 'Scan rapide',
         'color': ShowmeDesign.primaryTeal,
         'isPro': false,
+        'enabled': currentCard != null,
       },
       {
         'id': 'view_contacts',
@@ -36,14 +41,16 @@ class QuickActionsGrid extends StatelessWidget {
         'subtitle': 'Mini CRM',
         'color': ShowmeDesign.primaryEmerald,
         'isPro': false,
+        'enabled': true,
       },
       {
         'id': 'kiosk_mode',
         'icon': Icons.fullscreen_rounded,
         'title': 'Kiosque',
-        'subtitle': 'Mode événement',
+        'subtitle': currentCard != null ? 'Mode événement' : 'Créez une carte d\'abord',
         'color': ShowmeDesign.primaryAmber,
         'isPro': true,
+        'enabled': currentCard != null,
       },
     ];
 
@@ -65,19 +72,25 @@ class QuickActionsGrid extends StatelessWidget {
   }
 
   Widget _buildActionCard(Map<String, dynamic> action) {
+    final isEnabled = action['enabled'] as bool;
+    
     return GestureDetector(
-      onTap: () => onActionTap(action['id']),
+      onTap: isEnabled ? () => onActionTap(action['id']) : null,
       child: Container(
         decoration: BoxDecoration(
-          color: ShowmeDesign.white,
+          color: isEnabled ? ShowmeDesign.white : ShowmeDesign.neutral50,
           borderRadius: BorderRadius.circular(ShowmeDesign.radiusLg),
-          boxShadow: ShowmeDesign.cardShadow,
+          boxShadow: isEnabled ? ShowmeDesign.cardShadow : [],
+          border: !isEnabled ? Border.all(
+            color: ShowmeDesign.neutral200,
+            width: 1,
+          ) : null,
         ),
         child: Stack(
           children: [
             // Contenu principal
             Padding(
-              padding: EdgeInsets.all(ShowmeDesign.spacingMd),
+              padding: const EdgeInsets.all(ShowmeDesign.spacingMd),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -86,12 +99,16 @@ class QuickActionsGrid extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: (action['color'] as Color).withOpacity(0.1),
+                      color: isEnabled 
+                          ? (action['color'] as Color).withOpacity(0.1)
+                          : ShowmeDesign.neutral200,
                       borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
                     ),
                     child: Icon(
                       action['icon'] as IconData,
-                      color: action['color'] as Color,
+                      color: isEnabled 
+                          ? action['color'] as Color
+                          : ShowmeDesign.neutral400,
                       size: 24,
                     ),
                   ),
@@ -103,17 +120,23 @@ class QuickActionsGrid extends StatelessWidget {
                     action['title'],
                     style: ShowmeDesign.bodyLarge.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: ShowmeDesign.neutral900,
+                      color: isEnabled 
+                          ? ShowmeDesign.neutral900
+                          : ShowmeDesign.neutral500,
                     ),
                   ),
                   
-                  SizedBox(height: ShowmeDesign.spacingXs),
+                  const SizedBox(height: ShowmeDesign.spacingXs),
                   
                   Text(
                     action['subtitle'],
                     style: ShowmeDesign.bodySmall.copyWith(
-                      color: ShowmeDesign.neutral600,
+                      color: isEnabled 
+                          ? ShowmeDesign.neutral600
+                          : ShowmeDesign.neutral400,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
@@ -125,12 +148,16 @@ class QuickActionsGrid extends StatelessWidget {
                 top: ShowmeDesign.spacingSm,
                 right: ShowmeDesign.spacingSm,
                 child: Container(
-                  padding: EdgeInsets.symmetric(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: ShowmeDesign.spacingXs,
                     vertical: ShowmeDesign.spacingXs / 2,
                   ),
                   decoration: BoxDecoration(
-                    gradient: ShowmeDesign.warmGradient,
+                    gradient: isEnabled 
+                        ? ShowmeDesign.warmGradient
+                        : LinearGradient(
+                            colors: [ShowmeDesign.neutral300, ShowmeDesign.neutral300],
+                          ),
                     borderRadius: BorderRadius.circular(ShowmeDesign.radiusXs),
                   ),
                   child: Text(
@@ -140,6 +167,17 @@ class QuickActionsGrid extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       fontSize: ShowmeDesign.text2xs,
                     ),
+                  ),
+                ),
+              ),
+            
+            // Overlay disabled si non activé
+            if (!isEnabled)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(ShowmeDesign.radiusLg),
                   ),
                 ),
               ),

@@ -1,299 +1,306 @@
 // mobile/lib/features/card/bloc/card_bloc.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:equatable/equatable.dart';
+import 'package:dio/dio.dart';
 
+import 'card_event.dart';
+import 'card_state.dart';
+import '../../../core/services/cards_api_service.dart';
+import '../../../features/auth/data/repositories/auth_repository.dart';
 import '../../../shared/models/card.dart';
-import '../../../shared/models/profile.dart';
 
-// Events
-abstract class CardEvent extends Equatable {
-  @override
-  List<Object?> get props => [];
-}
-
-class CardLoadRequested extends CardEvent {}
-
-class CardCreateRequested extends CardEvent {
-  final Map<String, dynamic> cardData;
-  
-  CardCreateRequested(this.cardData);
-  
-  @override
-  List<Object> get props => [cardData];
-}
-
-class CardUpdateRequested extends CardEvent {
-  final String cardId;
-  final Map<String, dynamic> cardData;
-  
-  CardUpdateRequested(this.cardId, this.cardData);
-  
-  @override
-  List<Object> get props => [cardId, cardData];
-}
-
-class CardDeleteRequested extends CardEvent {
-  final String cardId;
-  
-  CardDeleteRequested(this.cardId);
-  
-  @override
-  List<Object> get props => [cardId];
-}
-
-class CardRefreshRequested extends CardEvent {}
-
-class CardTogglePublicRequested extends CardEvent {
-  final String cardId;
-  final bool isPublic;
-  
-  CardTogglePublicRequested(this.cardId, this.isPublic);
-  
-  @override
-  List<Object> get props => [cardId, isPublic];
-}
-
-// States
-abstract class CardState extends Equatable {
-  @override
-  List<Object?> get props => [];
-}
-
-class CardInitial extends CardState {}
-
-class CardLoading extends CardState {}
-
-class CardLoaded extends CardState {
-  final List<Card> cards;
-  
-  CardLoaded(this.cards);
-  
-  @override
-  List<Object> get props => [cards];
-}
-
-class CardOperationSuccess extends CardState {
-  final String message;
-  final List<Card> cards;
-  
-  CardOperationSuccess(this.message, this.cards);
-  
-  @override
-  List<Object> get props => [message, cards];
-}
-
-class CardError extends CardState {
-  final String message;
-  
-  CardError(this.message);
-  
-  @override
-  List<Object> get props => [message];
-}
-
-// Bloc
 class CardBloc extends Bloc<CardEvent, CardState> {
-  final List<Card> _cards = [];
+  final CardsApiService _cardsApiService;
 
-  CardBloc() : super(CardInitial()) {
-    on<CardLoadRequested>(_onLoadRequested);
-    on<CardCreateRequested>(_onCreateRequested);
-    on<CardUpdateRequested>(_onUpdateRequested);
-    on<CardDeleteRequested>(_onDeleteRequested);
-    on<CardRefreshRequested>(_onRefreshRequested);
-    on<CardTogglePublicRequested>(_onTogglePublicRequested);
+  CardBloc({required CardsApiService cardsApiService})
+      : _cardsApiService = cardsApiService,
+        super(CardInitial()) {
+    on<CardLoadRequested>(_onCardLoadRequested);
+    on<CardCreateRequested>(_onCardCreateRequested);
+    on<CardUpdateRequested>(_onCardUpdateRequested);
+    on<CardDeleteRequested>(_onCardDeleteRequested);
+    on<CardShareRequested>(_onCardShareRequested);
+    on<CardQRGenerateRequested>(_onCardQRGenerateRequested);
+    on<CardImageUploadRequested>(_onCardImageUploadRequested);
+    on<CardRefreshRequested>(_onCardRefreshRequested);
+    on<CardTogglePublicRequested>(_onCardTogglePublicRequested);
   }
 
-  Future<void> _onLoadRequested(
+  Future<void> _onCardLoadRequested(
     CardLoadRequested event,
     Emitter<CardState> emit,
   ) async {
     emit(CardLoading());
-    
+
     try {
-      // Simulation avec une carte de démo
-      await Future.delayed(const Duration(milliseconds: 500));
-      final demoCard = Card.demo();
-      _cards.clear();
-      _cards.add(demoCard);
-      emit(CardLoaded(List.from(_cards)));
+      final response = await _cardsApiService.getBusinessCards();
+      emit(CardLoaded(response.data!));
+    } on AuthException catch (e) {
+      emit(CardError(e.message));
+    } on DioException catch (e) {
+      emit(CardError(_handleDioError(e)));
     } catch (e) {
-      emit(CardError('Erreur lors du chargement des cartes: ${e.toString()}'));
+      emit(CardError('Erreur lors du chargement des cartes'));
     }
   }
 
-  Future<void> _onCreateRequested(
+  Future<void> _onCardCreateRequested(
     CardCreateRequested event,
     Emitter<CardState> emit,
   ) async {
+    emit(CardCreateLoading());
+
     try {
-      emit(CardLoading());
+      final response = await _cardsApiService.createBusinessCard(event.cardData);
       
-      // Simulation de création
-      await Future.delayed(const Duration(seconds: 1));
-      
-      // Créer une nouvelle carte avec les données fournies
-      final newCard = Card(
-        id: DateTime.now().millisecondsSinceEpoch,
-        slug: event.cardData['slug'] ?? 'new-card-${_cards.length + 1}',
-        title: event.cardData['title'] ?? 'Nouvelle carte',
-        bio: event.cardData['bio'],
-        isPublic: event.cardData['isPublic'] ?? true,
-        viewsCount: 0,
-        walletPassUrl: null,
-        allowPayment: event.cardData['allowPayment'] ?? false,
-        nfcEnabled: event.cardData['nfcEnabled'] ?? false,
-        qrCodeUrl: null,
-        totalShared: 0,
-        totalLeads: 0,
-        profile: Profile.demo(), // Utiliser un profil par défaut
-        subscription: null,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-      
-      _cards.add(newCard);
-      emit(CardOperationSuccess('Carte créée avec succès', List.from(_cards)));
+      // Recharger toutes les cartes après création
+      final cardsResponse = await _cardsApiService.getBusinessCards();
+      emit(CardCreateSuccess(response.data!, cardsResponse.data!));
+    } on AuthException catch (e) {
+      emit(CardError(e.message));
+    } on DioException catch (e) {
+      emit(CardError(_handleDioError(e)));
     } catch (e) {
-      emit(CardError('Erreur lors de la création de la carte: ${e.toString()}'));
+      emit(CardError('Erreur lors de la création de la carte'));
     }
   }
 
-  Future<void> _onUpdateRequested(
+  Future<void> _onCardUpdateRequested(
     CardUpdateRequested event,
     Emitter<CardState> emit,
   ) async {
+    emit(CardUpdateLoading());
+
     try {
-      emit(CardLoading());
+      final response = await _cardsApiService.updateBusinessCard(
+        event.cardId, 
+        event.updateData
+      );
       
-      // Simulation de mise à jour
-      await Future.delayed(const Duration(seconds: 1));
-      
-      final cardIndex = _cards.indexWhere((card) => card.id.toString() == event.cardId);
-      if (cardIndex != -1) {
-        final existingCard = _cards[cardIndex];
-        final updatedCard = existingCard.copyWith(
-          title: event.cardData['title'],
-          bio: event.cardData['bio'],
-          isPublic: event.cardData['isPublic'],
-          allowPayment: event.cardData['allowPayment'],
-          nfcEnabled: event.cardData['nfcEnabled'],
-        );
-        
-        _cards[cardIndex] = updatedCard;
-        emit(CardOperationSuccess('Carte mise à jour avec succès', List.from(_cards)));
-      } else {
-        emit(CardError('Carte non trouvée'));
-      }
+      // Recharger toutes les cartes après mise à jour
+      final cardsResponse = await _cardsApiService.getBusinessCards();
+      emit(CardUpdateSuccess(response.data!, cardsResponse.data!));
+    } on AuthException catch (e) {
+      emit(CardError(e.message));
+    } on DioException catch (e) {
+      emit(CardError(_handleDioError(e)));
     } catch (e) {
-      emit(CardError('Erreur lors de la mise à jour de la carte: ${e.toString()}'));
+      emit(CardError('Erreur lors de la mise à jour de la carte'));
     }
   }
 
-  Future<void> _onDeleteRequested(
+  Future<void> _onCardDeleteRequested(
     CardDeleteRequested event,
     Emitter<CardState> emit,
   ) async {
+    emit(CardDeleteLoading());
+
     try {
-      emit(CardLoading());
+      await _cardsApiService.deleteBusinessCard(event.cardId);
       
-      // Simulation de suppression
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      final cardIndex = _cards.indexWhere((card) => card.id.toString() == event.cardId);
-      if (cardIndex != -1) {
-        _cards.removeAt(cardIndex);
-        emit(CardOperationSuccess('Carte supprimée avec succès', List.from(_cards)));
-      } else {
-        emit(CardError('Carte non trouvée'));
-      }
+      // Recharger toutes les cartes après suppression
+      final cardsResponse = await _cardsApiService.getBusinessCards();
+      emit(CardDeleteSuccess(cardsResponse.data!));
+    } on AuthException catch (e) {
+      emit(CardError(e.message));
+    } on DioException catch (e) {
+      emit(CardError(_handleDioError(e)));
     } catch (e) {
-      emit(CardError('Erreur lors de la suppression de la carte: ${e.toString()}'));
+      emit(CardError('Erreur lors de la suppression de la carte'));
     }
   }
 
-  Future<void> _onRefreshRequested(
+  Future<void> _onCardShareRequested(
+    CardShareRequested event,
+    Emitter<CardState> emit,
+  ) async {
+    try {
+      // Récupérer la carte pour obtenir son slug/URL
+      final cardResponse = await _cardsApiService.getBusinessCard(event.cardId);
+      final card = cardResponse.data!;
+      
+      // Construire l'URL de partage
+      final shareUrl = 'https://votre-app.com/card/${card.slug}';
+      
+      emit(CardShareSuccess(shareUrl, 'Lien de partage généré'));
+    } on AuthException catch (e) {
+      emit(CardError(e.message));
+    } on DioException catch (e) {
+      emit(CardError(_handleDioError(e)));
+    } catch (e) {
+      emit(CardError('Erreur lors de la génération du lien de partage'));
+    }
+  }
+
+  Future<void> _onCardQRGenerateRequested(
+    CardQRGenerateRequested event,
+    Emitter<CardState> emit,
+  ) async {
+    try {
+      // Récupérer la carte pour obtenir le QR code
+      final cardResponse = await _cardsApiService.getBusinessCard(event.cardId);
+      final card = cardResponse.data!;
+      
+      // Le QR code devrait être généré côté backend
+      final qrCodeUrl = card.qrCodeUrl ?? 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://votre-app.com/card/${card.slug}';
+      
+      emit(CardShareSuccess(qrCodeUrl, 'QR Code généré'));
+    } on AuthException catch (e) {
+      emit(CardError(e.message));
+    } on DioException catch (e) {
+      emit(CardError(_handleDioError(e)));
+    } catch (e) {
+      emit(CardError('Erreur lors de la génération du QR Code'));
+    }
+  }
+
+  Future<void> _onCardImageUploadRequested(
+    CardImageUploadRequested event,
+    Emitter<CardState> emit,
+  ) async {
+    emit(CardImageUploadLoading());
+
+    try {
+      final response = await _cardsApiService.uploadCardImage(
+        event.cardId,
+        event.imageFile,
+        event.imageType,
+      );
+
+      final imageUrl = response.data!['url'] as String;
+      emit(CardImageUploadSuccess(imageUrl, 'Image uploadée avec succès'));
+    } on AuthException catch (e) {
+      emit(CardError(e.message));
+    } on DioException catch (e) {
+      emit(CardError(_handleDioError(e)));
+    } catch (e) {
+      emit(CardError('Erreur lors de l\'upload de l\'image'));
+    }
+  }
+
+  Future<void> _onCardRefreshRequested(
     CardRefreshRequested event,
     Emitter<CardState> emit,
   ) async {
+    emit(CardLoading());
+
     try {
-      emit(CardLoading());
-      
-      // Simulation de rafraîchissement
-      await Future.delayed(const Duration(milliseconds: 800));
-      
-      // Mettre à jour les statistiques des cartes existantes
-      for (int i = 0; i < _cards.length; i++) {
-        final card = _cards[i];
-        final updatedCard = card.copyWith(
-          viewsCount: card.viewsCount + (1 + (i * 2)), // Simulation d'augmentation des vues
-          totalShared: card.totalShared + 1,
-        );
-        _cards[i] = updatedCard;
-      }
-      
-      emit(CardLoaded(List.from(_cards)));
+      final response = await _cardsApiService.getBusinessCards();
+      emit(CardLoaded(response.data!));
+    } on AuthException catch (e) {
+      emit(CardError(e.message));
+    } on DioException catch (e) {
+      emit(CardError(_handleDioError(e)));
     } catch (e) {
-      emit(CardError('Erreur lors du rafraîchissement: ${e.toString()}'));
+      emit(CardError('Erreur lors du rafraîchissement'));
     }
   }
 
-  Future<void> _onTogglePublicRequested(
+  Future<void> _onCardTogglePublicRequested(
     CardTogglePublicRequested event,
     Emitter<CardState> emit,
   ) async {
+    final currentState = state;
+    List<Card> currentCards = [];
+    
+    if (currentState is CardLoaded) {
+      currentCards = List.from(currentState.cards);
+    }
+
     try {
-      emit(CardLoading());
-      
-      // Simulation de changement de visibilité
-      await Future.delayed(const Duration(milliseconds: 300));
-      
-      final cardIndex = _cards.indexWhere((card) => card.id.toString() == event.cardId);
+      await _cardsApiService.updateBusinessCard(
+        event.cardId,
+        {'isPublic': event.isPublic}
+      );
+
+      final cardIndex = currentCards.indexWhere((card) => card.id.toString() == event.cardId);
       if (cardIndex != -1) {
-        final existingCard = _cards[cardIndex];
-        final updatedCard = existingCard.copyWith(
-          isPublic: event.isPublic,
-        );
-        
-        _cards[cardIndex] = updatedCard;
-        final message = event.isPublic 
-            ? 'Carte rendue publique' 
-            : 'Carte rendue privée';
-        emit(CardOperationSuccess(message, List.from(_cards)));
-      } else {
-        emit(CardError('Carte non trouvée'));
+        final updatedCard = currentCards[cardIndex].copyWith(isPublic: event.isPublic);
+        currentCards[cardIndex] = updatedCard;
       }
+      
+      final message = event.isPublic 
+          ? 'Carte rendue publique' 
+          : 'Carte rendue privée';
+      
+      emit(CardOperationSuccess(message, currentCards));
+    } on AuthException catch (e) {
+      emit(CardError(e.message));
+    } on DioException catch (e) {
+      emit(CardError(_handleDioError(e)));
     } catch (e) {
-      emit(CardError('Erreur lors du changement de visibilité: ${e.toString()}'));
+      emit(CardError('Erreur lors du changement de visibilité'));
     }
   }
 
-  // Méthodes utilitaires
-  Card? getCardById(String cardId) {
-    try {
-      return _cards.firstWhere((card) => card.id.toString() == cardId);
-    } catch (e) {
-      return null;
+  /// Gère les erreurs DioException de manière centralisée
+  String _handleDioError(DioException e) {
+    print('🚨 CardBloc DioError: ${e.response?.data}');
+    
+    if (e.response?.data != null) {
+      final data = e.response!.data;
+      
+      if (data is Map<String, dynamic>) {
+        if (data.containsKey('message') && data['message'] is List) {
+          final messages = data['message'] as List;
+          return messages.isNotEmpty 
+            ? messages.first.toString() 
+            : 'Erreur de validation';
+        }
+        
+        if (data.containsKey('message') && data['message'] is String) {
+          return data['message'] as String;
+        }
+        
+        if (data.containsKey('error') && data['error'] is String) {
+          return data['error'] as String;
+        }
+      }
+    }
+
+    switch (e.response?.statusCode) {
+      case 400:
+        return 'Données invalides';
+      case 401:
+        return 'Session expirée. Veuillez vous reconnecter.';
+      case 403:
+        return 'Vous n\'êtes pas autorisé à effectuer cette action';
+      case 404:
+        return 'Carte non trouvée';
+      case 409:
+        return 'Une carte avec ce nom existe déjà';
+      case 422:
+        return 'Données de validation incorrectes';
+      case 500:
+        return 'Erreur serveur, veuillez réessayer';
+      default:
+        if (e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.receiveTimeout) {
+          return 'Connexion lente, veuillez réessayer';
+        } else if (e.type == DioExceptionType.connectionError) {
+          return 'Problème de connexion internet';
+        }
+        return 'Une erreur s\'est produite';
     }
   }
 
-  List<Card> getPublicCards() {
-    return _cards.where((card) => card.isPublic).toList();
+  // Méthodes utilitaires (si vous en avez besoin dans l'UI)
+  List<Card> getPublicCards(List<Card> cards) {
+    return cards.where((card) => card.isPublic).toList();
   }
 
-  List<Card> getPrivateCards() {
-    return _cards.where((card) => !card.isPublic).toList();
+  List<Card> getPrivateCards(List<Card> cards) {
+    return cards.where((card) => !card.isPublic).toList();
   }
 
-  int getTotalViews() {
-    return _cards.fold(0, (sum, card) => sum + card.viewsCount);
+  int getTotalViews(List<Card> cards) {
+    return cards.fold(0, (sum, card) => sum + card.viewsCount);
   }
 
-  int getTotalShares() {
-    return _cards.fold(0, (sum, card) => sum + card.totalShared);
+  int getTotalShares(List<Card> cards) {
+    return cards.fold(0, (sum, card) => sum + card.totalShared);
   }
 
-  bool hasProCards() {
-    return _cards.any((card) => card.isPro);
+  bool hasProCards(List<Card> cards) {
+    return cards.any((card) => card.isPro);
   }
 }

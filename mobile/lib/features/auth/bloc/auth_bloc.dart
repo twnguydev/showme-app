@@ -21,6 +21,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthLogoutRequested>(_onAuthLogoutRequested);
     on<AuthUserUpdated>(_onAuthUserUpdated);
     on<AuthTokenExpired>(_onAuthTokenExpired);
+    on<AuthRefreshUserRequested>(_onAuthRefreshUserRequested);
+    on<AuthAvatarUploadRequested>(_onAuthAvatarUploadRequested);
 
     // Configurer le callback pour la déconnexion automatique
     ApiService.setUnauthorizedCallback(() {
@@ -145,13 +147,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         user: result.user,
         token: result.token,
       ));
-    } on DioException catch (e) {
-      // Vérifier d'abord si c'est une AuthException encapsulée
-      emit(AuthError(_handleDioError(e)));
     } on AuthException catch (e) {
       emit(AuthError(e.message));
+    } on DioException catch (e) {
+      emit(AuthError(_handleDioError(e)));
     } catch (e) {
-      print('Exception non gérée: ${e.runtimeType} - $e'); // Pour debug
+      print('Exception non gérée: ${e.runtimeType} - $e');
       emit(AuthError('Une erreur inattendue s\'est produite'));
     }
   }
@@ -177,7 +178,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  // Nouvelle méthode pour gérer l'expiration du token
   Future<void> _onAuthTokenExpired(
     AuthTokenExpired event,
     Emitter<AuthState> emit,
@@ -191,9 +191,76 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthUnauthenticated());
   }
 
+  Future<void> _onAuthRefreshUserRequested(
+    AuthRefreshUserRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    if (state is AuthAuthenticated) {
+      try {
+        final user = await _authRepository.refreshCurrentUser();
+        
+        if (user != null) {
+          final currentState = state as AuthAuthenticated;
+          emit(AuthAuthenticated(
+            user: user,
+            token: currentState.token,
+          ));
+        }
+      } catch (e) {
+        // En cas d'erreur, on garde l'état actuel
+        print('Erreur lors du rafraîchissement de l\'utilisateur: $e');
+      }
+    }
+  }
+
+  Future<void> _onAuthAvatarUploadRequested(
+    AuthAvatarUploadRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    if (state is AuthAuthenticated) {
+      final currentState = state as AuthAuthenticated;
+      
+      try {
+        // Émettre un état de chargement partiel pour l'avatar
+        emit(AuthAvatarUploading(
+          user: currentState.user,
+          token: currentState.token,
+        ));
+
+        // Upload de l'avatar avec rafraîchissement automatique de l'utilisateur
+        final updatedUser = await _authRepository.uploadAvatar(event.imageFile);
+
+        // Émettre le nouvel état avec l'utilisateur mis à jour
+        emit(AuthAuthenticated(
+          user: updatedUser,
+          token: currentState.token,
+        ));
+      } on AuthException catch (e) {
+        // En cas d'erreur, revenir à l'état précédent et émettre une erreur
+        emit(AuthAuthenticated(
+          user: currentState.user,
+          token: currentState.token,
+        ));
+        emit(AuthError(e.message));
+      } on DioException catch (e) {
+        emit(AuthAuthenticated(
+          user: currentState.user,
+          token: currentState.token,
+        ));
+        emit(AuthError(_handleDioError(e)));
+      } catch (e) {
+        emit(AuthAuthenticated(
+          user: currentState.user,
+          token: currentState.token,
+        ));
+        emit(AuthError('Erreur lors de l\'upload de l\'avatar'));
+      }
+    }
+  }
+
   /// Gère les erreurs DioException de manière centralisée
   String _handleDioError(DioException e) {
-    print('🚨 Response: ${e.response?.data}'); // Pour debug
+    print('🚨 Response: ${e.response?.data}');
     
     if (e.response?.data != null) {
       final data = e.response!.data;

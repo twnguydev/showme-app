@@ -1,379 +1,243 @@
-// src/modules/cards/cards.service.ts
+// backend/src/modules/cards/cards.service.ts
 import {
   Injectable,
   NotFoundException,
+  ConflictException,
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-
-import { Card, CardTheme } from '../../entities/card.entity';
-import { Profile } from '../../entities/profile.entity';
+import { Card } from '../../entities/card.entity';
 import { User } from '../../entities/user.entity';
-import { CreateCardDto, UpdateCardDto } from './dto';
+import { CreateCardDto } from './dto/create-card.dto';
+import { UpdateCardDto } from './dto/update-card.dto';
 
 @Injectable()
 export class CardsService {
   constructor(
     @InjectRepository(Card)
     private readonly cardRepository: Repository<Card>,
-    @InjectRepository(Profile)
-    private readonly profileRepository: Repository<Profile>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
 
-  /**
-   * Créer une carte par défaut pour un nouvel utilisateur
-   */
-  async createDefaultCard(user: User): Promise<Card> {
-    // Récupérer l'utilisateur avec son profil
-    const userWithProfile = await this.userRepository.findOne({
-      where: { id: user.id },
-      relations: ['profile'],
-    });
-
-    if (!userWithProfile) {
-      throw new NotFoundException('Utilisateur non trouvé');
-    }
-
-    // Générer un slug unique basé sur le nom d'utilisateur
-    const slug = await this.generateUniqueSlug(userWithProfile.username);
-
-    // Utiliser le profil existant ou créer un profil par défaut
-    let profile = userWithProfile.profile;
-    
-    if (!profile) {
-      // Si pas de profil, créer un profil basique
-      profile = this.profileRepository.create({
-        email: userWithProfile.email,
-        bio: 'Ma carte de contact digitale',
-        isPublic: true,
-        user: userWithProfile,
-      });
-      profile = await this.profileRepository.save(profile);
-    }
-
-    // Créer la carte par défaut
-    const card = this.cardRepository.create({
-      slug,
-      title: userWithProfile.displayName ? `Carte de ${userWithProfile.displayName}` : 'Ma carte de contact',
-      bio: 'Ma carte de contact digitale',
-      theme: CardTheme.PURPLE, // Thème par défaut
-      isPublic: true,
-      user: userWithProfile,
-      profile,
-    });
-
-    return this.cardRepository.save(card);
-  }
-
-  /**
-   * Créer une nouvelle carte
-   */
-  async createCard(userId: number, createCardDto: CreateCardDto): Promise<Card> {
-    const user = await this.userRepository.findOne({ 
-      where: { id: userId },
-      relations: ['subscription', 'profile'],
-    });
-
+  async create(createCardDto: CreateCardDto, userId: number): Promise<Card> {
+    // Vérifier que l'utilisateur existe
+    const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException('Utilisateur non trouvé');
     }
 
-    // Vérifier le nombre de cartes (limite pour les utilisateurs gratuits)
-    const userCardsCount = await this.cardRepository.count({ 
-      where: { user: { id: userId } } 
+    // Vérifier l'unicité du slug pour cet utilisateur
+    const existingCard = await this.cardRepository.findOne({
+      where: { slug: createCardDto.slug, userId },
     });
 
-    if (userCardsCount >= 5 && !user.subscription?.isActive) {
-      throw new ForbiddenException(
-        'Limite de cartes atteinte. Passez à la version Pro pour créer plus de cartes.'
-      );
+    if (existingCard) {
+      throw new ConflictException('Une carte avec ce slug existe déjà');
     }
 
-    // Générer un slug unique
-    const slug = await this.generateUniqueSlug(
-      createCardDto.slug || createCardDto.title
-    );
-
-    // Créer le profil pour la carte
-    let profile = null;
-    if (createCardDto.profile) {
-      // Nouveau profil avec les données fournies
-      profile = this.profileRepository.create({
-        ...createCardDto.profile,
-        isPublic: createCardDto.isPublic ?? true,
-      });
-    } else if (user.profile) {
-      // Cloner le profil utilisateur existant pour la carte
-      const { id, createdAt, updatedAt, user: userRef, ...profileData } = user.profile;
-      profile = this.profileRepository.create({
-        ...profileData,
-        isPublic: createCardDto.isPublic ?? true,
-      });
-    } else {
-      // Profil minimal si aucun profil utilisateur
-      profile = this.profileRepository.create({
-        email: user.email,
-        bio: createCardDto.bio || 'Ma carte de contact',
-        isPublic: createCardDto.isPublic ?? true,
-      });
-    }
-
-    const savedProfile = await this.profileRepository.save(profile);
-
-    // Créer la carte
+    // Créer la carte avec les données utilisateur par défaut si non fournies
     const card = this.cardRepository.create({
-      title: createCardDto.title,
-      slug,
-      bio: createCardDto.bio,
-      theme: createCardDto.theme || CardTheme.PURPLE,
-      isPublic: createCardDto.isPublic ?? true,
-      allowPayment: createCardDto.allowPayment ?? false,
-      nfcEnabled: createCardDto.nfcEnabled ?? false,
-      user,
-      profile: savedProfile,
+      ...createCardDto,
+      userId,
+      // Utiliser les données par défaut de l'utilisateur si non fournies
+      firstName: createCardDto.firstName || user.firstName,
+      lastName: createCardDto.lastName || user.lastName,
+      phone: createCardDto.phone || user.defaultPhone,
+      company: createCardDto.company || user.defaultCompany,
+      position: createCardDto.position || user.defaultPosition,
+      avatar: user.defaultAvatar, // Avatar par défaut de l'utilisateur
     });
 
-    return this.cardRepository.save(card);
+    const savedCard = await this.cardRepository.save(card);
+
+    // Générer le QR code après création
+    await this.generateQRCode(savedCard);
+
+    return this.findOne(savedCard.id, userId);
   }
 
-  /**
-   * Obtenir toutes les cartes d'un utilisateur
-   */
-  async getUserCards(userId: number): Promise<Card[]> {
+  async findAll(userId: number): Promise<Card[]> {
     return this.cardRepository.find({
-      where: { user: { id: userId } },
-      relations: ['profile', 'subscription'],
+      where: { userId },
       order: { createdAt: 'DESC' },
     });
   }
 
-  /**
-   * Obtenir une carte par son ID
-   */
-  async getCardById(cardId: number, userId?: number): Promise<Card> {
+  async findOne(id: number, userId?: number): Promise<Card> {
+    const whereCondition: any = { id };
+    if (userId) {
+      whereCondition.userId = userId;
+    }
+
     const card = await this.cardRepository.findOne({
-      where: { id: cardId },
-      relations: ['profile', 'user', 'subscription'],
+      where: whereCondition,
+      relations: ['user'],
     });
 
     if (!card) {
       throw new NotFoundException('Carte non trouvée');
     }
 
-    // Vérifier les permissions si un userId est fourni
-    if (userId && card.user.id !== userId) {
-      throw new ForbiddenException('Vous n\'avez pas accès à cette carte');
+    // Si pas de userId fourni, vérifier que la carte est publique
+    if (!userId && !card.isPublic) {
+      throw new ForbiddenException('Cette carte n\'est pas publique');
     }
 
     return card;
   }
 
-  /**
-   * Obtenir une carte publique par son slug
-   */
-  async getPublicCard(slug: string): Promise<Card> {
+  async findBySlug(slug: string, userId?: number): Promise<Card> {
+    const whereCondition: any = { slug };
+    if (userId) {
+      whereCondition.userId = userId;
+    }
+
     const card = await this.cardRepository.findOne({
-      where: { slug, isPublic: true },
-      relations: ['profile', 'user', 'user.profile'],
+      where: whereCondition,
+      relations: ['user'],
     });
 
     if (!card) {
-      throw new NotFoundException('Carte non trouvée ou privée');
+      throw new NotFoundException('Carte non trouvée');
     }
 
-    // Incrémenter le compteur de vues
-    await this.cardRepository.increment({ id: card.id }, 'viewsCount', 1);
+    // Si pas de userId fourni, vérifier que la carte est publique
+    if (!userId && !card.isPublic) {
+      throw new ForbiddenException('Cette carte n\'est pas publique');
+    }
+
+    // Incrémenter les vues si accès public
+    if (!userId) {
+      card.incrementViews();
+      await this.cardRepository.save(card);
+    }
 
     return card;
   }
 
-  /**
-   * Mettre à jour une carte
-   */
-  async updateCard(cardId: number, userId: number, updateCardDto: UpdateCardDto): Promise<Card> {
-    const card = await this.getCardById(cardId, userId);
+  async update(id: number, updateCardDto: UpdateCardDto, userId: number): Promise<Card> {
+    const card = await this.findOne(id, userId);
 
-    // Mettre à jour le slug si le titre change
-    if (updateCardDto.title && updateCardDto.title !== card.title) {
-      const newSlug = await this.generateUniqueSlug(updateCardDto.title, card.id);
-      updateCardDto.slug = newSlug;
+    // Mise à jour des données
+    Object.assign(card, updateCardDto);
+    
+    const updatedCard = await this.cardRepository.save(card);
+
+    // Régénérer le QR code si nécessaire
+    if (updateCardDto.isPublic !== undefined) {
+      await this.generateQRCode(updatedCard);
     }
 
-    // Mettre à jour le profil si fourni
-    if (updateCardDto.profile && card.profile) {
-      await this.profileRepository.update(card.profile.id, updateCardDto.profile);
-    } else if (updateCardDto.profile && !card.profile) {
-      // Créer un nouveau profil si la carte n'en avait pas
-      const profile = this.profileRepository.create({
-        ...updateCardDto.profile,
-        isPublic: updateCardDto.isPublic ?? card.isPublic,
-      });
-      const savedProfile = await this.profileRepository.save(profile);
-      
-      // Associer le profil à la carte
-      await this.cardRepository.update(card.id, { profile: savedProfile });
-    }
-
-    // Mettre à jour la carte (exclure le profil de l'update direct)
-    const { profile, ...cardUpdateData } = updateCardDto;
-    if (Object.keys(cardUpdateData).length > 0) {
-      await this.cardRepository.update(cardId, cardUpdateData);
-    }
-
-    return this.getCardById(cardId, userId);
+    return updatedCard;
   }
 
-  /**
-   * Supprimer une carte
-   */
-  async deleteCard(cardId: number, userId: number): Promise<void> {
-    const card = await this.getCardById(cardId, userId);
+  async remove(id: number, userId: number): Promise<void> {
+    const card = await this.findOne(id, userId);
+    await this.cardRepository.remove(card);
+  }
 
-    // Vérifier que ce n'est pas la seule carte de l'utilisateur
-    const userCardsCount = await this.cardRepository.count({ 
-      where: { user: { id: userId } } 
+  async togglePublic(id: number, userId: number): Promise<Card> {
+    const card = await this.findOne(id, userId);
+    card.isPublic = !card.isPublic;
+    
+    const updatedCard = await this.cardRepository.save(card);
+    
+    // Régénérer le QR code
+    await this.generateQRCode(updatedCard);
+    
+    return updatedCard;
+  }
+
+  async uploadImage(
+    cardId: number,
+    userId: number,
+    file: Express.Multer.File,
+    imageType: 'avatar' | 'companyLogo',
+  ): Promise<Card> {
+    const card = await this.findOne(cardId, userId);
+
+    if (!file) {
+      throw new BadRequestException('Aucun fichier fourni');
+    }
+
+    // Construire l'URL du fichier
+    const fileUrl = `/api/uploads/${file.filename}`;
+    
+    const imageData = {
+      url: fileUrl,
+      name: file.originalname,
+      size: file.size,
+      mimeType: file.mimetype,
+      uploadedAt: new Date(),
+    };
+
+    // Mettre à jour le bon champ selon le type
+    if (imageType === 'avatar') {
+      card.avatar = imageData;
+    } else if (imageType === 'companyLogo') {
+      card.companyLogo = imageData;
+    }
+
+    return this.cardRepository.save(card);
+  }
+
+  async getPublicCards(limit: number = 20, offset: number = 0): Promise<Card[]> {
+    return this.cardRepository.find({
+      where: { isPublic: true },
+      order: { createdAt: 'DESC' },
+      take: limit,
+      skip: offset,
+      relations: ['user'],
     });
-
-    if (userCardsCount <= 1) {
-      throw new BadRequestException(
-        'Vous devez avoir au moins une carte. Créez une nouvelle carte avant de supprimer celle-ci.'
-      );
-    }
-
-    // Supprimer le profil associé s'il existe
-    if (card.profile) {
-      await this.profileRepository.delete(card.profile.id);
-    }
-
-    // Supprimer la carte
-    await this.cardRepository.delete(cardId);
   }
 
-  /**
-   * Obtenir les statistiques d'une carte
-   */
-  async getCardStats(cardId: number, userId: number) {
-    const card = await this.getCardById(cardId, userId);
-
-    const conversionRate = card.viewsCount > 0 
-      ? Math.round((card.totalLeads / card.viewsCount) * 100 * 100) / 100 
-      : 0;
+  async getUserStats(userId: number): Promise<any> {
+    const cards = await this.findAll(userId);
+    
+    const totalViews = cards.reduce((sum, card) => sum + card.viewsCount, 0);
+    const totalShares = cards.reduce((sum, card) => sum + card.totalShared, 0);
+    const totalLeads = cards.reduce((sum, card) => sum + card.totalLeads, 0);
+    const publicCards = cards.filter(card => card.isPublic).length;
 
     return {
-      cardId: card.id,
-      slug: card.slug,
-      title: card.title,
-      views: card.viewsCount,
-      shares: card.totalShared,
-      leads: card.totalLeads,
-      conversionRate,
-      theme: card.theme,
-      isPublic: card.isPublic,
-      createdAt: card.createdAt,
-      lastViewed: null, // TODO: Implémenter depuis ContactExchange
-      profileComplete: this.isProfileComplete(card.profile),
+      totalCards: cards.length,
+      publicCards,
+      totalViews,
+      totalShares,
+      totalLeads,
     };
   }
 
-  /**
-   * Vérifier si le profil d'une carte est complet
-   */
-  private isProfileComplete(profile: Profile | null): boolean {
-    if (!profile) return false;
+  private async generateQRCode(card: Card): Promise<void> {
+    // Générer l'URL du QR code (vous pouvez utiliser une librairie comme qrcode)
+    const baseUrl = process.env.APP_URL || 'http://localhost:3000';
+    const cardUrl = `${baseUrl}/card/${card.slug}`;
     
-    const requiredFields = ['firstName', 'lastName', 'email'];
-    const optionalFields = ['company', 'position', 'phone', 'bio'];
+    // URL de génération de QR code externe (temporaire)
+    card.qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(cardUrl)}`;
     
-    const hasRequired = requiredFields.every(field => profile[field]);
-    const hasOptional = optionalFields.some(field => profile[field]);
-    
-    return hasRequired && hasOptional;
+    await this.cardRepository.save(card);
   }
 
-  /**
-   * Dupliquer une carte existante
-   */
-  async duplicateCard(cardId: number, userId: number): Promise<Card> {
-    const originalCard = await this.getCardById(cardId, userId);
+  // Méthode pour créer la carte par défaut d'un utilisateur
+  async createDefaultCard(user: User): Promise<Card> {
+    const defaultCardData = user.createDefaultCard();
     
-    // Créer un nouveau profil basé sur l'original
-    let newProfile = null;
-    if (originalCard.profile) {
-      const { id, createdAt, updatedAt, user, ...profileData } = originalCard.profile;
-      newProfile = this.profileRepository.create(profileData);
-      newProfile = await this.profileRepository.save(newProfile);
-    }
-    
-    // Générer un nouveau slug
-    const newSlug = await this.generateUniqueSlug(`${originalCard.title}-copie`);
-    
-    // Créer la nouvelle carte
-    const newCard = this.cardRepository.create({
-      title: `${originalCard.title} (Copie)`,
-      slug: newSlug,
-      bio: originalCard.bio,
-      theme: originalCard.theme,
-      isPublic: originalCard.isPublic,
-      allowPayment: originalCard.allowPayment,
-      nfcEnabled: originalCard.nfcEnabled,
-      user: originalCard.user,
-      profile: newProfile,
-    });
-    
-    return this.cardRepository.save(newCard);
-  }
+    const createDto: CreateCardDto = {
+      slug: defaultCardData.slug!,
+      title: defaultCardData.title!,
+      bio: defaultCardData.bio,
+      email: defaultCardData.email!,
+      firstName: defaultCardData.firstName,
+      lastName: defaultCardData.lastName,
+      phone: defaultCardData.phone,
+      company: defaultCardData.company,
+      position: defaultCardData.position,
+    };
 
-  /**
-   * Méthodes privées utilitaires
-   */
-  private async generateUniqueSlug(baseSlug: string, excludeId?: number): Promise<string> {
-    let slug = this.slugify(baseSlug);
-    let counter = 1;
-
-    while (true) {
-      const whereCondition: any = { slug };
-      if (excludeId) {
-        // Utiliser Not pour exclure l'ID
-        whereCondition.id = excludeId;
-      }
-
-      const existingCard = await this.cardRepository
-        .createQueryBuilder('card')
-        .where('card.slug = :slug', { slug })
-        .andWhere(excludeId ? 'card.id != :excludeId' : '1=1', { excludeId })
-        .getOne();
-
-      if (!existingCard) {
-        break;
-      }
-
-      slug = `${this.slugify(baseSlug)}-${counter}`;
-      counter++;
-
-      // Éviter les boucles infinies
-      if (counter > 100) {
-        slug = `${this.slugify(baseSlug)}-${Date.now()}`;
-        break;
-      }
-    }
-
-    return slug;
-  }
-
-  private slugify(text: string): string {
-    return text
-      .toLowerCase()
-      .trim()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9 -]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '')
-      .substring(0, 50);
+    return this.create(createDto, user.id);
   }
 }

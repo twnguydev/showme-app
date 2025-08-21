@@ -34,6 +34,7 @@ dependencies:
   qr_code_scanner: ^1.0.1
   qr_flutter: ^4.1.0
   camera: ^0.10.5+5
+  share_plus: ^11.1.0
   
   # Location & Maps
   geolocator: ^10.1.0

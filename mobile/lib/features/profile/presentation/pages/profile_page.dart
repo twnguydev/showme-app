@@ -38,7 +38,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ShowmeSliverAppBar(
                   title: 'Mon profil',
                   showBackButton: true,
-                  onBackPressed: () => context.pop(),
+                  onBackPressed: () => context.go('/home'),
                   showProfileIcon: false,
                   actions: [
                     Container(
