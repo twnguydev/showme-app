@@ -4,9 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:showme/core/services/auth_api_service.dart';
-import 'package:showme/core/services/users_api_service.dart';
-import 'package:showme/core/services/cards_api_service.dart';
+import 'package:qard/core/services/auth_api_service.dart';
+import 'package:qard/core/services/users_api_service.dart';
+import 'package:qard/core/services/cards_api_service.dart';
 import 'dart:async';
 
 import 'core/services/api_service.dart';

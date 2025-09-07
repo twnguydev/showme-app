@@ -1,6 +1,7 @@
 // mobile/lib/features/profile/bloc/profile_bloc.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
+import 'dart:io';
 
 import 'profile_event.dart';
 import 'profile_state.dart';
@@ -47,7 +48,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       final response = await _usersApiService.uploadAvatar(event.imageFile);
       
       // Émettre le succès avec l'URL de l'avatar
-      emit(ProfileAvatarUploadSuccess(response.data!.profile!.avatar!.url));
+      emit(ProfileAvatarUploadSuccess(response.data!.defaultAvatar!.url));
     } on AuthException catch (e) {
       emit(ProfileAvatarUploadError(e.message));
     } on DioException catch (e) {

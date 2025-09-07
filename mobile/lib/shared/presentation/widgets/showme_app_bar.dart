@@ -1,7 +1,7 @@
 // mobile/lib/shared/presentation/widgets/showme_sliver_app_bar.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:showme/shared/models/user.dart';
+import 'package:qard/shared/models/user.dart';
 import '../../../core/design/showme_design_system.dart';
 import '../../../features/auth/bloc/auth_bloc.dart';
 import '../../../features/auth/bloc/auth_state.dart';
@@ -108,7 +108,7 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
         size: 24,
         color: ShowmeDesign.neutral900,
       ),
-      onPressed: widget.onBackPressed
+      onPressed: widget.onBackPressed,
     );
   }
 
@@ -185,10 +185,7 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
               ),
             ),
             const SizedBox(width: 6),
-            Text(
-              _getTimeBasedEmoji(),
-              style: const TextStyle(fontSize: 18),
-            ),
+            Text(_getTimeBasedEmoji(), style: const TextStyle(fontSize: 18)),
           ],
         ),
         Text(
@@ -239,42 +236,7 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
   }
 
   Widget _buildAvatarFromUser(User? user) {
-    if (user?.profile?.avatar != null) {
-      // Avatar avec photo de profil
-      return Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: ShowmeDesign.neutral200,
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(7),
-          child: Image.network(
-            user?.profile?.avatar?.url ?? '',
-            width: 36,
-            height: 36,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return _buildDefaultAvatar(user);
-            },
-          ),
-        ),
-      );
-    } else {
-      // Avatar par défaut avec initiales
-      return _buildDefaultAvatar(user);
-    }
+    return _buildDefaultAvatar(user);
   }
 
   Widget _buildDefaultAvatar(dynamic user) {
@@ -284,10 +246,7 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
       decoration: BoxDecoration(
         gradient: ShowmeDesign.primaryGradient,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: ShowmeDesign.neutral200,
-          width: 1,
-        ),
+        border: Border.all(color: ShowmeDesign.neutral200, width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
@@ -311,8 +270,8 @@ class _ShowmeSliverAppBarState extends State<ShowmeSliverAppBar>
 
   // Méthodes utilitaires
   String _getUserName(dynamic user) {
-    if (user?.profile.firstName != null && user.profile.firstName!.isNotEmpty) {
-      return user.profile.firstName!;
+    if (user.firstName != null && user.firstName!.isNotEmpty) {
+      return user.firstName!;
     } else if (user?.email != null) {
       return user.email!.split('@').first;
     }

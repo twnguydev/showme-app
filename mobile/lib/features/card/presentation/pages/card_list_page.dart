@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:showme/features/card/bloc/card_bloc.dart';
-import 'package:showme/features/card/bloc/card_event.dart';
-import 'package:showme/features/card/bloc/card_state.dart';
-import 'package:showme/shared/presentation/widgets/showme_app_bar.dart';
+import 'package:qard/features/card/bloc/card_bloc.dart';
+import 'package:qard/features/card/bloc/card_event.dart';
+import 'package:qard/features/card/bloc/card_state.dart';
+import 'package:qard/shared/presentation/widgets/showme_app_bar.dart';
 
 import '../../../../core/design/showme_design_system.dart';
 import '../../../auth/bloc/auth_bloc.dart';
@@ -20,27 +20,28 @@ class CardListPage extends StatefulWidget {
   State<CardListPage> createState() => _CardListPageState();
 }
 
-class _CardListPageState extends State<CardListPage> with TickerProviderStateMixin {
+class _CardListPageState extends State<CardListPage>
+    with TickerProviderStateMixin {
   late AnimationController _fabAnimationController;
   late Animation<double> _fabAnimation;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     _fabAnimationController = AnimationController(
       duration: ShowmeDesign.normalDuration,
       vsync: this,
     );
-    
+
     _fabAnimation = CurvedAnimation(
       parent: _fabAnimationController,
       curve: ShowmeDesign.bouncyCurve,
     );
-    
+
     // Charger les cartes au démarrage
     context.read<CardBloc>().add(CardLoadRequested());
-    
+
     // Animer le FAB
     _fabAnimationController.forward();
   }
@@ -136,8 +137,10 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
               // Liste des cartes
               BlocBuilder<CardBloc, CardState>(
                 builder: (context, state) {
-                  if (state is CardLoading || state is CardCreateLoading || 
-                      state is CardUpdateLoading || state is CardDeleteLoading) {
+                  if (state is CardLoading ||
+                      state is CardCreateLoading ||
+                      state is CardUpdateLoading ||
+                      state is CardDeleteLoading) {
                     return _buildLoadingState();
                   }
 
@@ -159,12 +162,14 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
 
               // Padding bottom
               const SliverToBoxAdapter(
-                child: SizedBox(height: ShowmeDesign.spacingXl + 80), // Extra space for FAB
+                child: SizedBox(
+                  height: ShowmeDesign.spacingXl + 80,
+                ), // Extra space for FAB
               ),
             ],
           ),
         ),
-        
+
         // FAB pour créer une nouvelle carte
         floatingActionButton: ScaleTransition(
           scale: _fabAnimation,
@@ -205,21 +210,28 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
           margin: const EdgeInsets.only(right: 8),
           child: BlocBuilder<CardBloc, CardState>(
             builder: (context, state) {
-              final isLoading = state is CardLoading || 
-                              state is CardCreateLoading || 
-                              state is CardUpdateLoading || 
-                              state is CardDeleteLoading;
-              
+              final isLoading =
+                  state is CardLoading ||
+                  state is CardCreateLoading ||
+                  state is CardUpdateLoading ||
+                  state is CardDeleteLoading;
+
               return IconButton(
-                onPressed: isLoading ? null : () {
-                  context.read<CardBloc>().add(CardRefreshRequested());
-                },
+                onPressed:
+                    isLoading
+                        ? null
+                        : () {
+                          context.read<CardBloc>().add(CardRefreshRequested());
+                        },
                 icon: AnimatedRotation(
                   turns: isLoading ? 1 : 0,
                   duration: ShowmeDesign.normalDuration,
                   child: Icon(
                     Icons.refresh,
-                    color: isLoading ? ShowmeDesign.neutral400 : ShowmeDesign.neutral700,
+                    color:
+                        isLoading
+                            ? ShowmeDesign.neutral400
+                            : ShowmeDesign.neutral700,
                   ),
                 ),
               );
@@ -238,11 +250,7 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
                 color: ShowmeDesign.primaryTeal,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
-                Icons.add,
-                color: Colors.white,
-                size: 18,
-              ),
+              child: const Icon(Icons.add, color: Colors.white, size: 18),
             ),
           ),
         ),
@@ -251,8 +259,14 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
   }
 
   Widget _buildStatsSection(List cards) {
-    final totalViews = cards.fold<int>(0, (sum, card) => sum + (card.viewsCount as int));
-    final totalShares = cards.fold<int>(0, (sum, card) => sum + (card.totalShared as int));
+    final totalViews = cards.fold<int>(
+      0,
+      (sum, card) => sum + (card.viewsCount as int),
+    );
+    final totalShares = cards.fold<int>(
+      0,
+      (sum, card) => sum + (card.totalShared as int),
+    );
     final publicCards = cards.where((card) => card.isPublic).length;
 
     return SliverToBoxAdapter(
@@ -280,11 +294,7 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
                 color: ShowmeDesign.primaryBlue,
               ),
             ),
-            Container(
-              width: 1,
-              height: 40,
-              color: ShowmeDesign.neutral200,
-            ),
+            Container(width: 1, height: 40, color: ShowmeDesign.neutral200),
             Expanded(
               child: _buildStatItem(
                 icon: Icons.share,
@@ -293,11 +303,7 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
                 color: ShowmeDesign.primaryTeal,
               ),
             ),
-            Container(
-              width: 1,
-              height: 40,
-              color: ShowmeDesign.neutral200,
-            ),
+            Container(width: 1, height: 40, color: ShowmeDesign.neutral200),
             Expanded(
               child: _buildStatItem(
                 icon: Icons.public,
@@ -327,11 +333,7 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
             color: color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
           ),
-          child: Icon(
-            icon,
-            color: color,
-            size: 20,
-          ),
+          child: Icon(icon, color: color, size: 20),
         ),
         const SizedBox(height: ShowmeDesign.spacingSm),
         Text(
@@ -343,9 +345,7 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
         ),
         Text(
           label,
-          style: ShowmeDesign.caption.copyWith(
-            color: ShowmeDesign.neutral600,
-          ),
+          style: ShowmeDesign.caption.copyWith(color: ShowmeDesign.neutral600),
         ),
       ],
     );
@@ -357,9 +357,7 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircularProgressIndicator(
-              color: ShowmeDesign.primaryPurple,
-            ),
+            const CircularProgressIndicator(color: ShowmeDesign.primaryPurple),
             const SizedBox(height: ShowmeDesign.spacingMd),
             Text(
               'Chargement de vos cartes...',
@@ -467,9 +465,9 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
                   );
                 },
               ),
-              
+
               const SizedBox(height: ShowmeDesign.spacingXl),
-              
+
               Text(
                 'Aucune carte pour le moment',
                 style: ShowmeDesign.h3.copyWith(
@@ -478,9 +476,9 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
                 ),
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: ShowmeDesign.spacingMd),
-              
+
               Text(
                 'Créez votre première carte de visite digitale pour commencer à partager vos informations professionnelles de manière moderne et élégante.',
                 style: ShowmeDesign.bodyMedium.copyWith(
@@ -488,9 +486,9 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
                 ),
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: ShowmeDesign.spacingXl),
-              
+
               ElevatedButton.icon(
                 onPressed: _navigateToCardCreation,
                 icon: const Icon(Icons.add),
@@ -508,9 +506,9 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
                   elevation: 4,
                 ),
               ),
-              
+
               const SizedBox(height: ShowmeDesign.spacingMd),
-              
+
               TextButton(
                 onPressed: () {
                   // Afficher un guide ou des exemples
@@ -533,214 +531,243 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
 
   Widget _buildCardsList(List cards) {
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final card = cards[index];
-          
-          return BlocBuilder<AuthBloc, AuthState>(
-            builder: (context, authState) {
-              if (authState is AuthAuthenticated) {
-                return Container(
-                  margin: const EdgeInsets.only(
-                    left: ShowmeDesign.spacingMd,
-                    right: ShowmeDesign.spacingMd,
-                    bottom: ShowmeDesign.spacingSm,
+      delegate: SliverChildBuilderDelegate((context, index) {
+        final card = cards[index];
+
+        return BlocBuilder<AuthBloc, AuthState>(
+          builder: (context, authState) {
+            if (authState is AuthAuthenticated) {
+              return Container(
+                margin: const EdgeInsets.only(
+                  left: ShowmeDesign.spacingMd,
+                  right: ShowmeDesign.spacingMd,
+                  bottom: ShowmeDesign.spacingSm,
+                ),
+                child: Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(ShowmeDesign.radiusLg),
                   ),
-                  child: Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(ShowmeDesign.radiusLg),
-                    ),
-                    child: InkWell(
-                      onTap: () => _navigateToCardDetail(card.id.toString()),
-                      borderRadius: BorderRadius.circular(ShowmeDesign.radiusLg),
-                      child: Padding(
-                        padding: const EdgeInsets.all(ShowmeDesign.spacingLg),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Header avec titre et actions
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
+                  child: InkWell(
+                    onTap: () => _navigateToCardDetail(card.id.toString()),
+                    borderRadius: BorderRadius.circular(ShowmeDesign.radiusLg),
+                    child: Padding(
+                      padding: const EdgeInsets.all(ShowmeDesign.spacingLg),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header avec titre et actions
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      card.title,
+                                      style: ShowmeDesign.h5.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    if (card.bio != null) ...[
+                                      const SizedBox(height: 4),
                                       Text(
-                                        card.title,
-                                        style: ShowmeDesign.h5.copyWith(
-                                          fontWeight: FontWeight.bold,
+                                        card.bio!,
+                                        style: ShowmeDesign.bodySmall.copyWith(
+                                          color: ShowmeDesign.neutral600,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+
+                              // Menu d'actions
+                              PopupMenuButton<String>(
+                                icon: const Icon(Icons.more_vert),
+                                onSelected: (String value) {
+                                  switch (value) {
+                                    case 'edit':
+                                      _showEditCardDialog(context, card);
+                                      break;
+                                    case 'toggle_public':
+                                      context.read<CardBloc>().add(
+                                        CardTogglePublicRequested(
+                                          card.id.toString(),
+                                          !card.isPublic,
+                                        ),
+                                      );
+                                      break;
+                                    case 'share':
+                                      context.read<CardBloc>().add(
+                                        CardShareRequested(
+                                          card.id.toString(),
+                                          'link',
+                                        ),
+                                      );
+                                      break;
+                                    case 'qr_code':
+                                      context.read<CardBloc>().add(
+                                        CardQRGenerateRequested(
+                                          card.id.toString(),
+                                        ),
+                                      );
+                                      break;
+                                    case 'delete':
+                                      _confirmDeleteCard(context, card);
+                                      break;
+                                  }
+                                },
+                                itemBuilder:
+                                    (
+                                      BuildContext context,
+                                    ) => <PopupMenuEntry<String>>[
+                                      const PopupMenuItem<String>(
+                                        value: 'edit',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.edit, size: 20),
+                                            SizedBox(width: 8),
+                                            Text('Modifier'),
+                                          ],
                                         ),
                                       ),
-                                      if (card.bio != null) ...[
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          card.bio!,
-                                          style: ShowmeDesign.bodySmall.copyWith(
-                                            color: ShowmeDesign.neutral600,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
+                                      PopupMenuItem<String>(
+                                        value: 'toggle_public',
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              card.isPublic
+                                                  ? Icons.visibility_off
+                                                  : Icons.visibility,
+                                              size: 20,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              card.isPublic
+                                                  ? 'Rendre privée'
+                                                  : 'Rendre publique',
+                                            ),
+                                          ],
                                         ),
-                                      ],
+                                      ),
+                                      const PopupMenuItem<String>(
+                                        value: 'share',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.share, size: 20),
+                                            SizedBox(width: 8),
+                                            Text('Partager'),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem<String>(
+                                        value: 'qr_code',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.qr_code, size: 20),
+                                            SizedBox(width: 8),
+                                            Text('QR Code'),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuDivider(),
+                                      const PopupMenuItem<String>(
+                                        value: 'delete',
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.delete,
+                                              size: 20,
+                                              color: ShowmeDesign.primaryRose,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              'Supprimer',
+                                              style: TextStyle(
+                                                color: ShowmeDesign.primaryRose,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ],
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: ShowmeDesign.spacingMd),
+
+                          // Statistiques
+                          Row(
+                            children: [
+                              _buildStatChip(
+                                icon: Icons.visibility,
+                                value: card.viewsCount.toString(),
+                                color: ShowmeDesign.primaryBlue,
+                              ),
+                              const SizedBox(width: ShowmeDesign.spacingSm),
+                              _buildStatChip(
+                                icon: Icons.share,
+                                value: card.totalShared.toString(),
+                                color: ShowmeDesign.primaryTeal,
+                              ),
+                              const SizedBox(width: ShowmeDesign.spacingSm),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      card.isPublic
+                                          ? ShowmeDesign.primaryPurple
+                                              .withOpacity(0.1)
+                                          : ShowmeDesign.neutral200,
+                                  borderRadius: BorderRadius.circular(
+                                    ShowmeDesign.radiusSm,
                                   ),
                                 ),
-                                
-                                // Menu d'actions
-                                PopupMenuButton<String>(
-                                  icon: const Icon(Icons.more_vert),
-                                  onSelected: (String value) {
-                                    switch (value) {
-                                      case 'edit':
-                                        _showEditCardDialog(context, card);
-                                        break;
-                                      case 'toggle_public':
-                                        context.read<CardBloc>().add(
-                                          CardTogglePublicRequested(card.id.toString(), !card.isPublic)
-                                        );
-                                        break;
-                                      case 'share':
-                                        context.read<CardBloc>().add(
-                                          CardShareRequested(card.id.toString(), 'link')
-                                        );
-                                        break;
-                                      case 'qr_code':
-                                        context.read<CardBloc>().add(
-                                          CardQRGenerateRequested(card.id.toString())
-                                        );
-                                        break;
-                                      case 'delete':
-                                        _confirmDeleteCard(context, card);
-                                        break;
-                                    }
-                                  },
-                                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                                    const PopupMenuItem<String>(
-                                      value: 'edit',
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.edit, size: 20),
-                                          SizedBox(width: 8),
-                                          Text('Modifier'),
-                                        ],
-                                      ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      card.isPublic ? Icons.public : Icons.lock,
+                                      size: 12,
+                                      color:
+                                          card.isPublic
+                                              ? ShowmeDesign.primaryPurple
+                                              : ShowmeDesign.neutral600,
                                     ),
-                                    PopupMenuItem<String>(
-                                      value: 'toggle_public',
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            card.isPublic ? Icons.visibility_off : Icons.visibility,
-                                            size: 20,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(card.isPublic ? 'Rendre privée' : 'Rendre publique'),
-                                        ],
-                                      ),
-                                    ),
-                                    const PopupMenuItem<String>(
-                                      value: 'share',
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.share, size: 20),
-                                          SizedBox(width: 8),
-                                          Text('Partager'),
-                                        ],
-                                      ),
-                                    ),
-                                    const PopupMenuItem<String>(
-                                      value: 'qr_code',
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.qr_code, size: 20),
-                                          SizedBox(width: 8),
-                                          Text('QR Code'),
-                                        ],
-                                      ),
-                                    ),
-                                    const PopupMenuDivider(),
-                                    const PopupMenuItem<String>(
-                                      value: 'delete',
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.delete, size: 20, color: ShowmeDesign.primaryRose),
-                                          SizedBox(width: 8),
-                                          Text('Supprimer', style: TextStyle(color: ShowmeDesign.primaryRose)),
-                                        ],
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      card.isPublic ? 'Public' : 'Privé',
+                                      style: ShowmeDesign.caption.copyWith(
+                                        color:
+                                            card.isPublic
+                                                ? ShowmeDesign.primaryPurple
+                                                : ShowmeDesign.neutral600,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
-                            
-                            const SizedBox(height: ShowmeDesign.spacingMd),
-                            
-                            // Statistiques
-                            Row(
-                              children: [
-                                _buildStatChip(
-                                  icon: Icons.visibility,
-                                  value: card.viewsCount.toString(),
-                                  color: ShowmeDesign.primaryBlue,
-                                ),
-                                const SizedBox(width: ShowmeDesign.spacingSm),
-                                _buildStatChip(
-                                  icon: Icons.share,
-                                  value: card.totalShared.toString(),
-                                  color: ShowmeDesign.primaryTeal,
-                                ),
-                                const SizedBox(width: ShowmeDesign.spacingSm),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: card.isPublic 
-                                        ? ShowmeDesign.primaryPurple.withOpacity(0.1)
-                                        : ShowmeDesign.neutral200,
-                                    borderRadius: BorderRadius.circular(ShowmeDesign.radiusSm),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        card.isPublic ? Icons.public : Icons.lock,
-                                        size: 12,
-                                        color: card.isPublic 
-                                            ? ShowmeDesign.primaryPurple
-                                            : ShowmeDesign.neutral600,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        card.isPublic ? 'Public' : 'Privé',
-                                        style: ShowmeDesign.caption.copyWith(
-                                          color: card.isPublic 
-                                              ? ShowmeDesign.primaryPurple
-                                              : ShowmeDesign.neutral600,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          );
-        },
-        childCount: cards.length,
-      ),
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          },
+        );
+      }, childCount: cards.length),
     );
   }
 
@@ -758,11 +785,7 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 12,
-            color: color,
-          ),
+          Icon(icon, size: 12, color: color),
           const SizedBox(width: 4),
           Text(
             value,
@@ -786,10 +809,11 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
   void _navigateToCardCreation() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => BlocProvider.value(
-          value: context.read<CardBloc>(),
-          child: const CardCreationPage(),
-        ),
+        builder:
+            (context) => BlocProvider.value(
+              value: context.read<CardBloc>(),
+              child: const CardCreationPage(),
+            ),
       ),
     );
   }
@@ -804,137 +828,142 @@ class _CardListPageState extends State<CardListPage> with TickerProviderStateMix
       _showQRCodeDialog(shareUrl);
     } else {
       // Partager l'URL directement avec share_plus v11.1.0
-      Share.shareUri(
-        Uri.parse(shareUrl),
-      );
+      Share.shareUri(Uri.parse(shareUrl));
     }
   }
 
   void _showQRCodeDialog(String qrCodeUrl) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('QR Code'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Ici vous pourriez afficher l'image du QR code
-            Container(
-              width: 200,
-              height: 200,
-              decoration: BoxDecoration(
-                border: Border.all(color: ShowmeDesign.neutral300),
-                borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.qr_code,
-                      size: 80,
-                      color: ShowmeDesign.neutral600,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('QR Code'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Ici vous pourriez afficher l'image du QR code
+                Container(
+                  width: 200,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: ShowmeDesign.neutral300),
+                    borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.qr_code,
+                          size: 80,
+                          color: ShowmeDesign.neutral600,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'QR Code généré',
+                          style: ShowmeDesign.bodySmall.copyWith(
+                            color: ShowmeDesign.neutral600,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'QR Code généré',
-                      style: ShowmeDesign.bodySmall.copyWith(
-                        color: ShowmeDesign.neutral600,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                const SizedBox(height: 16),
+                Text(
+                  'Partagez ce QR code pour que les autres puissent scanner votre carte',
+                  style: ShowmeDesign.bodySmall.copyWith(
+                    color: ShowmeDesign.neutral600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Partagez ce QR code pour que les autres puissent scanner votre carte',
-              style: ShowmeDesign.bodySmall.copyWith(
-                color: ShowmeDesign.neutral600,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Fermer'),
               ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fermer'),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Share.share(qrCodeUrl, subject: 'QR Code de ma carte');
+                },
+                child: const Text('Partager'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Share.share(qrCodeUrl, subject: 'QR Code de ma carte');
-            },
-            child: const Text('Partager'),
-          ),
-        ],
-      ),
     );
   }
 
   void _showEditCardDialog(BuildContext context, dynamic card) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Modifier la carte'),
-        content: const Text('Cette fonctionnalité sera bientôt disponible. Vous pourrez modifier votre carte directement depuis cette interface.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fermer'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Modifier la carte'),
+            content: const Text(
+              'Cette fonctionnalité sera bientôt disponible. Vous pourrez modifier votre carte directement depuis cette interface.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Fermer'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  // TODO: Navigator vers la page d'édition
+                  // _navigateToCardEdit(card.id.toString());
+                },
+                child: const Text('Modifier'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Navigator vers la page d'édition
-              // _navigateToCardEdit(card.id.toString());
-            },
-            child: const Text('Modifier'),
-          ),
-        ],
-      ),
     );
   }
 
-void _confirmDeleteCard(BuildContext context, dynamic card) {
+  void _confirmDeleteCard(BuildContext context, dynamic card) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Supprimer la carte'),
-        content: RichText(
-          text: TextSpan(
-            style: ShowmeDesign.bodyMedium.copyWith(color: ShowmeDesign.neutral800),
-            children: [
-              const TextSpan(text: 'Êtes-vous sûr de vouloir supprimer '),
-              TextSpan(
-                text: '"${card.title}"',
-                style: const TextStyle(fontWeight: FontWeight.bold),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Supprimer la carte'),
+            content: RichText(
+              text: TextSpan(
+                style: ShowmeDesign.bodyMedium.copyWith(
+                  color: ShowmeDesign.neutral800,
+                ),
+                children: [
+                  const TextSpan(text: 'Êtes-vous sûr de vouloir supprimer '),
+                  TextSpan(
+                    text: '"${card.title}"',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const TextSpan(text: ' ?\n\nCette action est irréversible.'),
+                ],
               ),
-              const TextSpan(text: ' ?\n\nCette action est irréversible.'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Annuler'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  context.read<CardBloc>().add(
+                    CardDeleteRequested(card.id.toString()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ShowmeDesign.primaryRose,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Supprimer'),
+              ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Annuler'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.read<CardBloc>().add(
-                CardDeleteRequested(card.id.toString())
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: ShowmeDesign.primaryRose,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Supprimer'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -943,90 +972,95 @@ void _confirmDeleteCard(BuildContext context, dynamic card) {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: ShowmeDesign.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(ShowmeDesign.radiusXl),
-            topRight: Radius.circular(ShowmeDesign.radiusXl),
-          ),
-        ),
-        padding: const EdgeInsets.all(ShowmeDesign.spacingLg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: ShowmeDesign.neutral300,
-                borderRadius: BorderRadius.circular(2),
+      builder:
+          (context) => Container(
+            decoration: const BoxDecoration(
+              color: ShowmeDesign.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(ShowmeDesign.radiusXl),
+                topRight: Radius.circular(ShowmeDesign.radiusXl),
               ),
             ),
-            const SizedBox(height: ShowmeDesign.spacingLg),
-            
-            Text(
-              'Exemples de cartes',
-              style: ShowmeDesign.h4.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            
-            const SizedBox(height: ShowmeDesign.spacingMd),
-            
-            Text(
-              'Découvrez différents styles de cartes que vous pouvez créer',
-              style: ShowmeDesign.bodyMedium.copyWith(
-                color: ShowmeDesign.neutral600,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            
-            const SizedBox(height: ShowmeDesign.spacingLg),
-            
-            // Liste d'exemples
-            ..._buildExamplesList(),
-            
-            const SizedBox(height: ShowmeDesign.spacingLg),
-            
-            Row(
+            padding: const EdgeInsets.all(ShowmeDesign.spacingLg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: ShowmeDesign.neutral300),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
-                      ),
-                    ),
-                    child: const Text('Fermer'),
+                // Handle
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: ShowmeDesign.neutral300,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(width: ShowmeDesign.spacingMd),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _navigateToCardCreation();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: ShowmeDesign.primaryPurple,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
+                const SizedBox(height: ShowmeDesign.spacingLg),
+
+                Text(
+                  'Exemples de cartes',
+                  style: ShowmeDesign.h4.copyWith(fontWeight: FontWeight.bold),
+                ),
+
+                const SizedBox(height: ShowmeDesign.spacingMd),
+
+                Text(
+                  'Découvrez différents styles de cartes que vous pouvez créer',
+                  style: ShowmeDesign.bodyMedium.copyWith(
+                    color: ShowmeDesign.neutral600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: ShowmeDesign.spacingLg),
+
+                // Liste d'exemples
+                ..._buildExamplesList(),
+
+                const SizedBox(height: ShowmeDesign.spacingLg),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(
+                            color: ShowmeDesign.neutral300,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              ShowmeDesign.radiusMd,
+                            ),
+                          ),
+                        ),
+                        child: const Text('Fermer'),
                       ),
                     ),
-                    child: const Text('Créer ma carte'),
-                  ),
+                    const SizedBox(width: ShowmeDesign.spacingMd),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _navigateToCardCreation();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: ShowmeDesign.primaryPurple,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              ShowmeDesign.radiusMd,
+                            ),
+                          ),
+                        ),
+                        child: const Text('Créer ma carte'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -1058,48 +1092,52 @@ void _confirmDeleteCard(BuildContext context, dynamic card) {
       },
     ];
 
-    return examples.map((example) => Container(
-      margin: const EdgeInsets.only(bottom: ShowmeDesign.spacingSm),
-      child: ListTile(
-        leading: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: (example['color'] as Color).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
+    return examples
+        .map(
+          (example) => Container(
+            margin: const EdgeInsets.only(bottom: ShowmeDesign.spacingSm),
+            child: ListTile(
+              leading: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: (example['color'] as Color).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
+                ),
+                child: Icon(
+                  example['icon'] as IconData,
+                  color: example['color'] as Color,
+                  size: 24,
+                ),
+              ),
+              title: Text(
+                'Carte ${example['title']}',
+                style: ShowmeDesign.bodyLarge.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                example['subtitle'] as String,
+                style: ShowmeDesign.bodySmall.copyWith(
+                  color: ShowmeDesign.neutral600,
+                ),
+              ),
+              trailing: Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: ShowmeDesign.neutral400,
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _navigateToCardCreation();
+              },
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
+              ),
+              tileColor: ShowmeDesign.neutral50,
+            ),
           ),
-          child: Icon(
-            example['icon'] as IconData,
-            color: example['color'] as Color,
-            size: 24,
-          ),
-        ),
-        title: Text(
-          'Carte ${example['title']}',
-          style: ShowmeDesign.bodyLarge.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        subtitle: Text(
-          example['subtitle'] as String,
-          style: ShowmeDesign.bodySmall.copyWith(
-            color: ShowmeDesign.neutral600,
-          ),
-        ),
-        trailing: Icon(
-          Icons.arrow_forward_ios,
-          size: 16,
-          color: ShowmeDesign.neutral400,
-        ),
-        onTap: () {
-          Navigator.pop(context);
-          _navigateToCardCreation();
-        },
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
-        ),
-        tileColor: ShowmeDesign.neutral50,
-      ),
-    )).toList();
+        )
+        .toList();
   }
 }

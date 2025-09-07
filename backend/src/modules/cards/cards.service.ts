@@ -43,8 +43,6 @@ export class CardsService {
       ...createCardDto,
       userId,
       // Utiliser les données par défaut de l'utilisateur si non fournies
-      firstName: createCardDto.firstName || user.firstName,
-      lastName: createCardDto.lastName || user.lastName,
       phone: createCardDto.phone || user.defaultPhone,
       company: createCardDto.company || user.defaultCompany,
       position: createCardDto.position || user.defaultPosition,
@@ -231,8 +229,6 @@ export class CardsService {
       title: defaultCardData.title!,
       bio: defaultCardData.bio,
       email: defaultCardData.email!,
-      firstName: defaultCardData.firstName,
-      lastName: defaultCardData.lastName,
       phone: defaultCardData.phone,
       company: defaultCardData.company,
       position: defaultCardData.position,

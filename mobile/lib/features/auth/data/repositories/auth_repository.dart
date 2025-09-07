@@ -26,7 +26,7 @@ class AuthResponse {
   factory AuthResponse.fromAuthResponseData(AuthResponseData data) {
     return AuthResponse(
       user: data.user,
-      token: data.jwt,
+      token: data.token,
       expiresAt: data.expiresAt,
       refreshToken: data.refreshToken,
     );
@@ -417,7 +417,7 @@ class AuthRepository {
 
   /// Sauvegarde les données d'authentification localement
   Future<void> _saveAuthData(AuthResponseData authData) async {
-    await StorageService.setToken(authData.jwt);
+    await StorageService.setToken(authData.token);
     await StorageService.setUser(authData.user.toJson());
     
     if (authData.expiresAt != null) {
@@ -452,7 +452,7 @@ class AuthRepository {
   }
 
   /// Récupère le rôle de l'utilisateur
-  Future<String?> getUserRole() async {
+  Future<UserRole?> getUserRole() async {
     final user = await getCurrentUser();
     return user?.role;
   }

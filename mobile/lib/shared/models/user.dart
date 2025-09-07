@@ -1,64 +1,89 @@
 // mobile/lib/shared/models/user.dart
 import 'package:json_annotation/json_annotation.dart';
-import 'package:showme/shared/models/profile.dart';
 import 'uploaded_file.dart';
+import 'subscription.dart';
 
 part 'user.g.dart';
+
+enum UserRole {
+  @JsonValue('user')
+  user,
+  @JsonValue('admin')
+  admin,
+  @JsonValue('moderator')
+  moderator,
+}
 
 @JsonSerializable()
 class User {
   final int id;
-  final String username;
   final String email;
   final String? firstName;
   final String? lastName;
-  final bool isActive;
-  final DateTime? lastLoginAt;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final String role; // API renvoie String, pas enum
+  final UserRole role;
   final bool emailVerified;
-  final String? timezone;
-  final String? language;
-  final Profile? profile;
-  
-  // Champs supplémentaires de l'API que vous n'aviez pas
   final String? emailVerificationToken;
   final String? passwordResetToken;
   final DateTime? passwordResetExpires;
+  final String? refreshToken;
+  final DateTime? lastLoginAt;
+  final bool isActive;
+
+  // === DONNÉES DE BASE UTILISATEUR ===
+  // Ces données peuvent être utilisées comme valeurs par défaut pour nouvelles cartes
+  final String? defaultPhone;
+  final String? defaultCompany;
+  final String? defaultPosition;
+  final UploadedFile? defaultAvatar;
+
+  // === RELATIONS ===
+  final Subscription? subscription;
+
+  // === TIMESTAMPS ===
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   const User({
     required this.id,
-    required this.username,
     required this.email,
     this.firstName,
     this.lastName,
-    required this.isActive,
-    this.lastLoginAt,
-    required this.createdAt,
-    required this.updatedAt,
-    this.role = 'user',
+    this.role = UserRole.user,
     this.emailVerified = false,
-    this.timezone,
-    this.language,
-    this.profile,
     this.emailVerificationToken,
     this.passwordResetToken,
     this.passwordResetExpires,
+    this.refreshToken,
+    this.lastLoginAt,
+    this.isActive = true,
+    this.defaultPhone,
+    this.defaultCompany,
+    this.defaultPosition,
+    this.defaultAvatar,
+    this.subscription,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
   Map<String, dynamic> toJson() => _$UserToJson(this);
 
+  // === GETTERS VIRTUELS ===
+
   String get fullName {
-    final first = firstName ?? '';
-    final last = lastName ?? '';
-    return '$first $last'.trim();
+    if (firstName != null && lastName != null) {
+      return '$firstName $lastName';
+    } else if (firstName != null) {
+      return firstName!;
+    } else if (lastName != null) {
+      return lastName!;
+    }
+    return email.split('@')[0];
   }
 
   String get displayName {
     final name = fullName;
-    if (name.isNotEmpty) return name;
+    if (name.isNotEmpty && name != email.split('@')[0]) return name;
     return email;
   }
 
@@ -69,19 +94,15 @@ class User {
     return result.isNotEmpty ? result : email[0].toUpperCase();
   }
 
-  bool get hasProfilePicture => profile?.avatar != null && profile!.avatar!.url.isNotEmpty;
-
-  bool get isAdmin => role == 'admin';
-  bool get isModerator => role == 'moderator';
-  bool get isStandardUser => role == 'user';
-
-  bool get hasCompanyInfo => profile?.company != null || profile?.position != null;
-  bool get hasContactInfo => profile?.phone != null || profile?.linkedinUrl != null || profile?.website != null;
+  bool get isAdmin => role == UserRole.admin;
+  bool get isModerator => role == UserRole.moderator;
+  bool get isStandardUser => role == UserRole.user;
+  bool get isPro => subscription?.isActive == true;
 
   String get memberSince {
     final now = DateTime.now();
     final difference = now.difference(createdAt);
-    
+
     if (difference.inDays < 30) {
       return 'Membre depuis ${difference.inDays} jour${difference.inDays > 1 ? 's' : ''}';
     } else if (difference.inDays < 365) {
@@ -98,63 +119,91 @@ class User {
     return DateTime.now().difference(lastLoginAt!).inMinutes < 15;
   }
 
+  // === MÉTHODES ===
+
   User copyWith({
-    String? username,
     String? email,
     String? firstName,
     String? lastName,
-    String? company,
-    String? position,
-    String? phoneNumber,
-    String? linkedinUrl,
-    String? website,
-    UploadedFile? profilePicture,
-    bool? isActive,
-    DateTime? lastLoginAt,
-    String? role,
+    UserRole? role,
     bool? emailVerified,
-    String? timezone,
-    String? language,
-    Profile? profile,
+    String? emailVerificationToken,
+    String? passwordResetToken,
+    DateTime? passwordResetExpires,
+    String? refreshToken,
+    DateTime? lastLoginAt,
+    bool? isActive,
+    String? defaultPhone,
+    String? defaultCompany,
+    String? defaultPosition,
+    UploadedFile? defaultAvatar,
+    Subscription? subscription,
+    DateTime? updatedAt,
   }) {
     return User(
       id: id,
-      username: username ?? this.username,
       email: email ?? this.email,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
-      isActive: isActive ?? this.isActive,
-      lastLoginAt: lastLoginAt ?? this.lastLoginAt,
-      createdAt: createdAt,
-      updatedAt: updatedAt,
       role: role ?? this.role,
       emailVerified: emailVerified ?? this.emailVerified,
-      timezone: timezone ?? this.timezone,
-      language: language ?? this.language,
-      profile: profile ?? this.profile,
-      emailVerificationToken: emailVerificationToken,
-      passwordResetToken: passwordResetToken,
-      passwordResetExpires: passwordResetExpires,
+      emailVerificationToken: emailVerificationToken ?? this.emailVerificationToken,
+      passwordResetToken: passwordResetToken ?? this.passwordResetToken,
+      passwordResetExpires: passwordResetExpires ?? this.passwordResetExpires,
+      refreshToken: refreshToken ?? this.refreshToken,
+      lastLoginAt: lastLoginAt ?? this.lastLoginAt,
+      isActive: isActive ?? this.isActive,
+      defaultPhone: defaultPhone ?? this.defaultPhone,
+      defaultCompany: defaultCompany ?? this.defaultCompany,
+      defaultPosition: defaultPosition ?? this.defaultPosition,
+      defaultAvatar: defaultAvatar ?? this.defaultAvatar,
+      subscription: subscription ?? this.subscription,
+      createdAt: createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
+  }
+
+  // Méthode pour créer les données d'une carte par défaut pour un nouvel utilisateur
+  Map<String, dynamic> createDefaultCardData() {
+    return {
+      'slug': generateSlug(),
+      'title': 'Carte de $fullName',
+      'bio': 'Ma carte de contact digitale',
+      'isPublic': true,
+      'email': email,
+      'phone': defaultPhone,
+      'company': defaultCompany,
+      'position': defaultPosition,
+    };
+  }
+
+  String generateSlug() {
+    final base = fullName
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9\s-]'), '')
+        .replaceAll(RegExp(r'\s+'), '-')
+        .replaceAll(RegExp(r'-+'), '-')
+        .trim();
+    
+    return base.isNotEmpty ? base : 'user-$id';
   }
 
   static User demo() {
     final now = DateTime.now();
     return User(
       id: 1,
-      username: 'tanguy.gbt',
       email: 'tanguy.gbt@showme.com',
       firstName: 'Tanguy',
       lastName: 'Gbty',
+      role: UserRole.user,
       isActive: true,
+      emailVerified: true,
       lastLoginAt: now.subtract(const Duration(minutes: 5)),
       createdAt: now.subtract(const Duration(days: 180)),
       updatedAt: now.subtract(const Duration(hours: 2)),
-      role: 'user',
-      emailVerified: true,
-      timezone: 'Europe/Paris',
-      language: 'fr',
-      profile: Profile.demo(),
+      defaultPhone: '+33 6 12 34 56 78',
+      defaultCompany: 'ShowMe',
+      defaultPosition: 'Développeur',
     );
   }
 }

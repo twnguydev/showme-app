@@ -216,7 +216,7 @@ class CrmBloc extends Bloc<CrmEvent, CrmState> {
     
     try {
       if (_allContacts.isEmpty) {
-        await _loadDemoContacts();
+        // await _loadDemoContacts();
       }
 
       final filteredContacts = _applyFilter(_allContacts, _currentFilter);
@@ -283,7 +283,7 @@ class CrmBloc extends Bloc<CrmEvent, CrmState> {
     
     try {
       // Recharger les données
-      await _loadDemoContacts();
+      // await _loadDemoContacts();
       _cachedStats = ContactStats.demo();
       
       final filteredContacts = _applyFilter(_allContacts, _currentFilter);
@@ -291,74 +291,6 @@ class CrmBloc extends Bloc<CrmEvent, CrmState> {
     } catch (e) {
       emit(CrmError('Erreur lors du rafraîchissement: ${e.toString()}'));
     }
-  }
-
-  Future<void> _loadDemoContacts() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    
-    _allContacts.clear();
-    _allContacts.addAll([
-      ContactExchange(
-        id: 1,
-        timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-        geoLocation: {'city': 'Paris', 'country': 'France', 'lat': 48.8566, 'lng': 2.3522},
-        userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
-        referrer: ExchangeMethod.nfc,
-        openedOnWallet: true,
-        contactAdded: true,
-        emailSubmitted: 'marie.martin@example.com',
-        deviceType: DeviceType.ios,
-        card: Card.demo(),
-        visitor: null,
-        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-        updatedAt: DateTime.now().subtract(const Duration(hours: 2)),
-      ),
-      ContactExchange(
-        id: 2,
-        timestamp: DateTime.now().subtract(const Duration(days: 1)),
-        geoLocation: {'city': 'Lyon', 'country': 'France', 'lat': 45.7640, 'lng': 4.8357},
-        userAgent: 'Mozilla/5.0 (Linux; Android 13)',
-        referrer: ExchangeMethod.qr,
-        openedOnWallet: false,
-        contactAdded: true,
-        emailSubmitted: 'pierre.durand@company.com',
-        deviceType: DeviceType.android,
-        card: Card.demo(),
-        visitor: null,
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-        updatedAt: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      ContactExchange(
-        id: 3,
-        timestamp: DateTime.now().subtract(const Duration(days: 2)),
-        geoLocation: {'city': 'Marseille', 'country': 'France', 'lat': 43.2965, 'lng': 5.3698},
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        referrer: ExchangeMethod.link,
-        openedOnWallet: false,
-        contactAdded: false,
-        emailSubmitted: null,
-        deviceType: DeviceType.web,
-        card: Card.demo(),
-        visitor: null,
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
-        updatedAt: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-      ContactExchange(
-        id: 4,
-        timestamp: DateTime.now().subtract(const Duration(days: 3)),
-        geoLocation: {'city': 'Toulouse', 'country': 'France', 'lat': 43.6047, 'lng': 1.4442},
-        userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X)',
-        referrer: ExchangeMethod.kiosk,
-        openedOnWallet: true,
-        contactAdded: true,
-        emailSubmitted: 'sophie.bernard@startup.fr',
-        deviceType: DeviceType.ios,
-        card: Card.demo(),
-        visitor: null,
-        createdAt: DateTime.now().subtract(const Duration(days: 3)),
-        updatedAt: DateTime.now().subtract(const Duration(days: 3)),
-      ),
-    ]);
   }
 
   List<ContactExchange> _applyFilter(List<ContactExchange> contacts, CrmFilter filter) {

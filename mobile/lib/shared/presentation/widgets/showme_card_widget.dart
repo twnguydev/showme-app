@@ -1,8 +1,7 @@
 // mobile/lib/shared/widgets/showme_card_widget.dart
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:showme/shared/models/profile.dart';
-import 'package:showme/shared/models/user.dart';
+import 'package:qard/shared/models/user.dart';
 
 import '../../../core/design/showme_design_system.dart';
 import '../../models/card.dart' as CardModel;
@@ -11,7 +10,6 @@ import '../../models/card_theme.dart';
 class ShowmeCardWidget extends StatefulWidget {
   final CardModel.Card card;
   final User user;
-  final Profile profile;
   final VoidCallback? onTap;
   final bool showActions;
   final bool showQR;
@@ -21,7 +19,6 @@ class ShowmeCardWidget extends StatefulWidget {
     super.key,
     required this.card,
     required this.user,
-    required this.profile,
     this.onTap,
     this.showActions = true,
     this.showQR = false,
@@ -58,29 +55,29 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
       vsync: this,
     );
 
-    _scaleAnimation = Tween<double>(
-      begin: 0.95,
-      end: 1.05,
-    ).animate(CurvedAnimation(
-      parent: _hoverController,
-      curve: ShowmeDesign.primaryCurve,
-    ));
+    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
+      CurvedAnimation(
+        parent: _hoverController,
+        curve: ShowmeDesign.primaryCurve,
+      ),
+    );
 
-    _shimmerAnimation = Tween<double>(
-      begin: -2.0,
-      end: 2.0,
-    ).animate(CurvedAnimation(
-      parent: _entryController,
-      curve: ShowmeDesign.smoothCurve,
-    ));
+    _shimmerAnimation = Tween<double>(begin: -2.0, end: 2.0).animate(
+      CurvedAnimation(
+        parent: _entryController,
+        curve: ShowmeDesign.smoothCurve,
+      ),
+    );
 
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.1),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _entryController,
-      curve: ShowmeDesign.bouncyCurve,
-    ));
+    ).animate(
+      CurvedAnimation(
+        parent: _entryController,
+        curve: ShowmeDesign.bouncyCurve,
+      ),
+    );
 
     _entryController.forward();
   }
@@ -165,13 +162,11 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
     return BoxDecoration(
       gradient: gradient,
       borderRadius: BorderRadius.circular(ShowmeDesign.radiusXl),
-      boxShadow: _isHovered
-          ? CardThemeHelper.getShadows(widget.card.theme)
-          : ShowmeDesign.cardShadow,
-      border: Border.all(
-        color: Colors.white.withOpacity(0.2),
-        width: 1,
-      ),
+      boxShadow:
+          _isHovered
+              ? CardThemeHelper.getShadows(widget.card.theme)
+              : ShowmeDesign.cardShadow,
+      border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
     );
   }
 
@@ -292,19 +287,22 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
                 child: CircleAvatar(
                   radius: widget.size == CardSize.compact ? 18 : 26,
                   backgroundColor: Colors.white.withOpacity(0.2),
-                  backgroundImage: widget.profile.avatar != null
-                      ? NetworkImage(widget.profile.avatar!.url)
-                      : null,
-                  child: widget.profile.avatar == null
-                      ? Text(
-                          _getInitials(),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: widget.size == CardSize.compact ? 14 : 18,
-                          ),
-                        )
-                      : null,
+                  backgroundImage:
+                      widget.card.avatar != null
+                          ? NetworkImage(widget.card.avatar!)
+                          : null,
+                  child:
+                      widget.card.avatar == null
+                          ? Text(
+                            _getInitials(),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize:
+                                  widget.size == CardSize.compact ? 14 : 18,
+                            ),
+                          )
+                          : null,
                 ),
               ),
             );
@@ -314,7 +312,7 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
         const Spacer(),
 
         // Logo entreprise ou icône
-        if (widget.profile.company != null)
+        if (widget.card.company != null)
           Container(
             padding: const EdgeInsets.all(ShowmeDesign.spacingSm),
             decoration: BoxDecoration(
@@ -342,16 +340,16 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
                   ? ShowmeDesign.bodyLarge
                   : ShowmeDesign.h3)
               .copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            shadows: [
-              Shadow(
-                color: Colors.black.withOpacity(0.3),
-                offset: const Offset(0, 1),
-                blurRadius: 2,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withOpacity(0.3),
+                    offset: const Offset(0, 1),
+                    blurRadius: 2,
+                  ),
+                ],
               ),
-            ],
-          ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -359,22 +357,22 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
         const SizedBox(height: ShowmeDesign.spacingXs),
 
         // Titre/Poste
-        if (widget.profile.position != null)
+        if (widget.card.position != null)
           Text(
-            widget.profile.position!,
+            widget.card.position!,
             style: (widget.size == CardSize.compact
                     ? ShowmeDesign.bodySmall
                     : ShowmeDesign.bodyMedium)
                 .copyWith(
-              color: Colors.white.withOpacity(0.9),
-              fontWeight: FontWeight.w500,
-            ),
+                  color: Colors.white.withOpacity(0.9),
+                  fontWeight: FontWeight.w500,
+                ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
 
         // Entreprise
-        if (widget.profile.company != null) ...[
+        if (widget.card.company != null) ...[
           const SizedBox(height: ShowmeDesign.spacingXs),
           Row(
             children: [
@@ -386,7 +384,7 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
               const SizedBox(width: ShowmeDesign.spacingXs),
               Expanded(
                 child: Text(
-                  widget.profile.company!,
+                  widget.card.company!,
                   style: ShowmeDesign.caption.copyWith(
                     color: Colors.white.withOpacity(0.8),
                   ),
@@ -430,11 +428,7 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            color: Colors.white.withOpacity(0.9),
-            size: 12,
-          ),
+          Icon(icon, color: Colors.white.withOpacity(0.9), size: 12),
           const SizedBox(width: ShowmeDesign.spacingXs),
           Text(
             value,
@@ -487,19 +481,12 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.2),
           borderRadius: BorderRadius.circular(ShowmeDesign.radiusSm),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.3),
-            width: 1,
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color: Colors.white,
-              size: 14,
-            ),
+            Icon(icon, color: Colors.white, size: 14),
             const SizedBox(width: ShowmeDesign.spacingXs),
             Text(
               label,
@@ -537,11 +524,7 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.star,
-              color: Colors.white,
-              size: 12,
-            ),
+            const Icon(Icons.star, color: Colors.white, size: 12),
             const SizedBox(width: ShowmeDesign.spacingXs),
             Text(
               'PRO',
@@ -595,8 +578,8 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
   }
 
   String _getFullName() {
-    final firstName = widget.user.profile?.firstName ?? '';
-    final lastName = widget.user.profile?.lastName ?? '';
+    final firstName = widget.user.firstName ?? '';
+    final lastName = widget.user.lastName ?? '';
     final fullName = '$firstName $lastName'.trim();
 
     // If both are empty, fallback to email or a default
@@ -608,8 +591,8 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
   }
 
   String _getInitials() {
-    final firstName = widget.profile.firstName ?? '';
-    final lastName = widget.profile.lastName ?? '';
+    final firstName = widget.card.firstName ?? '';
+    final lastName = widget.card.lastName ?? '';
 
     if (firstName.isNotEmpty && lastName.isNotEmpty) {
       return '${firstName[0]}${lastName[0]}'.toUpperCase();
@@ -619,7 +602,7 @@ class _ShowmeCardWidgetState extends State<ShowmeCardWidget>
       return lastName.substring(0, lastName.length > 1 ? 2 : 1).toUpperCase();
     } else {
       // Fallback to email or default
-      final email = widget.profile.email;
+      final email = widget.card.email;
       if (email != null && email.isNotEmpty) {
         return email.substring(0, email.length > 1 ? 2 : 1).toUpperCase();
       }
@@ -646,10 +629,11 @@ class GeometricPatternPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1
-      ..style = PaintingStyle.stroke;
+    final paint =
+        Paint()
+          ..color = color
+          ..strokeWidth = 1
+          ..style = PaintingStyle.stroke;
 
     // Lignes diagonales
     for (int i = 0; i < 5; i++) {
@@ -660,17 +644,9 @@ class GeometricPatternPainter extends CustomPainter {
     }
 
     // Cercles décoratifs
-    canvas.drawCircle(
-      Offset(size.width * 0.8, size.height * 0.2),
-      8,
-      paint,
-    );
+    canvas.drawCircle(Offset(size.width * 0.8, size.height * 0.2), 8, paint);
 
-    canvas.drawCircle(
-      Offset(size.width * 0.2, size.height * 0.8),
-      12,
-      paint,
-    );
+    canvas.drawCircle(Offset(size.width * 0.2, size.height * 0.8), 12, paint);
   }
 
   @override

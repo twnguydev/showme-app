@@ -205,7 +205,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   //   ),
                   // ),
                   
-                  SizedBox(height: ShowmeDesign.spacingXl),
+                  const SizedBox(height: ShowmeDesign.spacingXl),
                   
                   // Nom de l'app avec effet
                   Text(
@@ -217,7 +217,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                       ),
                   ),
                   
-                  SizedBox(height: ShowmeDesign.spacingSm),
+                  const SizedBox(height: ShowmeDesign.spacingSm),
                   
                   Text(
                     'Votre identité professionnelle digitale',
@@ -245,7 +245,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           child: FadeTransition(
             opacity: _formOpacityAnimation,
             child: Container(
-              padding: EdgeInsets.all(0),
+              padding: const EdgeInsets.all(0),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -254,12 +254,12 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                     // Boutons de connexion sociale
                     _buildSocialLoginSection(),
                     
-                    SizedBox(height: ShowmeDesign.spacingLg),
+                    const SizedBox(height: ShowmeDesign.spacingLg),
                     
                     // Séparateur "OU"
                     _buildDivider(),
                     
-                    SizedBox(height: ShowmeDesign.spacingLg),
+                    const SizedBox(height: ShowmeDesign.spacingLg),
                     
                     // Formulaire email/mot de passe
                     AuthTextField(
@@ -278,7 +278,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                       },
                     ),
                     
-                    SizedBox(height: ShowmeDesign.spacingMd),
+                    const SizedBox(height: ShowmeDesign.spacingMd),
                     
                     AuthTextField(
                       controller: _passwordController,
@@ -304,7 +304,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                       },
                     ),
                     
-                    SizedBox(height: ShowmeDesign.spacingXl),
+                    const SizedBox(height: ShowmeDesign.spacingXl),
                     
                     BlocBuilder<AuthBloc, AuthState>(
                       builder: (context, state) {
@@ -316,7 +316,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                       },
                     ),
                     
-                    SizedBox(height: ShowmeDesign.spacingLg),
+                    const SizedBox(height: ShowmeDesign.spacingLg),
                     
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -362,7 +362,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               isLoading: isLoading,
             ),
             
-            SizedBox(height: ShowmeDesign.spacingMd),
+            const SizedBox(height: ShowmeDesign.spacingMd),
             
             SocialLoginButton(
               provider: SocialProvider.google,
@@ -385,7 +385,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           ),
         ),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: ShowmeDesign.spacingMd),
+          padding: const EdgeInsets.symmetric(horizontal: ShowmeDesign.spacingMd),
           child: Text(
             'OU',
             style: ShowmeDesign.bodySmall.copyWith(

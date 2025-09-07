@@ -49,26 +49,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
       final user = authState.user;
-      _firstNameController = TextEditingController(text: user.profile?.firstName ?? '');
-      _lastNameController = TextEditingController(text: user.profile?.lastName ?? '');
-      _emailController = TextEditingController(text: user.email);
-      _phoneController = TextEditingController(text: user.profile?.phone ?? '');
-      _companyController = TextEditingController(text: user.profile?.company ?? '');
-      _positionController = TextEditingController(text: user.profile?.position ?? '');
-      _websiteController = TextEditingController(text: user.profile?.website ?? '');
-      _linkedinController = TextEditingController(text: user.profile?.linkedinUrl ?? '');
-      _bioController =
-          TextEditingController(text: user.profile?.bio ?? ''); // Bio depuis le profil si disponible
+      _firstNameController = TextEditingController(text: user.firstName ?? '');
+      _lastNameController = TextEditingController(text: user.lastName ?? '');
+      _emailController = TextEditingController(text: user.email);// Bio depuis le profil si disponible
     } else {
       _firstNameController = TextEditingController();
       _lastNameController = TextEditingController();
       _emailController = TextEditingController();
-      _phoneController = TextEditingController();
-      _companyController = TextEditingController();
-      _positionController = TextEditingController();
-      _websiteController = TextEditingController();
-      _linkedinController = TextEditingController();
-      _bioController = TextEditingController();
     }
   }
 
@@ -214,7 +201,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       builder: (context, authState) {
         String? currentAvatarUrl;
         if (authState is AuthAuthenticated) {
-          currentAvatarUrl = authState.user.profile?.avatar?.url;
+          currentAvatarUrl = authState.user.defaultAvatar!.url;
         }
 
         return Center(
@@ -513,26 +500,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
           'email': _emailController.text.trim(),
           'firstName': _firstNameController.text.trim(),
           'lastName': _lastNameController.text.trim(),
-        },
-        'profile': {
-          'phone': _phoneController.text.trim().isEmpty
+          'defaultPhone': _phoneController.text.trim().isEmpty
               ? null
               : _phoneController.text.trim(),
-          'bio': _bioController.text.trim().isEmpty
-              ? null
-              : _bioController.text.trim(),
-          'company': _companyController.text.trim().isEmpty
+          'defaultCompany': _companyController.text.trim().isEmpty
               ? null
               : _companyController.text.trim(),
-          'position': _positionController.text.trim().isEmpty
+          'defaultPosition': _positionController.text.trim().isEmpty
               ? null
               : _positionController.text.trim(),
-          'website': _websiteController.text.trim().isEmpty
-              ? null
-              : _websiteController.text.trim(),
-          'linkedinUrl': _linkedinController.text.trim().isEmpty
-              ? null
-              : _linkedinController.text.trim(),
         },
       };
 

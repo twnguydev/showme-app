@@ -6,13 +6,13 @@ part 'auth_models.g.dart';
 
 @JsonSerializable()
 class AuthResponseData {
-  final String jwt;
+  final String token;
   final User user;
   final DateTime? expiresAt;
   final String? refreshToken;
 
   const AuthResponseData({
-    required this.jwt,
+    required this.token,
     required this.user,
     this.expiresAt,
     this.refreshToken,
@@ -39,7 +39,7 @@ class AuthResponseData {
     String? refreshToken,
   }) {
     return AuthResponseData(
-      jwt: jwt ?? this.jwt,
+      token: token,
       user: user ?? this.user,
       expiresAt: expiresAt ?? this.expiresAt,
       refreshToken: refreshToken ?? this.refreshToken,

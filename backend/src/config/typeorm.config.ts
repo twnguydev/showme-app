@@ -5,7 +5,6 @@ import { config } from 'dotenv';
 config();
 
 import { User } from '../entities/user.entity';
-import { Profile } from '../entities/profile.entity';
 import { Card } from '../entities/card.entity';
 import { ContactExchange } from '../entities/contact-exchange.entity';
 import { Visitor } from '../entities/visitor.entity';
@@ -23,7 +22,6 @@ const AppDataSource = new DataSource({
   database: process.env.DB_NAME,
   entities: [
     User,
-    Profile,
     Card,
     ContactExchange,
     Visitor,

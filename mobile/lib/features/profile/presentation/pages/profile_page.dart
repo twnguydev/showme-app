@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:showme/shared/models/user.dart';
+import 'package:qard/shared/models/user.dart';
 
 import '../../../../shared/presentation/widgets/showme_app_bar.dart';
 import '../../../../core/design/showme_design_system.dart';
@@ -98,40 +98,26 @@ class _ProfilePageState extends State<ProfilePage> {
                               value: user.email,
                               valueColor: ShowmeDesign.neutral600,
                             ),
-                            if (user.profile?.company != null && user.profile!.company!.isNotEmpty)
+                            if (user.defaultCompany != null && user.defaultCompany!.isNotEmpty)
                               ProfileInfoTile(
                                 icon: Icons.business,
                                 label: 'Entreprise',
-                                value: user.profile!.company!,
+                                value: user.defaultCompany!,
                                 valueColor: ShowmeDesign.neutral600,
                               ),
-                            if (user.profile?.position != null && user.profile!.position!.isNotEmpty)
+                            if (user.defaultPosition != null && user.defaultPosition!.isNotEmpty)
                               ProfileInfoTile(
                                 icon: Icons.work,
                                 label: 'Poste',
-                                value: user.profile!.position!,
+                                value: user.defaultPosition!,
                                 valueColor: ShowmeDesign.neutral600,
                               ),
-                            if (user.profile?.phone != null && user.profile!.phone!.isNotEmpty)
+                            if (user.defaultPhone != null && user.defaultPhone!.isNotEmpty)
                               ProfileInfoTile(
                                 icon: Icons.phone,
                                 label: 'Téléphone',
-                                value: user.profile!.phone!,
+                                value: user.defaultPhone!,
                                 valueColor: ShowmeDesign.primaryTeal,
-                              ),
-                            if (user.profile?.website != null && user.profile!.website!.isNotEmpty)
-                              ProfileInfoTile(
-                                icon: Icons.language,
-                                label: 'Site web',
-                                value: user.profile!.website!,
-                                valueColor: ShowmeDesign.primaryBlue,
-                              ),
-                            if (user.profile?.linkedinUrl != null && user.profile!.linkedinUrl!.isNotEmpty)
-                              ProfileInfoTile(
-                                icon: Icons.work_outline,
-                                label: 'LinkedIn',
-                                value: user.profile!.linkedinUrl!,
-                                valueColor: ShowmeDesign.primaryBlue,
                               ),
                           ],
                         ),
@@ -296,10 +282,10 @@ class _ProfilePageState extends State<ProfilePage> {
               child: CircleAvatar(
                 radius: 56,
                 backgroundColor: ShowmeDesign.primaryBlue.withOpacity(0.1),
-                backgroundImage: user.profile?.avatar != null
-                    ? NetworkImage(user.profile?.avatar!.url ?? '')
+                backgroundImage: user.defaultAvatar != null
+                    ? NetworkImage(user.defaultAvatar!.url)
                     : null,
-                child: user.profile?.avatar == null
+                child: user.defaultAvatar == null
                     ? Text(
                         _getInitials(user),
                         style: ShowmeDesign.h1.copyWith(
@@ -351,10 +337,10 @@ class _ProfilePageState extends State<ProfilePage> {
           textAlign: TextAlign.center,
         ),
 
-        if (user.profile?.position != null && user.profile!.position!.isNotEmpty) ...[
+        if (user.defaultPosition != null && user.defaultPosition!.isNotEmpty) ...[
           const SizedBox(height: 4),
           Text(
-            user.profile!.position!,
+            user.defaultPosition!,
             style: ShowmeDesign.bodyLarge.copyWith(
               color: ShowmeDesign.neutral600,
               fontWeight: FontWeight.w500,
@@ -363,7 +349,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ],
 
-        if (user.profile?.company != null && user.profile!.company!.isNotEmpty) ...[
+        if (user.defaultCompany != null && user.defaultCompany!.isNotEmpty) ...[
           const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -375,7 +361,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               const SizedBox(width: 4),
               Text(
-                user.profile!.company!,
+                user.defaultCompany!,
                 style: ShowmeDesign.bodyMedium.copyWith(
                   color: ShowmeDesign.neutral500,
                 ),
@@ -506,8 +492,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // Méthodes utilitaires
   String _getFullName(User user) {
-    final firstName = user.profile?.firstName ?? '';
-    final lastName = user.profile?.lastName ?? '';
+    final firstName = user.firstName ?? '';
+    final lastName = user.lastName ?? '';
     final fullName = '$firstName $lastName'.trim();
     
     if (fullName.isEmpty) {
@@ -518,8 +504,8 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   String _getInitials(User user) {
-    final firstName = user.profile?.firstName ?? '';
-    final lastName = user.profile?.lastName ?? '';
+    final firstName = user.firstName ?? '';
+    final lastName = user.lastName ?? '';
 
     if (firstName.isNotEmpty && lastName.isNotEmpty) {
       return '${firstName[0]}${lastName[0]}'.toUpperCase();
@@ -541,16 +527,15 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   double _calculateProfileCompletion(User user) {
-    int totalFields = 7; // firstName, lastName, email, company, position, phone, website
+    int totalFields = 6; // firstName, lastName, email, company, position, phone
     int completedFields = 0;
 
-    if (user.profile?.firstName != null && user.profile!.firstName!.isNotEmpty) completedFields++;
-    if (user.profile?.lastName != null && user.profile!.lastName!.isNotEmpty) completedFields++;
+    if (user.firstName != null && user.firstName!.isNotEmpty) completedFields++;
+    if (user.lastName != null && user.lastName!.isNotEmpty) completedFields++;
     if (user.email.isNotEmpty) completedFields++;
-    if (user.profile?.company != null && user.profile!.company!.isNotEmpty) completedFields++;
-    if (user.profile?.position != null && user.profile!.position!.isNotEmpty) completedFields++;
-    if (user.profile?.phone != null && user.profile!.phone!.isNotEmpty) completedFields++;
-    if (user.profile?.website != null && user.profile!.website!.isNotEmpty) completedFields++;
+    if (user.defaultCompany != null && user.defaultCompany!.isNotEmpty) completedFields++;
+    if (user.defaultPosition != null && user.defaultPosition!.isNotEmpty) completedFields++;
+    if (user.defaultPhone != null && user.defaultPhone!.isNotEmpty) completedFields++;
 
     return (completedFields / totalFields) * 100;
   }
@@ -558,12 +543,11 @@ class _ProfilePageState extends State<ProfilePage> {
   List<String> _getMissingFields(User user) {
     List<String> missing = [];
 
-    if (user.profile?.firstName == null || user.profile!.firstName!.isEmpty) missing.add('Prénom');
-    if (user.profile?.lastName == null || user.profile!.lastName!.isEmpty) missing.add('Nom');
-    if (user.profile?.company == null || user.profile!.company!.isEmpty) missing.add('Entreprise');
-    if (user.profile?.position == null || user.profile!.position!.isEmpty) missing.add('Poste');
-    if (user.profile?.phone == null || user.profile!.phone!.isEmpty) missing.add('Téléphone');
-    if (user.profile?.website == null || user.profile!.website!.isEmpty) missing.add('Site web');
+    if (user.firstName == null || user.firstName!.isEmpty) missing.add('Prénom');
+    if (user.lastName == null || user.lastName!.isEmpty) missing.add('Nom');
+    if (user.defaultCompany == null || user.defaultCompany!.isEmpty) missing.add('Entreprise');
+    if (user.defaultPosition == null || user.defaultPosition!.isEmpty) missing.add('Poste');
+    if (user.defaultPhone == null || user.defaultPhone!.isEmpty) missing.add('Téléphone');
 
     return missing;
   }

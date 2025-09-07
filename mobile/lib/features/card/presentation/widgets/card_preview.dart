@@ -1,7 +1,7 @@
 // mobile/lib/features/card/presentation/widgets/card_preview.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:showme/shared/models/card_theme.dart';
+import 'package:qard/shared/models/card_theme.dart';
 import 'dart:math' as math;
 import '../../../../shared/models/card.dart' as showme;
 
@@ -30,59 +30,43 @@ class _CardPreviewState extends State<CardPreview>
   late Animation<double> _glowAnimation;
   late Animation<double> _scaleAnimation;
   late Animation<double> _slideAnimation;
-  
+
   bool _isPressed = false;
 
   @override
   void initState() {
     super.initState();
-    
+
     _rotationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    
+
     _glowController = AnimationController(
       duration: const Duration(milliseconds: 3000),
       vsync: this,
     );
-    
+
     _entranceController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
 
-    _rotationAnimation = Tween<double>(
-      begin: 0.0,
-      end: 0.05,
-    ).animate(CurvedAnimation(
-      parent: _rotationController,
-      curve: Curves.easeInOut,
-    ));
+    _rotationAnimation = Tween<double>(begin: 0.0, end: 0.05).animate(
+      CurvedAnimation(parent: _rotationController, curve: Curves.easeInOut),
+    );
 
-    _glowAnimation = Tween<double>(
-      begin: 0.3,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _glowController,
-      curve: Curves.easeInOut,
-    ));
+    _glowAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
+      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
+    );
 
-    _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _entranceController,
-      curve: Curves.elasticOut,
-    ));
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _entranceController, curve: Curves.elasticOut),
+    );
 
-    _slideAnimation = Tween<double>(
-      begin: 50.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _entranceController,
-      curve: Curves.easeOutCubic,
-    ));
+    _slideAnimation = Tween<double>(begin: 50.0, end: 0.0).animate(
+      CurvedAnimation(parent: _entranceController, curve: Curves.easeOutCubic),
+    );
 
     // Démarrer les animations
     _entranceController.forward();
@@ -150,8 +134,9 @@ class _CardPreviewState extends State<CardPreview>
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: _getCardThemeColor()
-                            .withOpacity(0.4 * _glowAnimation.value),
+                        color: _getCardThemeColor().withOpacity(
+                          0.4 * _glowAnimation.value,
+                        ),
                         blurRadius: 25 + (15 * _glowAnimation.value),
                         offset: const Offset(0, 12),
                         spreadRadius: 2,
@@ -169,16 +154,16 @@ class _CardPreviewState extends State<CardPreview>
                     children: [
                       // Motifs de fond futuristes
                       _buildFuturisticBackground(),
-                      
+
                       // Effet glassmorphique
                       _buildGlassmorphicEffect(),
-                      
+
                       // Contenu principal
                       _buildContent(),
-                      
+
                       // Badge actif (Pro badge)
                       if (widget.card.isPro) _buildProBadge(),
-                      
+
                       // Reflets lumineux
                       _buildLightReflections(),
                     ],
@@ -227,7 +212,7 @@ class _CardPreviewState extends State<CardPreview>
                 );
               },
             ),
-            
+
             // Formes géométriques
             Positioned(
               bottom: -25,
@@ -244,7 +229,7 @@ class _CardPreviewState extends State<CardPreview>
                 ),
               ),
             ),
-            
+
             // Lignes modernes
             Positioned(
               top: 40,
@@ -267,7 +252,7 @@ class _CardPreviewState extends State<CardPreview>
                 ),
               ),
             ),
-            
+
             // Grille de points futuriste
             ...List.generate(8, (index) {
               return Positioned(
@@ -317,12 +302,12 @@ class _CardPreviewState extends State<CardPreview>
         children: [
           // Header avec avatar et logo
           _buildHeader(),
-          
+
           const Spacer(),
-          
+
           // Informations principales
           _buildMainInfo(),
-          
+
           if (widget.showActions) ...[
             const SizedBox(height: 20),
             _buildActions(),
@@ -369,25 +354,27 @@ class _CardPreviewState extends State<CardPreview>
                 child: CircleAvatar(
                   radius: 28,
                   backgroundColor: Colors.transparent,
-                  backgroundImage: widget.card.avatar != null
-                      ? NetworkImage(widget.card.avatar!)
-                      : null,
-                  child: widget.card.avatar == null
-                      ? Text(
-                          _getInitials(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 20,
-                          ),
-                        )
-                      : null,
+                  backgroundImage:
+                      widget.card.avatar != null
+                          ? NetworkImage(widget.card.avatar!)
+                          : null,
+                  child:
+                      widget.card.avatar == null
+                          ? Text(
+                            _getInitials(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 20,
+                            ),
+                          )
+                          : null,
                 ),
               ),
             );
           },
         ),
-        
+
         // Logo entreprise avec effet moderne
         TweenAnimationBuilder<double>(
           duration: const Duration(milliseconds: 1200),
@@ -397,56 +384,58 @@ class _CardPreviewState extends State<CardPreview>
               offset: Offset(30 * (1 - value), 0),
               child: Opacity(
                 opacity: value,
-                child: widget.card.companyLogo != null
-                    ? Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: Image.network(
-                            widget.card.companyLogo!,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) => Icon(
-                              Icons.business_outlined,
-                              color: Colors.grey[400],
-                              size: 24,
-                            ),
-                          ),
-                        ),
-                      )
-                    : Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.white.withOpacity(0.3),
-                              Colors.white.withOpacity(0.1),
+                child:
+                    widget.card.companyLogo != null
+                        ? Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.15),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
                             ],
                           ),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.4),
-                            width: 1,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: Image.network(
+                              widget.card.companyLogo!,
+                              fit: BoxFit.contain,
+                              errorBuilder:
+                                  (context, error, stackTrace) => Icon(
+                                    Icons.business_outlined,
+                                    color: Colors.grey[400],
+                                    size: 24,
+                                  ),
+                            ),
+                          ),
+                        )
+                        : Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.white.withOpacity(0.3),
+                                Colors.white.withOpacity(0.1),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.4),
+                              width: 1,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.business_outlined,
+                            color: Colors.white.withOpacity(0.9),
+                            size: 24,
                           ),
                         ),
-                        child: Icon(
-                          Icons.business_outlined,
-                          color: Colors.white.withOpacity(0.9),
-                          size: 24,
-                        ),
-                      ),
               ),
             );
           },
@@ -458,7 +447,8 @@ class _CardPreviewState extends State<CardPreview>
   String _getInitials() {
     final firstName = widget.card.firstName ?? '';
     final lastName = widget.card.lastName ?? '';
-    return '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}'.toUpperCase();
+    return '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}'
+        .toUpperCase();
   }
 
   Widget _buildMainInfo() {
@@ -492,9 +482,9 @@ class _CardPreviewState extends State<CardPreview>
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                
+
                 const SizedBox(height: 6),
-                
+
                 // Titre/Poste
                 Text(
                   widget.card.title,
@@ -507,7 +497,7 @@ class _CardPreviewState extends State<CardPreview>
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                
+
                 // Entreprise
                 if (widget.card.company != null) ...[
                   const SizedBox(height: 4),
@@ -572,18 +562,18 @@ class _CardPreviewState extends State<CardPreview>
                   label: 'Share',
                   onTap: _handleShare,
                 ),
-                
+
                 const SizedBox(width: 12),
-                
+
                 // QR Code
                 _buildActionButton(
                   icon: Icons.qr_code_outlined,
                   label: 'QR',
                   onTap: _handleQRCode,
                 ),
-                
+
                 const Spacer(),
-                
+
                 // Stats mini
                 _buildStatsIndicator(),
               ],
@@ -611,10 +601,7 @@ class _CardPreviewState extends State<CardPreview>
             ],
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.4),
-            width: 1,
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.4), width: 1),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
@@ -626,11 +613,7 @@ class _CardPreviewState extends State<CardPreview>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color: Colors.white,
-              size: 16,
-            ),
+            Icon(icon, color: Colors.white, size: 16),
             const SizedBox(width: 6),
             Text(
               label,
@@ -657,10 +640,7 @@ class _CardPreviewState extends State<CardPreview>
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.3),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -768,7 +748,7 @@ class _CardPreviewState extends State<CardPreview>
 
   void _handleShare() {
     HapticFeedback.mediumImpact();
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Container(
@@ -786,9 +766,7 @@ class _CardPreviewState extends State<CardPreview>
         ),
         backgroundColor: const Color(0xFF1a1a1a),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         margin: const EdgeInsets.all(16),
       ),
     );
@@ -796,7 +774,7 @@ class _CardPreviewState extends State<CardPreview>
 
   void _handleQRCode() {
     HapticFeedback.mediumImpact();
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Container(
@@ -814,9 +792,7 @@ class _CardPreviewState extends State<CardPreview>
         ),
         backgroundColor: const Color(0xFF1a1a1a),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         margin: const EdgeInsets.all(16),
       ),
     );

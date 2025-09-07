@@ -1,6 +1,5 @@
 // mobile/lib/features/card/presentation/widgets/dynamic_card_preview.dart
 import 'package:flutter/material.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../core/design/showme_design_system.dart';
 import '../../../../shared/models/card_theme.dart' as CardTheme;
@@ -10,7 +9,7 @@ class DynamicCardPreview extends StatefulWidget {
   final String title;
   final String position;
   final String company;
-  // final String email;
+  final String email;
   final String phone;
   final String website;
 
@@ -20,7 +19,7 @@ class DynamicCardPreview extends StatefulWidget {
     required this.title,
     required this.position,
     required this.company,
-    // required this.email,
+    required this.email,
     required this.phone,
     required this.website
   });
@@ -425,12 +424,12 @@ class _DynamicCardPreviewState extends State<DynamicCardPreview>
       });
     }
 
-    // if (widget.email.isNotEmpty) {
-    //   contacts.add({
-    //     'icon': Icons.email,
-    //     'label': 'Email',
-    //   });
-    // }
+    if (widget.email.isNotEmpty) {
+      contacts.add({
+        'icon': Icons.email,
+        'label': 'Email',
+      });
+    }
 
     if (widget.website.isNotEmpty) {
       contacts.add({

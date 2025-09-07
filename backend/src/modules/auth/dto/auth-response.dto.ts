@@ -7,7 +7,7 @@ export class AuthResponseDto {
     description: 'Token JWT d\'accès',
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
-  jwt: string;
+  token: string;
 
   @ApiProperty({
     description: 'Informations de l\'utilisateur',

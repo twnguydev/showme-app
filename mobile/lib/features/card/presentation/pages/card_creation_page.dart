@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 // ignore: library_prefixes
-import 'package:showme/shared/models/card_theme.dart' as CardTheme;
+import 'package:qard/shared/models/card_theme.dart' as CardTheme;
 
 import '../../../../core/design/showme_design_system.dart';
 import '../../../auth/bloc/auth_bloc.dart';
@@ -31,12 +31,18 @@ class _CardCreationPageState extends State<CardCreationPage>
 
   // Form controllers
   final _titleController = TextEditingController();
+  // final _bioController = TextEditingController();
+  final _emailController = TextEditingController();
   final _positionController = TextEditingController();
   final _companyController = TextEditingController();
   final _phoneController = TextEditingController();
-  // final _emailController = TextEditingController();
   final _websiteController = TextEditingController();
   final _linkedinController = TextEditingController();
+  final _twitterController = TextEditingController();
+  final _instagramController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _countryController = TextEditingController();
 
   // Card data
   CardTheme.CardTheme _selectedTheme = CardTheme.CardTheme.purple;
@@ -49,14 +55,14 @@ class _CardCreationPageState extends State<CardCreationPage>
   @override
   void initState() {
     super.initState();
-    
-    _tabController = TabController(length: 3, vsync: this);
-    
+
+    _tabController = TabController(length: 4, vsync: this);
+
     _previewAnimationController = AnimationController(
       duration: ShowmeDesign.normalDuration,
       vsync: this,
     );
-    
+
     _previewAnimation = CurvedAnimation(
       parent: _previewAnimationController,
       curve: ShowmeDesign.primaryCurve,
@@ -64,7 +70,7 @@ class _CardCreationPageState extends State<CardCreationPage>
 
     // Pré-remplir avec les données utilisateur existantes
     _prefillUserData();
-    
+
     _previewAnimationController.forward();
   }
 
@@ -72,15 +78,13 @@ class _CardCreationPageState extends State<CardCreationPage>
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
       final user = authState.user;
-      
+
       setState(() {
-        _titleController.text = '${user.firstName ?? ''} ${user.lastName ?? ''}'.trim();
-        // _emailController.text = user.email;
-        _phoneController.text = user.profile?.phone ?? '';
-        _companyController.text = user.profile?.company ?? '';
-        _positionController.text = user.profile?.position ?? '';
-        _websiteController.text = user.profile?.website ?? '';
-        _linkedinController.text = user.profile?.linkedinUrl ?? '';
+        _titleController.text = user.fullName.isNotEmpty ? user.fullName : 'Ma carte';
+        _emailController.text = user.email;
+        _phoneController.text = user.defaultPhone ?? '';
+        _companyController.text = user.defaultCompany ?? '';
+        _positionController.text = user.defaultPosition ?? '';
       });
     }
   }
@@ -90,16 +94,22 @@ class _CardCreationPageState extends State<CardCreationPage>
     _tabController.dispose();
     _previewAnimationController.dispose();
     _scrollController.dispose();
-    
+
     // Dispose controllers
     _titleController.dispose();
+    // _bioController.dispose();
+    _emailController.dispose();
     _positionController.dispose();
     _companyController.dispose();
     _phoneController.dispose();
-    // _emailController.dispose();
     _websiteController.dispose();
     _linkedinController.dispose();
-    
+    _twitterController.dispose();
+    _instagramController.dispose();
+    _addressController.dispose();
+    _cityController.dispose();
+    _countryController.dispose();
+
     super.dispose();
   }
 
@@ -161,27 +171,29 @@ class _CardCreationPageState extends State<CardCreationPage>
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: isLoading
-                            ? ShowmeDesign.neutral300
-                            : ShowmeDesign.primaryTeal,
+                        color:
+                            isLoading
+                                ? ShowmeDesign.neutral300
+                                : ShowmeDesign.primaryTeal,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: isLoading
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  ShowmeDesign.neutral600,
+                      child:
+                          isLoading
+                              ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    ShowmeDesign.neutral600,
+                                  ),
                                 ),
+                              )
+                              : const Icon(
+                                Icons.check,
+                                color: Colors.white,
+                                size: 18,
                               ),
-                            )
-                          : const Icon(
-                              Icons.check,
-                              color: Colors.white,
-                              size: 18,
-                            ),
                     ),
                   );
                 },
@@ -193,13 +205,11 @@ class _CardCreationPageState extends State<CardCreationPage>
           children: [
             // Aperçu de la carte
             _buildCardPreview(),
-            
+
             const SizedBox(height: ShowmeDesign.spacingXs),
-            
+
             // Tabs - prend le reste de l'espace
-            Expanded(
-              child: _buildTabSection(),
-            ),
+            Expanded(child: _buildTabSection()),
           ],
         ),
       ),
@@ -217,12 +227,16 @@ class _CardCreationPageState extends State<CardCreationPage>
             opacity: _previewAnimation,
             child: DynamicCardPreview(
               theme: _selectedTheme,
-              title: _titleController.text.isEmpty ? 'Ma carte' : _titleController.text,
+              title:
+                  _titleController.text.isEmpty
+                      ? 'Ma carte'
+                      : _titleController.text,
+              // bio: _bioController.text,
               position: _positionController.text,
               company: _companyController.text,
-              // email: _emailController.text,
+              email: _emailController.text,
               phone: _phoneController.text,
-              website: _websiteController.text
+              website: _websiteController.text,
             ),
           ),
         ],
@@ -252,27 +266,17 @@ class _CardCreationPageState extends State<CardCreationPage>
           Container(
             decoration: const BoxDecoration(
               border: Border(
-                bottom: BorderSide(
-                  color: ShowmeDesign.neutral200,
-                  width: 1,
-                ),
+                bottom: BorderSide(color: ShowmeDesign.neutral200, width: 1),
               ),
             ),
             child: TabBar(
               controller: _tabController,
+              isScrollable: true,
               tabs: const [
-                Tab(
-                  icon: Icon(Icons.palette),
-                  text: 'Design',
-                ),
-                Tab(
-                  icon: Icon(Icons.person),
-                  text: 'Informations',
-                ),
-                Tab(
-                  icon: Icon(Icons.settings),
-                  text: 'Options',
-                ),
+                Tab(icon: Icon(Icons.palette), text: 'Design'),
+                Tab(icon: Icon(Icons.person), text: 'Général'),
+                Tab(icon: Icon(Icons.contact_page), text: 'Contact'),
+                Tab(icon: Icon(Icons.settings), text: 'Options'),
               ],
               labelColor: ShowmeDesign.primaryPurple,
               unselectedLabelColor: ShowmeDesign.neutral600,
@@ -287,7 +291,8 @@ class _CardCreationPageState extends State<CardCreationPage>
               controller: _tabController,
               children: [
                 _buildDesignTab(),
-                _buildInfoTab(),
+                _buildGeneralTab(),
+                _buildContactTab(),
                 _buildOptionsTab(),
               ],
             ),
@@ -303,6 +308,22 @@ class _CardCreationPageState extends State<CardCreationPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            'Choisissez le thème de votre carte',
+            style: ShowmeDesign.h5.copyWith(fontWeight: FontWeight.bold),
+          ),
+          
+          const SizedBox(height: ShowmeDesign.spacingMd),
+          
+          Text(
+            'Le thème définit les couleurs et le style général de votre carte',
+            style: ShowmeDesign.bodyMedium.copyWith(
+              color: ShowmeDesign.neutral600,
+            ),
+          ),
+
+          const SizedBox(height: ShowmeDesign.spacingLg),
+
           // Sélecteur de thème
           CardThemeSelector(
             selectedTheme: _selectedTheme,
@@ -317,7 +338,7 @@ class _CardCreationPageState extends State<CardCreationPage>
     );
   }
 
-  Widget _buildInfoTab() {
+  Widget _buildGeneralTab() {
     return Form(
       key: _formKey,
       child: SingleChildScrollView(
@@ -326,19 +347,17 @@ class _CardCreationPageState extends State<CardCreationPage>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Informations personnelles',
-              style: ShowmeDesign.h5.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              'Informations générales',
+              style: ShowmeDesign.h5.copyWith(fontWeight: FontWeight.bold),
             ),
-            
+
             const SizedBox(height: ShowmeDesign.spacingLg),
-            
+
             // Titre de la carte
             _buildTextField(
               controller: _titleController,
-              label: 'Titre de la carte',
-              hint: 'Ma carte professionnelle',
+              label: 'Titre de la carte *',
+              hint: 'Ex: John Doe - Développeur',
               icon: Icons.title,
               validator: (value) {
                 if (value?.isEmpty ?? true) {
@@ -352,38 +371,48 @@ class _CardCreationPageState extends State<CardCreationPage>
               onChanged: (value) => setState(() {}),
             ),
 
+            // const SizedBox(height: ShowmeDesign.spacingLg),
+
+            // // Bio
+            // _buildTextField(
+            //   controller: _bioController,
+            //   label: 'Bio / Description',
+            //   hint: 'Décrivez-vous en quelques mots...',
+            //   icon: Icons.description,
+            //   maxLines: 3,
+            //   onChanged: (value) => setState(() {}),
+            // ),
+
             const SizedBox(height: ShowmeDesign.spacingLg),
 
             // Email
-            // _buildTextField(
-            //   controller: _emailController,
-            //   label: 'Email',
-            //   hint: 'john.doe@example.com',
-            //   icon: Icons.email,
-            //   keyboardType: TextInputType.emailAddress,
-            //   validator: (value) {
-            //     if (value?.isEmpty ?? true) {
-            //       return 'L\'email est requis';
-            //     }
-            //     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
-            //       return 'Email invalide';
-            //     }
-            //     return null;
-            //   },
-            //   onChanged: (value) => setState(() {}),
-            // ),
-            
-            // const SizedBox(height: ShowmeDesign.spacingLg),
-            
+            _buildTextField(
+              controller: _emailController,
+              label: 'Email *',
+              hint: 'john.doe@example.com',
+              icon: Icons.email,
+              keyboardType: TextInputType.emailAddress,
+              validator: (value) {
+                if (value?.isEmpty ?? true) {
+                  return 'L\'email est requis';
+                }
+                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
+                  return 'Email invalide';
+                }
+                return null;
+              },
+              onChanged: (value) => setState(() {}),
+            ),
+
+            const SizedBox(height: ShowmeDesign.spacingLg),
+
             Text(
               'Informations professionnelles',
-              style: ShowmeDesign.h5.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: ShowmeDesign.h5.copyWith(fontWeight: FontWeight.bold),
             ),
-            
+
             const SizedBox(height: ShowmeDesign.spacingLg),
-            
+
             // Poste
             _buildTextField(
               controller: _positionController,
@@ -392,9 +421,9 @@ class _CardCreationPageState extends State<CardCreationPage>
               icon: Icons.work,
               onChanged: (value) => setState(() {}),
             ),
-            
+
             const SizedBox(height: ShowmeDesign.spacingLg),
-            
+
             // Entreprise
             _buildTextField(
               controller: _companyController,
@@ -403,53 +432,135 @@ class _CardCreationPageState extends State<CardCreationPage>
               icon: Icons.business,
               onChanged: (value) => setState(() {}),
             ),
-            
-            const SizedBox(height: ShowmeDesign.spacingLg),
-            
-            Text(
-              'Contact',
-              style: ShowmeDesign.h5.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            
-            const SizedBox(height: ShowmeDesign.spacingLg),
-            
-            // Téléphone
-            _buildTextField(
-              controller: _phoneController,
-              label: 'Téléphone',
-              hint: '+33 6 12 34 56 78',
-              icon: Icons.phone,
-              keyboardType: TextInputType.phone,
-              onChanged: (value) => setState(() {}),
-            ),
-            
-            const SizedBox(height: ShowmeDesign.spacingLg),
-            
-            // Site web
-            _buildTextField(
-              controller: _websiteController,
-              label: 'Site web',
-              hint: 'https://monsite.com',
-              icon: Icons.language,
-              keyboardType: TextInputType.url,
-              onChanged: (value) => setState(() {}),
-            ),
-            
-            const SizedBox(height: ShowmeDesign.spacingLg),
-            
-            // LinkedIn
-            _buildTextField(
-              controller: _linkedinController,
-              label: 'LinkedIn',
-              hint: 'https://linkedin.com/in/johndoe',
-              icon: Icons.link,
-              keyboardType: TextInputType.url,
-              onChanged: (value) => setState(() {}),
-            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildContactTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(ShowmeDesign.spacingLg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Informations de contact',
+            style: ShowmeDesign.h5.copyWith(fontWeight: FontWeight.bold),
+          ),
+
+          const SizedBox(height: ShowmeDesign.spacingLg),
+
+          // Téléphone
+          _buildTextField(
+            controller: _phoneController,
+            label: 'Téléphone',
+            hint: '+33 6 12 34 56 78',
+            icon: Icons.phone,
+            keyboardType: TextInputType.phone,
+            onChanged: (value) => setState(() {}),
+          ),
+
+          const SizedBox(height: ShowmeDesign.spacingLg),
+
+          // Site web
+          _buildTextField(
+            controller: _websiteController,
+            label: 'Site web',
+            hint: 'https://monsite.com',
+            icon: Icons.language,
+            keyboardType: TextInputType.url,
+            onChanged: (value) => setState(() {}),
+          ),
+
+          const SizedBox(height: ShowmeDesign.spacingLg),
+
+          Text(
+            'Réseaux sociaux',
+            style: ShowmeDesign.h5.copyWith(fontWeight: FontWeight.bold),
+          ),
+
+          const SizedBox(height: ShowmeDesign.spacingLg),
+
+          // LinkedIn
+          _buildTextField(
+            controller: _linkedinController,
+            label: 'LinkedIn',
+            hint: 'https://linkedin.com/in/johndoe',
+            icon: Icons.link,
+            keyboardType: TextInputType.url,
+            onChanged: (value) => setState(() {}),
+          ),
+
+          const SizedBox(height: ShowmeDesign.spacingLg),
+
+          // Twitter
+          _buildTextField(
+            controller: _twitterController,
+            label: 'Twitter / X',
+            hint: 'https://twitter.com/johndoe',
+            icon: Icons.alternate_email,
+            keyboardType: TextInputType.url,
+            onChanged: (value) => setState(() {}),
+          ),
+
+          const SizedBox(height: ShowmeDesign.spacingLg),
+
+          // Instagram
+          _buildTextField(
+            controller: _instagramController,
+            label: 'Instagram',
+            hint: 'https://instagram.com/johndoe',
+            icon: Icons.camera_alt,
+            keyboardType: TextInputType.url,
+            onChanged: (value) => setState(() {}),
+          ),
+
+          const SizedBox(height: ShowmeDesign.spacingLg),
+
+          Text(
+            'Adresse',
+            style: ShowmeDesign.h5.copyWith(fontWeight: FontWeight.bold),
+          ),
+
+          const SizedBox(height: ShowmeDesign.spacingLg),
+
+          // Adresse
+          _buildTextField(
+            controller: _addressController,
+            label: 'Adresse complète',
+            hint: '123 rue de la Paix',
+            icon: Icons.location_on,
+            maxLines: 2,
+            onChanged: (value) => setState(() {}),
+          ),
+
+          const SizedBox(height: ShowmeDesign.spacingLg),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _cityController,
+                  label: 'Ville',
+                  hint: 'Paris',
+                  icon: Icons.location_city,
+                  onChanged: (value) => setState(() {}),
+                ),
+              ),
+              const SizedBox(width: ShowmeDesign.spacingMd),
+              Expanded(
+                child: _buildTextField(
+                  controller: _countryController,
+                  label: 'Pays',
+                  hint: 'France',
+                  icon: Icons.flag,
+                  onChanged: (value) => setState(() {}),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -462,17 +573,15 @@ class _CardCreationPageState extends State<CardCreationPage>
         children: [
           Text(
             'Paramètres de la carte',
-            style: ShowmeDesign.h5.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: ShowmeDesign.h5.copyWith(fontWeight: FontWeight.bold),
           ),
-          
+
           const SizedBox(height: ShowmeDesign.spacingLg),
-          
+
           // Visibilité publique
           _buildSwitchTile(
             title: 'Carte publique',
-            subtitle: 'Votre carte sera visible sur votre profil public',
+            subtitle: 'Votre carte sera visible sur votre profil public et pourra être partagée',
             icon: Icons.public,
             value: _isPublic,
             onChanged: (value) {
@@ -481,13 +590,13 @@ class _CardCreationPageState extends State<CardCreationPage>
               });
             },
           ),
-          
+
           const Divider(height: ShowmeDesign.spacingXl),
-          
+
           // Paiements
           _buildSwitchTile(
             title: 'Autoriser les paiements',
-            subtitle: 'Les visiteurs pourront vous payer directement',
+            subtitle: 'Les visiteurs pourront vous payer directement via cette carte',
             icon: Icons.payment,
             value: _allowPayment,
             onChanged: (value) {
@@ -496,13 +605,13 @@ class _CardCreationPageState extends State<CardCreationPage>
               });
             },
           ),
-          
+
           const Divider(height: ShowmeDesign.spacingXl),
-          
+
           // NFC
           _buildSwitchTile(
             title: 'Activer le NFC',
-            subtitle: 'Partagez votre carte en approchant les téléphones',
+            subtitle: 'Partagez votre carte en approchant les téléphones compatibles',
             icon: Icons.nfc,
             value: _nfcEnabled,
             onChanged: (value) {
@@ -510,6 +619,46 @@ class _CardCreationPageState extends State<CardCreationPage>
                 _nfcEnabled = value;
               });
             },
+          ),
+
+          const SizedBox(height: ShowmeDesign.spacingXl),
+
+          Container(
+            padding: const EdgeInsets.all(ShowmeDesign.spacingMd),
+            decoration: BoxDecoration(
+              color: ShowmeDesign.neutral100,
+              borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
+              border: Border.all(color: ShowmeDesign.neutral300),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: ShowmeDesign.primaryPurple,
+                      size: 20,
+                    ),
+                    const SizedBox(width: ShowmeDesign.spacingXs),
+                    Text(
+                      'À savoir',
+                      style: ShowmeDesign.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: ShowmeDesign.primaryPurple,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: ShowmeDesign.spacingXs),
+                Text(
+                  'Vous pourrez modifier ces paramètres à tout moment après la création de votre carte.',
+                  style: ShowmeDesign.bodySmall.copyWith(
+                    color: ShowmeDesign.neutral600,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -580,7 +729,10 @@ class _CardCreationPageState extends State<CardCreationPage>
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: value ? ShowmeDesign.primaryPurple.withOpacity(0.1) : ShowmeDesign.neutral100,
+          color:
+              value
+                  ? ShowmeDesign.primaryPurple.withOpacity(0.1)
+                  : ShowmeDesign.neutral100,
           borderRadius: BorderRadius.circular(ShowmeDesign.radiusMd),
         ),
         child: Icon(
@@ -591,15 +743,11 @@ class _CardCreationPageState extends State<CardCreationPage>
       ),
       title: Text(
         title,
-        style: ShowmeDesign.bodyLarge.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
+        style: ShowmeDesign.bodyLarge.copyWith(fontWeight: FontWeight.w600),
       ),
       subtitle: Text(
         subtitle,
-        style: ShowmeDesign.bodySmall.copyWith(
-          color: ShowmeDesign.neutral600,
-        ),
+        style: ShowmeDesign.bodySmall.copyWith(color: ShowmeDesign.neutral600),
       ),
       trailing: Switch(
         value: value,
@@ -622,26 +770,32 @@ class _CardCreationPageState extends State<CardCreationPage>
 
       // Générer un slug unique basé sur le titre
       final slug = _generateSlug(_titleController.text);
-      
+
       final cardData = {
         'slug': slug,
         'title': _titleController.text,
+        // 'bio': _bioController.text.isEmpty ? null : _bioController.text,
         'isPublic': _isPublic,
         'allowPayment': _allowPayment,
         'nfcEnabled': _nfcEnabled,
         'theme': _selectedTheme.name,
-        // Données de contact directement dans la carte
-        // 'email': _emailController.text,
+        // Données de contact requises
+        'email': _emailController.text,
         'phone': _phoneController.text.isEmpty ? null : _phoneController.text,
+        'company': _companyController.text.isEmpty ? null : _companyController.text,
+        'position': _positionController.text.isEmpty ? null : _positionController.text,
         'website': _websiteController.text.isEmpty ? null : _websiteController.text,
         'linkedinUrl': _linkedinController.text.isEmpty ? null : _linkedinController.text,
-        'position': _positionController.text.isEmpty ? null : _positionController.text,
-        'company': _companyController.text.isEmpty ? null : _companyController.text,
+        'twitterUrl': _twitterController.text.isEmpty ? null : _twitterController.text,
+        'instagramUrl': _instagramController.text.isEmpty ? null : _instagramController.text,
+        'address': _addressController.text.isEmpty ? null : _addressController.text,
+        'city': _cityController.text.isEmpty ? null : _cityController.text,
+        'country': _countryController.text.isEmpty ? null : _countryController.text,
       };
 
       context.read<CardBloc>().add(CardCreateRequested(cardData));
     } else {
-      // Passer au tab des infos si la validation échoue
+      // Passer au tab des infos générales si la validation échoue
       _tabController.animateTo(1);
     }
   }

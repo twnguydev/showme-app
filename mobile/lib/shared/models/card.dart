@@ -1,8 +1,5 @@
 // mobile/lib/shared/models/card.dart
 import 'package:json_annotation/json_annotation.dart';
-import 'profile.dart';
-import 'subscription.dart';
-import 'uploaded_file.dart';
 import 'card_theme.dart';
 
 part 'card.g.dart';

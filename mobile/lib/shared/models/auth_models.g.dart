@@ -8,7 +8,7 @@ part of 'auth_models.dart';
 
 AuthResponseData _$AuthResponseDataFromJson(Map<String, dynamic> json) =>
     AuthResponseData(
-      jwt: json['jwt'] as String,
+      token: json['token'] as String,
       user: User.fromJson(json['user'] as Map<String, dynamic>),
       expiresAt: json['expiresAt'] == null
           ? null
@@ -18,7 +18,7 @@ AuthResponseData _$AuthResponseDataFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$AuthResponseDataToJson(AuthResponseData instance) =>
     <String, dynamic>{
-      'jwt': instance.jwt,
+      'token': instance.token,
       'user': instance.user,
       'expiresAt': instance.expiresAt?.toIso8601String(),
       'refreshToken': instance.refreshToken,

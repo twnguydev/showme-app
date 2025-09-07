@@ -1,6 +1,7 @@
 // mobile/lib/features/auth/presentation/widgets/social_login_button.dart
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/design/showme_design_system.dart';
 
 enum SocialProvider { apple, google }
@@ -129,24 +130,23 @@ class _SocialLoginButtonState extends State<SocialLoginButton>
   Widget _buildIcon() {
     switch (widget.provider) {
       case SocialProvider.apple:
-        return Container(
+        return const SizedBox(
           width: 20,
           height: 20,
-          child: Icon(
-            Icons.apple,
-            color: _getTextColor(),
+          child: FaIcon(
+            FontAwesomeIcons.apple,
+            color: Colors.white,
             size: 20,
           ),
         );
       case SocialProvider.google:
-        return Container(
+        return const SizedBox(
           width: 20,
           height: 20,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: CustomPaint(
-            painter: GoogleLogoPainter(),
+          child: FaIcon(
+            FontAwesomeIcons.google,
+            color: Colors.black,
+            size: 20,
           ),
         );
     }

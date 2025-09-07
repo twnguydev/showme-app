@@ -1,4 +1,4 @@
-// backend/src/entities/card.entity.ts
+// src/entities/card.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -24,14 +24,13 @@ export enum CardTheme {
 }
 
 @Entity('cards')
-@Index(['userId', 'slug'], { unique: true }) // Slug unique par utilisateur
-@Index(['slug']) // Index pour les recherches publiques
+@Index(['userId', 'slug'], { unique: true })
+@Index(['slug'])
 export class Card {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ length: 100 })
-  @Index()
   slug: string;
 
   @Column({ length: 200 })
@@ -76,12 +75,6 @@ export class Card {
   @Column({ length: 255 })
   @Index()
   email: string; // Requis, peut être différent pour chaque carte
-
-  @Column({ length: 100, nullable: true })
-  firstName: string;
-
-  @Column({ length: 100, nullable: true })
-  lastName: string;
 
   @Column({ length: 20, nullable: true })
   phone: string;
@@ -157,12 +150,12 @@ export class Card {
   // === GETTERS VIRTUELS ===
 
   get fullName(): string {
-    if (this.firstName && this.lastName) {
-      return `${this.firstName} ${this.lastName}`;
-    } else if (this.firstName) {
-      return this.firstName;
-    } else if (this.lastName) {
-      return this.lastName;
+    if (this.user.firstName && this.user.lastName) {
+      return `${this.user.firstName} ${this.user.lastName}`;
+    } else if (this.user.firstName) {
+      return this.user.firstName;
+    } else if (this.user.lastName) {
+      return this.user.lastName;
     }
     return this.email.split('@')[0]; // Fallback sur l'email
   }

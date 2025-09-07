@@ -82,7 +82,7 @@ export class AuthService {
 
     return {
       user: userWithCards,
-      jwt: accessToken,
+      token: accessToken,
       refreshToken,
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h
     };
@@ -92,26 +92,23 @@ export class AuthService {
     // Trouver l'utilisateur
     const user = await this.userRepository.findOne({
       where: { email: loginDto.identifier },
-      relations: ['cards'], // ✅ Charger les cartes
+      relations: ['cards'],
     });
 
     if (!user) {
       throw new UnauthorizedException('Identifiants incorrects');
     }
 
-    // Vérifier le mot de passe
     const passwordValid = await bcrypt.compare(loginDto.password, user.password);
     if (!passwordValid) {
       throw new UnauthorizedException('Identifiants incorrects');
     }
 
-    // ✅ VÉRIFIER SI L'UTILISATEUR A UNE CARTE PAR DÉFAUT
     if (!user.cards || user.cards.length === 0) {
       try {
         await this.cardsService.createDefaultCard(user);
         console.log(`✅ Carte par défaut créée lors de la connexion pour ${user.email}`);
-        
-        // Recharger l'utilisateur avec ses cartes
+
         const userWithCards = await this.userRepository.findOne({
           where: { id: user.id },
           relations: ['cards'],
@@ -122,19 +119,16 @@ export class AuthService {
       }
     }
 
-    // Mettre à jour la dernière connexion
     user.updateLastLogin();
-    
-    // Générer les tokens
+
     const { accessToken, refreshToken } = await this.generateTokens(user);
 
-    // Sauvegarder le refresh token et la dernière connexion
     user.refreshToken = refreshToken;
     await this.userRepository.save(user);
 
     return {
       user,
-      jwt: accessToken,
+      token: accessToken,
       refreshToken,
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h
     };
@@ -205,7 +199,7 @@ export class AuthService {
 
       return {
         user: this.sanitizeUser(user),
-        jwt: tokens.accessToken,
+        token: tokens.accessToken,
         refreshToken: tokens.refreshToken
       };
     } catch (error) {

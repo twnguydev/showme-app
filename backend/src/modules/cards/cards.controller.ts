@@ -24,6 +24,15 @@ import { CreateCardDto, UpdateCardDto } from './dto';
 export class CardsController {
   constructor(private readonly cardsService: CardsService) {}
 
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Récupérer les cartes de l\'utilisateur' })
+  @ApiResponse({ status: 200, description: 'Cartes récupérées avec succès' })
+  async getCards(@CurrentUser() user: User) {
+    return this.cardsService.findAll(user.id);
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

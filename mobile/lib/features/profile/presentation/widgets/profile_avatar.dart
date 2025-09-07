@@ -21,19 +21,14 @@ class ProfileAvatar extends StatelessWidget {
             CircleAvatar(
               radius: 60,
               backgroundColor: Theme.of(context).colorScheme.primary,
-              backgroundImage: user.profile?.avatar != null
-                  ? NetworkImage(user.profile!.avatar!.url)
-                  : null,
-              child: user.profile?.avatar == null
-                  ? Text(
+              child: Text(
                       user.initials,
                       style: const TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
-                    )
-                  : null,
+                    ),
             ),
             Positioned(
               bottom: 0,
@@ -67,14 +62,6 @@ class ProfileAvatar extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        if (user.profile?.position != null && user.profile?.company != null)
-          Text(
-            '${user.profile!.position} chez ${user.profile!.company}',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Colors.grey[600],
-            ),
-            textAlign: TextAlign.center,
-          ),
       ],
     );
   }

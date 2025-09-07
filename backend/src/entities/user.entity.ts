@@ -22,12 +22,12 @@ export enum UserRole {
 }
 
 @Entity('users')
+@Index(['email'], { unique: true })
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true, length: 255 })
-  @Index()
+  @Column({ length: 255 })
   email: string;
 
   @Column()
@@ -150,8 +150,6 @@ export class User {
       bio: 'Ma carte de contact digitale',
       isPublic: true,
       email: this.email,
-      firstName: this.firstName,
-      lastName: this.lastName,
       phone: this.defaultPhone,
       company: this.defaultCompany,
       position: this.defaultPosition,

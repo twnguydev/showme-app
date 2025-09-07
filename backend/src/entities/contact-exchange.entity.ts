@@ -65,7 +65,7 @@ export class ContactExchange {
   updatedAt: Date;
 
   // Relations
-  @ManyToOne(() => Card, (card) => card.exchanges)
+  @ManyToOne(() => Card, (card) => card.contactExchanges)
   card: Card;
 
   @ManyToOne(() => Visitor, { nullable: true })
